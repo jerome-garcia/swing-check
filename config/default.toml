@@ -49,6 +49,15 @@ min_visibility = 0.5
 # Wrists use a lower bar: the hands are weighted by visibility and averaged,
 # and in DTL the lead wrist is often partly hidden but still roughly right.
 hand_min_visibility = 0.3
+# Both hands are on the grip, so the wrists should be close. Farther apart
+# than this (torso lengths) means one is mis-tracked; the one continuing the
+# hand path's motion is used.
+hand_max_separation = 0.15
+# Direction of travel for that choice is averaged over this window.
+hand_velocity_window_ms = 50
+# A hand position this far (torso lengths) from where the path was heading is
+# treated as a tracking glitch and interpolated over.
+hand_max_jump = 0.4
 # Gaps in a keypoint track shorter than this are filled by interpolation.
 max_gap_ms = 100
 # Smoothing window for keypoint trajectories, in milliseconds (0 = off).
@@ -117,5 +126,10 @@ min_shift = 0.15              # less than this -> flagged (fat-shot / low-point 
 max_drift_away = 0.10         # more than this -> flagged
 
 [output]
-trail_length_ms = 2000        # how much hand path to draw behind the current frame
+# How much hand path to draw behind the current frame; 0 = all of it since address.
+trail_length_ms = 0
+# Phases saved as images (any of address, takeaway, top, early_downswing, impact).
 freeze_frames = ["address", "top", "impact"]
+# The annotated video plays at most this many frames per second, so a 240 fps
+# clip comes out as 4x slow motion at 60.
+max_playback_fps = 60

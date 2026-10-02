@@ -57,7 +57,7 @@ def head_drift(ctx: SwingContext) -> Verdict:
             "units": "body lengths toward target from address (- = away)",
         },
         overlays=[
-            Overlay("vline", [tuple(address_xy)], REFERENCE_COLOR, "head @ address", thickness=1),
+            Overlay("vline", ctx.vspan(address_xy, 0.2), REFERENCE_COLOR, "head @ address", thickness=1),
             Overlay("point", [tuple(impact_xy)], color, f"head {label}", frames=(impact, len(head) - 1)),
         ],
     )

@@ -32,6 +32,7 @@ def hands_at_impact(ctx: SwingContext) -> Verdict:
 
     color = STATUS_COLORS[status]
     impact = ctx.frame("impact")
+    ball_y = ctx.marks.points["ball"][1]
     return Verdict(
         status=status,
         label=label,
@@ -43,8 +44,10 @@ def hands_at_impact(ctx: SwingContext) -> Verdict:
             "units": "body lengths toward target (+ = ahead of ball)",
         },
         overlays=[
-            Overlay("vline", [(ball_x, 0)], BALL_COLOR, "ball", thickness=1),
+            # Ball line from the ball up to hand height: hands left/right of it is the verdict.
+            Overlay("vline", [(ball_x, ball_y), (ball_x, float(address_xy[1]) - 0.15 * ctx.scale)], BALL_COLOR,
+                    "ball", thickness=1),
+            Overlay("point", [(ball_x, ball_y)], BALL_COLOR, "", thickness=1),
             Overlay("point", [tuple(impact_xy)], color, f"hands {label}", frames=(impact, len(hands) - 1)),
-            Overlay("vline", [(float(impact_xy[0]), 0)], color, "", frames=(impact, len(hands) - 1)),
         ],
     )

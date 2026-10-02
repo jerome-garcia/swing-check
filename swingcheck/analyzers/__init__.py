@@ -49,8 +49,12 @@ class Overlay:
 
     kind: "line" (infinite line through points[0] along points[1]-points[0]),
           "ray" (from points[0] through points[1], to the frame edge),
-          "segment", "point", "vline" (vertical line at points[0].x),
-          "text" (label at points[0]).
+          "segment", "point",
+          "vline" (vertical line at points[0].x: full height, or from
+          points[0].y to points[1].y when two points are given),
+          "text" (label at points[0]),
+          "path" (one point per video frame; drawn as the hand-path trail up
+          to the current frame, replacing the default wrist trail).
     frames: (first, last) frame range to draw on; None = whole video.
     """
 
@@ -137,6 +141,12 @@ class SwingContext:
 
     def units(self, px: float) -> float:
         return to_body_units(px, self.scale)
+
+    def vspan(self, xy, half_height: float = 0.3) -> list[tuple[float, float]]:
+        """Points for a short "vline" overlay centered on xy, +/- half_height body lengths."""
+        x, y = float(xy[0]), float(xy[1])
+        d = half_height * self.scale
+        return [(x, y - d), (x, y + d)]
 
 
 class MissingData(RuntimeError):

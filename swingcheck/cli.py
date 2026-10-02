@@ -13,6 +13,8 @@ from swingcheck.ingest import IngestError, normalize
 from swingcheck.body import body_scale, hands
 from swingcheck.marking import MarkingCancelled, get_marks, video_signature
 from swingcheck.models import PoseSeq
+from swingcheck.output.annotate import Annotator, write_outputs
+from swingcheck.output.report import STATUS_TAGS, build_report
 from swingcheck.phases import PhaseError, detect_phases, get_phases
 from swingcheck.pose import get_pose, write_debug_video
 
@@ -28,6 +30,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--force", action="store_true", help="ignore cached results and redo every stage")
     parser.add_argument("--remark", action="store_true", help="re-open the marking window even if marks are saved")
     parser.add_argument("--pose-debug", action="store_true", help="also write pose_debug.mp4 with the skeleton drawn")
+    parser.add_argument("--no-video", action="store_true", help="skip the annotated video (images and report only)")
     phase_args = parser.add_argument_group("phase overrides (frame numbers; saved for later runs)")
     phase_args.add_argument("--address", type=int, help="address frame")
     phase_args.add_argument("--top", type=int, help="top-of-backswing frame")
@@ -104,22 +107,28 @@ def main(argv: list[str] | None = None) -> int:
         scale=body_scale(pose, phases.address, config), config=config,
     )
     verdicts = run_analyzers(ctx)
-    print("Results:")
-    for v in verdicts:
-        print(f"  [{v.status.upper():<5}] {v.title}: {v.label}")
-        print(f"          {v.summary}")
-        nums = ", ".join(f"{k}={val}" for k, val in v.measurements.items() if isinstance(val, (int, float)))
-        if nums:
-            print(f"          {nums}")
     (run_dir / "analysis.json").write_text(json.dumps(
         {"view": args.view, "phases": phases.as_dict(), "body_scale_px": round(ctx.scale, 2),
          "verdicts": [v.to_json() for v in verdicts]},
         indent=2,
     ))
+    report = build_report(args.video, args.view, info, phases, verdicts, ctx.scale, config["scale"]["method"])
+    (run_dir / "report.txt").write_text(report, encoding="utf-8")
+    print("Results:")
+    for v in verdicts:
+        print(f"  [{STATUS_TAGS[v.status]:<5}] {v.title}: {v.label}")
+        print(f"          {v.summary}")
+
+    annotator = Annotator(verdicts, phases, hand_track, pose.fps, info.width, info.height, config)
+    frame_range = pose.dense if pose.dense else (0, len(pose) - 1)
+    print("Writing outputs...")
+    written = write_outputs(run_dir, annotator, frame_range, config, video=not args.no_video)
+    written["report"] = run_dir / "report.txt"
+    for name, path in written.items():
+        print(f"  {name:<8} {path}")
 
     if args.pose_debug:
-        print(f"Debug video: {write_debug_video(run_dir, pose, config)}")
-    print(f"Output: {run_dir}")
+        print(f"  {'debug':<8} {write_debug_video(run_dir, pose, config)}")
     return 0
 
 

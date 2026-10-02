@@ -1,0 +1,80 @@
+import shutil
+
+import numpy as np
+import pytest
+
+from swingcheck.analyzers import Overlay, Verdict
+from swingcheck.config import load_config
+from swingcheck.ingest import VideoInfo
+from swingcheck.output.annotate import Annotator, write_outputs
+from swingcheck.output.report import build_report
+from swingcheck.output.video import VideoWriter
+from swingcheck.phases import Phases
+from tests.test_analyzers import face_on_pose, run_fo
+
+CONFIG = load_config()
+PHASES = Phases(address=10, takeaway=30, top=50, early_downswing=70, impact=80)
+
+
+def fo_verdicts():
+    v = run_fo(face_on_pose(hands_dx=-40, hip_dx=10, head_dx=-50))
+    return list(v.values())
+
+
+def test_every_overlay_kind_renders():
+    kinds = ["line", "ray", "segment", "point", "vline", "text"]
+    overlays = [Overlay(k, [(100.0, 900.0), (300.0, 300.0)], label=k) for k in kinds]
+    overlays.append(Overlay("point", [(50.0, 50.0)], thickness=1))  # ring marker
+    overlays.append(Overlay("ray", [(-500.0, -500.0), (-400.0, -400.0)], label="off-frame"))  # misses frame
+    verdict = Verdict(status="ok", label="x", summary="y", overlays=overlays, title="All kinds")
+    hands = np.tile([540.0, 760.0], (100, 1))
+    ann = Annotator([verdict], PHASES, hands, 240.0, 1080, 1920, CONFIG)
+    frame = np.zeros((1920, 1080, 3), np.uint8)
+    for i in (0, 10, 50, 80, 99):
+        out = ann.render(frame, i, footer="footer")
+        assert out.shape == frame.shape
+    assert out.any()
+
+
+def test_face_on_verdicts_render_through_impact():
+    verdicts = fo_verdicts()
+    assert {v.name for v in verdicts} == {"hands_at_impact", "weight_shift", "head_drift"}
+    pose = face_on_pose()
+    hands = (pose.xy("left_wrist") + pose.xy("right_wrist")) / 2
+    ann = Annotator(verdicts, PHASES, hands, 240.0, 1080, 1920, CONFIG)
+    frame = np.full((1920, 1080, 3), 90, np.uint8)
+    before = ann.render(frame, 79)
+    after = ann.render(frame, 80)
+    assert not np.array_equal(before, after)  # impact-only overlays appear at impact
+
+
+def test_unknown_overlay_kind_rejected():
+    verdict = Verdict(status="ok", label="x", summary="y", overlays=[Overlay("blob", [(0.0, 0.0)])])
+    ann = Annotator([verdict], PHASES, np.zeros((100, 2)), 240.0, 100, 100, CONFIG)
+    with pytest.raises(ValueError, match="blob"):
+        ann.render(np.zeros((100, 100, 3), np.uint8), 5)
+
+
+def test_report_lists_phases_and_flags():
+    info = VideoInfo(source="x", source_size=1, source_mtime=0, trim_start=1.0, trim_end=None, fps=240.0,
+                     width=1080, height=1920, rotation=90, frame_count=100, duration=0.4,
+                     source_codec="hevc", hdr=False, warnings=["a note"])
+    text = build_report(__import__("pathlib").Path("swing.mov"), "fo", info, PHASES, fo_verdicts(), 260.0, "torso")
+    assert "face-on" in text and "trimmed 1s to end" in text
+    assert "impact" in text and "Note: a note" in text
+    assert "[FLAG] Hands at impact: behind" in text
+    assert "SUMMARY" in text and "- Hands at impact: behind" in text
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg not on PATH")
+def test_write_outputs_end_to_end(tmp_path):
+    with VideoWriter(tmp_path / "normalized.mp4", 108, 192, 240.0) as w:
+        for i in range(100):
+            w.write(np.full((192, 108, 3), i * 2, np.uint8))
+    pose = face_on_pose()
+    hands = (pose.xy("left_wrist") + pose.xy("right_wrist")) / 2 / 10
+    ann = Annotator([], PHASES, hands, 240.0, 108, 192, CONFIG)
+    written = write_outputs(tmp_path, ann, (5, 95), CONFIG)
+    assert set(written) == {"video", "address", "top", "impact", "summary"}
+    for path in written.values():
+        assert path.exists() and path.stat().st_size > 0

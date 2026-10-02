@@ -43,8 +43,8 @@ def weight_shift(ctx: SwingContext) -> Verdict:
             "units": "body lengths toward target from address",
         },
         overlays=[
-            Overlay("vline", [tuple(address_xy)], REFERENCE_COLOR, "hips @ address", thickness=1),
-            Overlay("vline", [tuple(impact_xy)], color, "hips @ impact", frames=(impact, len(hips) - 1)),
+            Overlay("vline", ctx.vspan(address_xy, 0.25), REFERENCE_COLOR, "hips @ address", thickness=1),
+            Overlay("point", [tuple(impact_xy)], color, f"hips {label}", frames=(impact, len(hips) - 1)),
             Overlay("segment", [tuple(address_xy), (float(impact_xy[0]), float(address_xy[1]))], color, "",
                     frames=(impact, len(hips) - 1)),
         ],

@@ -89,6 +89,8 @@ def swing_plane(ctx: SwingContext) -> Verdict:
 
     n = len(hands)
     overlays = [
+        # The calibrated path, so the checkpoint dots sit on the drawn trail.
+        Overlay("path", [tuple(p) for p in path], label="hand path"),
         Overlay("ray", [tuple(ball), tuple(ball + shaft_dir)], SHAFT_COLOR, "shaft plane"),
         Overlay("ray", [tuple(ball), tuple(shoulder)], SHOULDER_COLOR, "shoulder plane"),
         Overlay("point", [tuple(ball)], BALL_COLOR, "", thickness=1),
