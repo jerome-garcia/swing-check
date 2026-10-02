@@ -14,7 +14,7 @@ import sys
 import tempfile
 import time
 import urllib.request
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -59,6 +59,7 @@ def _cache_params(info: VideoInfo, config: dict[str, Any]) -> dict[str, Any]:
         "max_height": config["ingest"]["pose_max_height"],
         "min_detection_confidence": pose_cfg["min_detection_confidence"],
         "min_tracking_confidence": pose_cfg["min_tracking_confidence"],
+        "trim": config["trim"],
     }
 
 
@@ -70,6 +71,7 @@ def save_pose(path: Path, pose: PoseSeq, params: dict[str, Any]) -> None:
         else:
             frames.append([[round(float(v), 2) if i < 2 else round(float(v), 4) for i, v in enumerate(lm)] for lm in frame])
     payload = {"params": params, "fps": pose.fps, "width": pose.width, "height": pose.height,
+               "dense": list(pose.dense) if pose.dense else None,
                "landmarks": list(LANDMARKS), "frames": frames}
     path.write_text(json.dumps(payload, separators=(",", ":")))
 
@@ -81,14 +83,27 @@ def load_pose(path: Path) -> tuple[PoseSeq, dict[str, Any]]:
     for i, frame in enumerate(payload["frames"]):
         if frame is not None:
             data[i] = frame
-    pose = PoseSeq(fps=payload["fps"], width=payload["width"], height=payload["height"], data=data)
+    dense = payload.get("dense")
+    pose = PoseSeq(fps=payload["fps"], width=payload["width"], height=payload["height"], data=data,
+                   dense=tuple(dense) if dense else None)
     return pose, payload["params"]
 
 
-def extract_pose(video_path: Path, info: VideoInfo, config: dict[str, Any]) -> PoseSeq:
-    """Run PoseLandmarker over every frame (downscaled for speed); coordinates are full-res pixels."""
+def extract_pose(
+    video_path: Path,
+    info: VideoInfo,
+    config: dict[str, Any],
+    select: Callable[[int], bool] | None = None,
+    data: np.ndarray | None = None,
+    label: str = "pose",
+) -> np.ndarray:
+    """Run PoseLandmarker on the frames `select` accepts (all by default), filling rows of `data`.
+
+    Frames are downscaled for speed; coordinates come back in full-res pixels.
+    Returns the (frames, 33, 4) array, NaN for frames not run or with no person.
+    """
     with _native_stderr_captured():
-        return _extract_pose(video_path, info, config)
+        return _extract_pose(video_path, info, config, select, data, label)
 
 
 @contextlib.contextmanager
@@ -110,7 +125,14 @@ def _native_stderr_captured() -> Iterator[None]:
             os.close(saved)
 
 
-def _extract_pose(video_path: Path, info: VideoInfo, config: dict[str, Any]) -> PoseSeq:
+def _extract_pose(
+    video_path: Path,
+    info: VideoInfo,
+    config: dict[str, Any],
+    select: Callable[[int], bool] | None,
+    data: np.ndarray | None,
+    label: str,
+) -> np.ndarray:
     # Imported here so the rest of the package (and tests) don't pay MediaPipe's import time.
     import mediapipe as mp
     from mediapipe.tasks.python import BaseOptions, vision
@@ -128,31 +150,48 @@ def _extract_pose(video_path: Path, info: VideoInfo, config: dict[str, Any]) -> 
     scale = min(1.0, max_h / info.height) if max_h else 1.0
     size = (round(info.width * scale), round(info.height * scale))
 
-    rows: list[np.ndarray] = []
-    total = info.frame_count or 0
+    total_frames = info.frame_count or int(cv2.VideoCapture(str(video_path)).get(cv2.CAP_PROP_FRAME_COUNT))
+    if data is None:
+        data = np.full((total_frames, len(LANDMARKS), 4), np.nan)
+    todo = sum(1 for i in range(total_frames) if select is None or select(i))
+    done = 0
     started = time.perf_counter()
     with vision.PoseLandmarker.create_from_options(options) as landmarker:
         for i, frame in enumerate(iter_frames(video_path)):
+            if i >= len(data):
+                break
+            if select is not None and not select(i):
+                continue
             small = cv2.resize(frame, size, interpolation=cv2.INTER_AREA) if scale < 1.0 else frame
             rgb = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
             image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
             result = landmarker.detect_for_video(image, int(round(i * 1000 / info.fps)))
-            row = np.full((len(LANDMARKS), 4), np.nan)
+            data[i] = np.nan
             if result.pose_landmarks:
                 for j, lm in enumerate(result.pose_landmarks[0]):
-                    row[j] = (lm.x * info.width, lm.y * info.height, lm.z, lm.visibility)
-            rows.append(row)
-            if (i + 1) % 50 == 0 or i + 1 == total:
-                rate = (i + 1) / (time.perf_counter() - started)
-                print(f"\r  pose: {i + 1}/{total or '?'} frames ({rate:.1f} fps)", end="", flush=True)
+                    data[i, j] = (lm.x * info.width, lm.y * info.height, lm.z, lm.visibility)
+            done += 1
+            if done % 50 == 0 or done == todo:
+                rate = done / (time.perf_counter() - started)
+                print(f"\r  {label}: {done}/{todo} frames ({rate:.1f} fps)", end="", flush=True)
     print()
-    return PoseSeq(fps=info.fps, width=info.width, height=info.height, data=np.array(rows))
+    return data
 
 
-def get_pose(run_dir: Path, info: VideoInfo, config: dict[str, Any], force: bool = False) -> tuple[PoseSeq, bool]:
+def get_pose(
+    run_dir: Path,
+    info: VideoInfo,
+    config: dict[str, Any],
+    locate_swing: Callable[[PoseSeq], tuple[int, int] | None] | None = None,
+    force: bool = False,
+) -> tuple[PoseSeq, bool]:
     """Cached pose if it matches the current video and pose settings, else extract and cache.
 
-    Returns (pose, reused).
+    With auto-trim on and a high frame rate clip, extraction runs in two passes:
+    a quick pass at ~`trim.coarse_fps` over the whole clip, `locate_swing` finds
+    the swing in it (returns a first/last frame range or None), then a full-rate
+    pass fills in every frame of that range. Outside it, only the quick-pass
+    frames have keypoints. Returns (pose, reused).
     """
     path = run_dir / "pose.json"
     params = _cache_params(info, config)
@@ -163,7 +202,29 @@ def get_pose(run_dir: Path, info: VideoInfo, config: dict[str, Any], force: bool
                 return pose, True
         except (KeyError, ValueError, json.JSONDecodeError):
             pass
-    pose = extract_pose(run_dir / "normalized.mp4", info, config)
+
+    video = run_dir / "normalized.mp4"
+    trim_cfg = config["trim"]
+    stride = max(1, round(info.fps / trim_cfg["coarse_fps"]))
+    if trim_cfg["enabled"] and stride > 1 and locate_swing is not None:
+        coarse = extract_pose(video, info, config, select=lambda i: i % stride == 0, label="pose (quick pass)")
+        found = locate_swing(PoseSeq(info.fps, info.width, info.height, coarse))
+        if found is None:
+            print("  couldn't locate the swing in the quick pass; running every frame")
+            data = extract_pose(video, info, config, data=coarse)
+            dense = (0, len(data) - 1)
+        else:
+            pad_before = round(trim_cfg["pad_before_s"] * info.fps)
+            pad_after = round(trim_cfg["pad_after_s"] * info.fps)
+            dense = (max(0, found[0] - pad_before), min(len(coarse) - 1, found[1] + pad_after))
+            data = extract_pose(
+                video, info, config, select=lambda i: dense[0] <= i <= dense[1], data=coarse, label="pose (swing)"
+            )
+    else:
+        data = extract_pose(video, info, config)
+        dense = (0, len(data) - 1)
+
+    pose = PoseSeq(fps=info.fps, width=info.width, height=info.height, data=data, dense=dense)
     save_pose(path, pose, params)
     return pose, False
 

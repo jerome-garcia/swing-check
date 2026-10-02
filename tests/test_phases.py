@@ -1,0 +1,125 @@
+import numpy as np
+import pytest
+
+from swingcheck.config import load_config
+from swingcheck.phases import PhaseError, Phases, apply_overrides, detect_phases
+
+CFG = load_config()["phases"]
+SCALE = 260.0  # torso length in px
+
+
+def synthetic_swing(fps: float, seed: int = 0, waggle: bool = False, noise: float = 0.5):
+    """Hand track (frames, 2) for a stylized swing, plus the true phase frames.
+
+    still address -> backswing up -> short pause at top -> accelerating
+    downswing -> impact -> follow-through to a finish higher than the top.
+    """
+    rng = np.random.default_rng(seed)
+    segments = []
+    truth = {}
+
+    def add(n_s, xs, ys):
+        n = int(round(n_s * fps))
+        s = np.linspace(0, 1, n, endpoint=False)
+        segments.append(np.stack([xs(s), ys(s)], axis=1))
+        return sum(len(seg) for seg in segments)
+
+    if waggle:
+        add(0.4, lambda s: 300 + 12 * np.sin(2 * np.pi * s), lambda s: 800 - 8 * np.sin(2 * np.pi * s) ** 2)
+    end_still = add(0.6, lambda s: 300 + 0 * s, lambda s: 800 + 0 * s)
+    truth["address"] = end_still - 1
+    ease = lambda s: (1 - np.cos(np.pi * s)) / 2  # noqa: E731
+    end_back = add(0.8, lambda s: 300 - 100 * np.sin(np.pi * s), lambda s: 800 - 420 * ease(s))
+    end_pause = add(0.1, lambda s: 300 + 0 * s, lambda s: 380 + 0 * s)
+    truth["top"] = (end_back + end_pause) // 2
+    end_down = add(0.25, lambda s: 300 + 40 * s, lambda s: 380 + 410 * s**2)
+    truth["impact"] = end_down
+    add(0.5, lambda s: 340 + 80 * s, lambda s: 790 - 490 * np.sin(np.pi / 2 * s))
+    add(0.3, lambda s: 420 + 0 * s, lambda s: 300 + 0 * s)
+
+    track = np.concatenate(segments)
+    track += rng.normal(0, noise, track.shape)
+    return track, truth
+
+
+def assert_close(phases: Phases, truth: dict, fps: float, tol_ms: dict):
+    for name, ms in tol_ms.items():
+        got, want = getattr(phases, name), truth[name]
+        assert abs(got - want) <= max(1, ms * fps / 1000), f"{name}: got {got}, want {want} (fps {fps})"
+
+
+@pytest.mark.parametrize("fps", [30.0, 60.0, 240.0])
+def test_detects_phases_at_common_frame_rates(fps):
+    track, truth = synthetic_swing(fps)
+    phases = detect_phases(track, fps, SCALE, CFG)
+    assert_close(phases, truth, fps, {"address": 40, "top": 60, "impact": 15})
+    assert phases.address < phases.takeaway < phases.top < phases.early_downswing < phases.impact
+
+
+def test_waggle_before_address_is_ignored():
+    fps = 240.0
+    track, truth = synthetic_swing(fps, waggle=True)
+    phases = detect_phases(track, fps, SCALE, CFG)
+    assert_close(phases, truth, fps, {"address": 40, "top": 60, "impact": 15})
+
+
+def test_finish_higher_than_top_is_not_mistaken_for_top():
+    fps = 240.0
+    track, truth = synthetic_swing(fps)
+    assert track[:, 1].min() < track[truth["top"], 1]  # finish really is higher
+    phases = detect_phases(track, fps, SCALE, CFG)
+    assert phases.top < phases.impact
+    assert_close(phases, truth, fps, {"top": 60})
+
+
+def test_tracking_gap_at_impact():
+    fps = 240.0
+    track, truth = synthetic_swing(fps)
+    gap = slice(truth["impact"] - 3, truth["impact"] + 3)  # 25 ms of lost hands (motion blur)
+    track[gap] = np.nan
+    from swingcheck.pose import clean_track
+
+    filled = clean_track(track, fps, max_gap_ms=100, smoothing_ms=0)
+    phases = detect_phases(filled, fps, SCALE, CFG)
+    assert_close(phases, truth, fps, {"impact": 20})
+
+
+def test_scale_invariant():
+    fps = 240.0
+    track, _ = synthetic_swing(fps, noise=0.0)
+    a = detect_phases(track, fps, SCALE, CFG)
+    b = detect_phases(track * 2, fps, SCALE * 2, CFG)
+    assert a.as_dict() == b.as_dict()
+
+
+def test_flat_track_raises():
+    track = np.full((200, 2), 500.0)
+    with pytest.raises(PhaseError):
+        detect_phases(track, 240.0, SCALE, CFG)
+
+
+def test_override_recomputes_checkpoints():
+    fps = 240.0
+    track, _ = synthetic_swing(fps)
+    auto = detect_phases(track, fps, SCALE, CFG)
+    moved = apply_overrides(auto, {"top": auto.top - 20}, track, fps, CFG, len(track))
+    assert moved.top == auto.top - 20
+    assert moved.manual == ["top"]
+    assert moved.address == auto.address and moved.impact == auto.impact
+    assert moved.takeaway <= moved.top <= moved.early_downswing
+
+
+def test_overrides_required_when_detection_failed():
+    track = np.full((200, 2), 500.0)
+    with pytest.raises(PhaseError, match="--top"):
+        apply_overrides(None, {"address": 10, "impact": 150}, track, 240.0, CFG, 200)
+    phases = apply_overrides(None, {"address": 10, "top": 80, "impact": 150}, track, 240.0, CFG, 200)
+    assert phases.manual == ["address", "top", "impact"]
+
+
+def test_bad_override_order_rejected():
+    fps = 240.0
+    track, _ = synthetic_swing(fps)
+    auto = detect_phases(track, fps, SCALE, CFG)
+    with pytest.raises(PhaseError, match="order"):
+        apply_overrides(auto, {"top": auto.impact + 5}, track, fps, CFG, len(track))

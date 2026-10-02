@@ -32,8 +32,11 @@ magnifier_size = 160          # px, the zoomed inset shown in a corner
 magnifier_zoom = 4
 
 [trim]
+# Auto-trim for high frame rate clips: a quick pose pass at coarse_fps over
+# the whole clip finds the swing, then every frame is processed only from
+# pad_before_s before address to pad_after_s after impact.
 enabled = true
-# Seconds kept before address-motion start and after impact.
+coarse_fps = 30
 pad_before_s = 0.75
 pad_after_s = 0.75
 
@@ -43,6 +46,9 @@ min_detection_confidence = 0.5
 min_tracking_confidence = 0.5
 # Landmarks below this visibility are treated as missing.
 min_visibility = 0.5
+# Wrists use a lower bar: the hands are weighted by visibility and averaged,
+# and in DTL the lead wrist is often partly hidden but still roughly right.
+hand_min_visibility = 0.3
 # Gaps in a keypoint track shorter than this are filled by interpolation.
 max_gap_ms = 100
 # Smoothing window for keypoint trajectories, in milliseconds (0 = off).
@@ -53,16 +59,32 @@ smoothing_ms = 25
 # or "shoulder_width". Torso is the default because shoulder width is
 # heavily foreshortened in DTL.
 method = "torso"
+# Median over this window around the address frame, so one noisy frame doesn't skew it.
+window_ms = 200
 
 [phases]
-# Address: the last still stretch before the takeaway.
-still_speed = 0.15            # body units / second, wrist-midpoint speed counted as "still"
-still_min_ms = 200            # how long hands must stay still to count as address
+# Phases come from the hand path's shape, with speeds relative to the clip's
+# own peak hand speed, so they work for real-time and slowed-down clips alike.
+#
+# Address: the last still moment before the takeaway. Hands count as "still"
+# below this fraction of the clip's peak hand speed...
+still_speed_fraction = 0.03
+# ...for at least this long.
+still_min_ms = 150
+# Address is the last frame before the hands move this far (body units) from
+# where they rested.
+address_move_tolerance = 0.03
+# Extra smoothing applied to the hand path for phase detection only.
+smoothing_ms = 40
+# Impact is the middle of the frames where the hands are within this distance
+# (body units) of their lowest point in the downswing.
+impact_plateau_tolerance = 0.01
+# Top search starts where the hands were last at impact height before the
+# downswing, give or take this tolerance (body units).
+low_level_tolerance = 0.15
 # Takeaway / early downswing checkpoints: frames where the hands cross this
 # height, as a fraction of the way from address hand height to top hand height.
 checkpoint_fraction = 0.35
-# Impact search: within this many ms after peak downswing hand speed.
-impact_search_ms = 120
 
 [analyzers.swing_plane]
 # Tolerance band around each plane line, body units. Hands within the band

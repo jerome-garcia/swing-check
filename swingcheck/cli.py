@@ -8,7 +8,10 @@ from pathlib import Path
 
 from swingcheck.config import PROJECT_ROOT, load_config
 from swingcheck.ingest import IngestError, normalize
-from swingcheck.marking import MarkingCancelled, get_marks
+from swingcheck.body import body_scale, hands
+from swingcheck.marking import MarkingCancelled, get_marks, video_signature
+from swingcheck.models import PoseSeq
+from swingcheck.phases import PhaseError, detect_phases, get_phases
 from swingcheck.pose import get_pose, write_debug_video
 
 
@@ -23,6 +26,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--force", action="store_true", help="ignore cached results and redo every stage")
     parser.add_argument("--remark", action="store_true", help="re-open the marking window even if marks are saved")
     parser.add_argument("--pose-debug", action="store_true", help="also write pose_debug.mp4 with the skeleton drawn")
+    phase_args = parser.add_argument_group("phase overrides (frame numbers; saved for later runs)")
+    phase_args.add_argument("--address", type=int, help="address frame")
+    phase_args.add_argument("--top", type=int, help="top-of-backswing frame")
+    phase_args.add_argument("--impact", type=int, help="impact frame")
+    phase_args.add_argument("--auto-phases", action="store_true", help="discard saved overrides, use detection only")
     args = parser.parse_args(argv)
 
     if not args.video.exists():
@@ -54,12 +62,41 @@ def main(argv: list[str] | None = None) -> int:
     points = ", ".join(f"{name}=({x:.0f},{y:.0f})" for name, (x, y) in marks.points.items())
     print(f"Marks ({source}): address frame {marks.address_frame}, {points}")
 
-    pose, reused = get_pose(run_dir, info, config, force=args.force)
-    detected = pose.detected()
-    print(
-        f"Pose ({'reused cache' if reused else 'extracted'}): person found in "
-        f"{detected.sum()}/{len(pose)} frames ({100 * detected.mean():.0f}%)"
-    )
+    def locate_swing(coarse: PoseSeq) -> tuple[int, int] | None:
+        try:
+            scale = body_scale(coarse, marks.address_frame, config)
+            found = detect_phases(hands(coarse, config), coarse.fps, scale, config["phases"])
+        except (PhaseError, ValueError):
+            return None
+        return found.address, found.impact
+
+    pose, reused = get_pose(run_dir, info, config, locate_swing=locate_swing, force=args.force)
+    if pose.dense and pose.dense != (0, len(pose) - 1):
+        span = f", full-rate frames {pose.dense[0]}-{pose.dense[1]}"
+    else:
+        span = ""
+    print(f"Pose ({'reused cache' if reused else 'extracted'}){span}")
+
+    overrides = {k: v for k, v in (("address", args.address), ("top", args.top), ("impact", args.impact)) if v is not None}
+    hand_track = hands(pose, config)
+    try:
+        scale = body_scale(pose, marks.address_frame, config)
+        phases, detect_error = get_phases(
+            run_dir, hand_track, pose.fps, scale, config, video_signature(info), overrides, args.auto_phases
+        )
+    except (PhaseError, ValueError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        print("Set phase frames manually with --address N --top N --impact N (frame numbers).", file=sys.stderr)
+        return 1
+    if detect_error:
+        print(f"warning: automatic phase detection failed ({detect_error}); using manual frames")
+    print("Phases:")
+    for name, frame in phases.as_dict().items():
+        tag = "  (manual)" if name in phases.manual else ""
+        print(f"  {name:<16} frame {frame:>5}  {frame / pose.fps:6.2f}s{tag}")
+    if pose.dense and not all(pose.dense[0] <= f <= pose.dense[1] for f in phases.as_dict().values()):
+        print("warning: a phase lies outside the full-rate pose range; rerun with --force to re-extract around it")
+
     if args.pose_debug:
         print(f"Debug video: {write_debug_video(run_dir, pose, config)}")
     print(f"Output: {run_dir}")

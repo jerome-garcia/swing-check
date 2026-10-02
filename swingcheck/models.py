@@ -44,6 +44,8 @@ class PoseSeq:
     width: int
     height: int
     data: np.ndarray
+    # First/last frame where pose ran on every frame (auto-trim); None = unknown.
+    dense: tuple[int, int] | None = None
 
     def __len__(self) -> int:
         return self.data.shape[0]
