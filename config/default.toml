@@ -21,6 +21,14 @@ crf = 18
 # Warn if a clip's capture fps is at or below this (likely a flattened slo-mo).
 low_fps_warning = 60
 
+[marking]
+# The marking window is scaled down to fit inside this size (clicks are mapped
+# back to full resolution).
+max_display_width = 1600
+max_display_height = 900
+magnifier_size = 160          # px, the zoomed inset shown in a corner
+magnifier_zoom = 4
+
 [trim]
 enabled = true
 # Seconds kept before address-motion start and after impact.

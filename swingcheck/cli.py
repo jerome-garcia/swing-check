@@ -8,6 +8,7 @@ from pathlib import Path
 
 from swingcheck.config import PROJECT_ROOT, load_config
 from swingcheck.ingest import IngestError, normalize
+from swingcheck.marking import MarkingCancelled, get_marks
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -19,6 +20,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--config", type=Path, help="extra TOML file overriding config values")
     parser.add_argument("--runs-dir", type=Path, default=PROJECT_ROOT / "runs", help="where outputs go")
     parser.add_argument("--force", action="store_true", help="ignore cached results and redo every stage")
+    parser.add_argument("--remark", action="store_true", help="re-open the marking window even if marks are saved")
     args = parser.parse_args(argv)
 
     if not args.video.exists():
@@ -40,6 +42,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     for warning in info.warnings:
         print(f"warning: {warning}")
+
+    try:
+        marks, reused = get_marks(run_dir / "normalized.mp4", run_dir, args.view, info, config, remark=args.remark)
+    except MarkingCancelled:
+        print("Marking cancelled; nothing saved.", file=sys.stderr)
+        return 1
+    source = "reused saved marks" if reused else "saved marks"
+    points = ", ".join(f"{name}=({x:.0f},{y:.0f})" for name, (x, y) in marks.points.items())
+    print(f"Marks ({source}): address frame {marks.address_frame}, {points}")
     print(f"Output: {run_dir}")
     return 0
 
