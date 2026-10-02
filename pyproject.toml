@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "swingcheck"
+version = "0.1.0"
+description = "Local golf swing analyzer: pose-based checks for DTL and face-on clips."
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "opencv-python>=4.8",
+    "mediapipe>=0.10.14",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.scripts]
+swingcheck = "swingcheck.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["swingcheck*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

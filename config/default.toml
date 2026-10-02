@@ -1,0 +1,75 @@
+# swingcheck default configuration.
+#
+# Don't edit this file to tune: copy any keys you want to change into
+# config/local.toml (gitignored). Values there override these.
+#
+# Distances marked "body units" are divided by the body scale measured on the
+# address frame (see [scale]), so they don't depend on camera distance.
+
+[golfer]
+handedness = "right"          # "right" | "left"
+# Target direction in the frame. "auto" infers it from handedness and view:
+#   fo  (camera facing golfer): right-handed -> target is screen-right
+#   dtl (camera behind golfer, looking at target): target is into the screen
+target_direction_fo = "auto"  # "auto" | "left" | "right"
+
+[ingest]
+# Downscale used for pose extraction only (annotated output stays full-res).
+pose_max_height = 1080
+# Re-encode quality for the normalized clip (libx264 CRF; lower = better).
+crf = 18
+# Warn if a clip's capture fps is at or below this (likely a flattened slo-mo).
+low_fps_warning = 60
+
+[trim]
+enabled = true
+# Seconds kept before address-motion start and after impact.
+pad_before_s = 0.75
+pad_after_s = 0.75
+
+[pose]
+model = "heavy"               # "lite" | "full" | "heavy"
+min_detection_confidence = 0.5
+min_tracking_confidence = 0.5
+# Landmarks below this visibility are treated as missing.
+min_visibility = 0.5
+# Smoothing window for keypoint trajectories, in milliseconds (0 = off).
+smoothing_ms = 25
+
+[scale]
+# Body measure taken on the address frame: "torso" (shoulder-mid to hip-mid)
+# or "shoulder_width". Torso is the default because shoulder width is
+# heavily foreshortened in DTL.
+method = "torso"
+
+[phases]
+# Address: the last still stretch before the takeaway.
+still_speed = 0.15            # body units / second, wrist-midpoint speed counted as "still"
+still_min_ms = 200            # how long hands must stay still to count as address
+# Takeaway / early downswing checkpoints: frames where the hands cross this
+# height, as a fraction of the way from address hand height to top hand height.
+checkpoint_fraction = 0.35
+# Impact search: within this many ms after peak downswing hand speed.
+impact_search_ms = 120
+
+[analyzers.swing_plane]
+# Tolerance band around each plane line, body units. Hands within the band
+# count as "on" that line, not over/under it.
+tolerance = 0.05
+
+[analyzers.hands_at_impact]
+# Lead wrist x minus ball x along the target direction, body units.
+ahead_threshold = 0.10        # >= this -> "ahead" (good shaft lean)
+behind_threshold = -0.05      # <= this -> "behind" (scoop signal)
+
+[analyzers.weight_shift]
+# Hip-center movement toward the target, address -> impact, body units.
+min_shift = 0.15              # less than this -> flagged (fat-shot / low-point risk)
+
+[analyzers.head_drift]
+# Head x movement away from the target, address -> impact, body units.
+max_drift_away = 0.10         # more than this -> flagged
+
+[output]
+trail_length_ms = 2000        # how much hand path to draw behind the current frame
+freeze_frames = ["address", "top", "impact"]
