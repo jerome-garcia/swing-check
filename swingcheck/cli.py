@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
+from swingcheck.analyzers import SwingContext, run_analyzers
 from swingcheck.config import PROJECT_ROOT, load_config
 from swingcheck.ingest import IngestError, normalize
 from swingcheck.body import body_scale, hands
@@ -96,6 +98,24 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {name:<16} frame {frame:>5}  {frame / pose.fps:6.2f}s{tag}")
     if pose.dense and not all(pose.dense[0] <= f <= pose.dense[1] for f in phases.as_dict().values()):
         print("warning: a phase lies outside the full-rate pose range; rerun with --force to re-extract around it")
+
+    ctx = SwingContext(
+        view=args.view, pose=pose, marks=marks, phases=phases,
+        scale=body_scale(pose, phases.address, config), config=config,
+    )
+    verdicts = run_analyzers(ctx)
+    print("Results:")
+    for v in verdicts:
+        print(f"  [{v.status.upper():<5}] {v.title}: {v.label}")
+        print(f"          {v.summary}")
+        nums = ", ".join(f"{k}={val}" for k, val in v.measurements.items() if isinstance(val, (int, float)))
+        if nums:
+            print(f"          {nums}")
+    (run_dir / "analysis.json").write_text(json.dumps(
+        {"view": args.view, "phases": phases.as_dict(), "body_scale_px": round(ctx.scale, 2),
+         "verdicts": [v.to_json() for v in verdicts]},
+        indent=2,
+    ))
 
     if args.pose_debug:
         print(f"Debug video: {write_debug_video(run_dir, pose, config)}")

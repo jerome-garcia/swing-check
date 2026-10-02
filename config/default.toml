@@ -86,6 +86,10 @@ low_level_tolerance = 0.15
 # height, as a fraction of the way from address hand height to top hand height.
 checkpoint_fraction = 0.35
 
+[analyzers]
+# Names of analyzers to skip, e.g. ["head_drift"].
+disabled = []
+
 [analyzers.swing_plane]
 # Tolerance band around each plane line, body units. Hands within the band
 # count as "on" that line, not over/under it.
