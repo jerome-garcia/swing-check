@@ -1,7 +1,7 @@
 """Click-to-mark window: pick the address frame and click the ball (and club in DTL).
 
-The window shows a scaled-down copy of the frame so tall phone video fits on
-screen; clicks are mapped back to full-resolution pixel coordinates. A
+The window opens scaled to fit the screen and can be resized by dragging its
+edges; clicks are mapped back to full-resolution pixel coordinates. A
 magnifier in the corner helps place points precisely.
 
 Keys:
@@ -15,6 +15,7 @@ Keys:
 
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -70,6 +71,41 @@ def load_marks(path: Path, view: str, info: VideoInfo) -> Marks | None:
     if marks.view != view or marks.video_signature != video_signature(info) or not marks.is_complete():
         return None
     return marks
+
+
+def screen_work_area() -> tuple[int, int] | None:
+    """Usable desktop size (excluding the taskbar) on Windows, else None."""
+    if sys.platform != "win32":
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        rect = wintypes.RECT()
+        SPI_GETWORKAREA = 0x0030
+        if ctypes.windll.user32.SystemParametersInfoW(SPI_GETWORKAREA, 0, ctypes.byref(rect), 0):
+            return rect.right - rect.left, rect.bottom - rect.top
+    except (AttributeError, OSError):
+        pass
+    return None
+
+
+def display_limits(marking_cfg: dict[str, Any], work_area: tuple[int, int] | None = None) -> tuple[int, int]:
+    """Max window size: a fraction of the screen's work area, capped by the config limits.
+
+    A config limit of 0 means "no fixed cap, just fit the screen".
+    """
+    max_w = marking_cfg["max_display_width"] or 10**6
+    max_h = marking_cfg["max_display_height"] or 10**6
+    area = work_area if work_area is not None else screen_work_area()
+    if area is not None:
+        fraction = marking_cfg["screen_fraction"]
+        # Leave room for the window title bar (~40px) below the fitted height.
+        max_w = min(max_w, int(area[0] * fraction))
+        max_h = min(max_h, int(area[1] * fraction) - 40)
+    elif max_w >= 10**6 or max_h >= 10**6:
+        max_w, max_h = min(max_w, 1280), min(max_h, 720)  # unknown screen: conservative default
+    return max_w, max_h
 
 
 def display_scale(width: int, height: int, max_width: int, max_height: int) -> float:
@@ -209,10 +245,13 @@ def run_marking_ui(video_path: Path, view: str, info: VideoInfo, config: dict[st
     reader = _FrameReader(video_path)
     frame_count = info.frame_count or int(reader.cap.get(cv2.CAP_PROP_FRAME_COUNT))
     session = MarkSession(view=view, frame_count=frame_count, frame=min(start_frame, frame_count - 1))
-    scale = display_scale(info.width, info.height, marking_cfg["max_display_width"], marking_cfg["max_display_height"])
+    max_w, max_h = display_limits(marking_cfg)
+    scale = display_scale(info.width, info.height, max_w, max_h)
     state: dict[str, Any] = {"cursor": None, "dirty": True}
 
     def on_mouse(event: int, x: int, y: int, flags: int, param: Any) -> None:
+        # In a resizable window OpenCV reports x/y in image (canvas) pixels,
+        # whatever size the window has been dragged to.
         full = (x / scale, y / scale)
         if event == cv2.EVENT_MOUSEMOVE:
             state["cursor"] = full
@@ -221,7 +260,10 @@ def run_marking_ui(video_path: Path, view: str, info: VideoInfo, config: dict[st
             session.click(full)
             state["dirty"] = True
 
-    cv2.namedWindow(WINDOW, cv2.WINDOW_AUTOSIZE)
+    # Resizable, aspect-locked window starting at the fitted size.
+    cv2.namedWindow(WINDOW, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
+    cv2.resizeWindow(WINDOW, round(info.width * scale), round(info.height * scale))
+    cv2.moveWindow(WINDOW, 20, 10)
     cv2.setMouseCallback(WINDOW, on_mouse)
     try:
         while True:

@@ -2,7 +2,7 @@ import numpy as np
 
 from swingcheck.config import load_config
 from swingcheck.ingest import VideoInfo
-from swingcheck.marking import MarkSession, _render, display_scale, load_marks, video_signature
+from swingcheck.marking import MarkSession, _render, display_limits, display_scale, load_marks, video_signature
 from swingcheck.models import Marks
 
 
@@ -49,6 +49,17 @@ def test_display_scale_fits_tall_video():
     scale = display_scale(1080, 1920, 1600, 900)
     assert abs(1920 * scale - 900) < 1e-6
     assert display_scale(640, 480, 1600, 900) == 1.0  # never upscale
+
+
+def test_display_limits_fit_screen():
+    cfg = {"screen_fraction": 0.85, "max_display_width": 0, "max_display_height": 0}
+    w, h = display_limits(cfg, work_area=(1920, 1040))
+    assert (w, h) == (1632, 844)
+    # Portrait video then fits the height of a 1080p laptop screen.
+    assert 1920 * display_scale(1080, 1920, w, h) <= 844
+    # Config caps still apply on top of the screen fit.
+    w, h = display_limits({**cfg, "max_display_height": 600}, work_area=(1920, 1040))
+    assert h == 600
 
 
 def test_saved_marks_reused_only_when_video_matches(tmp_path):
