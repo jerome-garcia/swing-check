@@ -9,6 +9,7 @@ from pathlib import Path
 from swingcheck.config import PROJECT_ROOT, load_config
 from swingcheck.ingest import IngestError, normalize
 from swingcheck.marking import MarkingCancelled, get_marks
+from swingcheck.pose import get_pose, write_debug_video
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -21,6 +22,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--runs-dir", type=Path, default=PROJECT_ROOT / "runs", help="where outputs go")
     parser.add_argument("--force", action="store_true", help="ignore cached results and redo every stage")
     parser.add_argument("--remark", action="store_true", help="re-open the marking window even if marks are saved")
+    parser.add_argument("--pose-debug", action="store_true", help="also write pose_debug.mp4 with the skeleton drawn")
     args = parser.parse_args(argv)
 
     if not args.video.exists():
@@ -51,6 +53,15 @@ def main(argv: list[str] | None = None) -> int:
     source = "reused saved marks" if reused else "saved marks"
     points = ", ".join(f"{name}=({x:.0f},{y:.0f})" for name, (x, y) in marks.points.items())
     print(f"Marks ({source}): address frame {marks.address_frame}, {points}")
+
+    pose, reused = get_pose(run_dir, info, config, force=args.force)
+    detected = pose.detected()
+    print(
+        f"Pose ({'reused cache' if reused else 'extracted'}): person found in "
+        f"{detected.sum()}/{len(pose)} frames ({100 * detected.mean():.0f}%)"
+    )
+    if args.pose_debug:
+        print(f"Debug video: {write_debug_video(run_dir, pose, config)}")
     print(f"Output: {run_dir}")
     return 0
 

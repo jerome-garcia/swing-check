@@ -43,6 +43,8 @@ min_detection_confidence = 0.5
 min_tracking_confidence = 0.5
 # Landmarks below this visibility are treated as missing.
 min_visibility = 0.5
+# Gaps in a keypoint track shorter than this are filled by interpolation.
+max_gap_ms = 100
 # Smoothing window for keypoint trajectories, in milliseconds (0 = off).
 smoothing_ms = 25
 
