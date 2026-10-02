@@ -65,6 +65,12 @@ class WedgeResult:
     margin_b: float
 
 
+def inward_normal(direction, other_direction) -> Vec:
+    """Unit normal to `direction` pointing toward the side `other_direction` heads into."""
+    n = normal(direction)
+    return n if np.dot(unit(other_direction), n) >= 0 else -n
+
+
 def classify_in_wedge(p, origin, dir_a, dir_b, tolerance_px: float = 0.0) -> WedgeResult:
     """Classify point p against the wedge between line a and line b, both through `origin`.
 
@@ -73,14 +79,10 @@ def classify_in_wedge(p, origin, dir_a, dir_b, tolerance_px: float = 0.0) -> Wed
     `tolerance_px` past a line still counts as inside.
     """
     p, o = as_vec(p), as_vec(origin)
-    n_a = normal(dir_a)
-    if np.dot(unit(dir_b), n_a) < 0:
-        n_a = -n_a
-    n_b = normal(dir_b)
-    if np.dot(unit(dir_a), n_b) < 0:
-        n_b = -n_b
     if abs(np.dot(unit(dir_a), normal(dir_b))) < 1e-9:
         raise ValueError("the two lines are parallel; there is no wedge between them")
+    n_a = inward_normal(dir_a, dir_b)
+    n_b = inward_normal(dir_b, dir_a)
 
     margin_a = float(np.dot(p - o, n_a))
     margin_b = float(np.dot(p - o, n_b))

@@ -97,6 +97,9 @@ def detect_phases(hands: np.ndarray, fps: float, scale: float, cfg: dict[str, An
     while hi + 1 <= end and y[hi + 1] >= floor:
         hi += 1
     impact = (lo + hi) // 2
+    # Hands bottom out slightly before contact for many players; a fixed shift
+    # (tuned on your own clips) can correct a consistent bias.
+    impact = min(n - 1, max(d, impact + int(round(cfg["impact_offset_ms"] * fps / 1000))))
 
     # 3. Top: highest hands between "last time hands were low before D" and D.
     low_level = y[impact] - cfg["low_level_tolerance"] * scale

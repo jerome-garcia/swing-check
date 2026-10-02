@@ -79,6 +79,10 @@ smoothing_ms = 40
 # Impact is the middle of the frames where the hands are within this distance
 # (body units) of their lowest point in the downswing.
 impact_plateau_tolerance = 0.01
+# Shift detected impact by this many milliseconds (+ = later). The hands
+# bottom out slightly before contact for many players; if impact lands
+# consistently early or late on your clips, correct it here.
+impact_offset_ms = 0
 # Top search starts where the hands were last at impact height before the
 # downswing, give or take this tolerance (body units).
 low_level_tolerance = 0.15
@@ -94,6 +98,10 @@ disabled = []
 # Tolerance band around each plane line, body units. Hands within the band
 # count as "on" that line, not over/under it.
 tolerance = 0.05
+# The pose "hands" point is the wrists, which sit above/inside the grip. At
+# address the hands are on the shaft plane by definition, so shift the hand
+# path sideways by the wrists' address offset from the shaft line.
+calibrate_hands_to_shaft_line = true
 
 [analyzers.hands_at_impact]
 # Lead wrist x minus ball x along the target direction, body units.
