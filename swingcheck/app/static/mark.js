@@ -25,11 +25,12 @@ export async function renderMark(view, id, isCurrent) {
   const v = s.video;
   const required = POINTS[s.view];
   const marksValid = s.status === "marked" || s.status === "analyzed";
-  const sameView = s.marks && s.marks.view === s.view;
+  // Point positions survive a re-trim or a view change (the camera didn't move),
+  // so keep the ones this view uses as a starting point.
+  const kept = Object.fromEntries(Object.entries((s.marks && s.marks.points) || {}).filter(([n]) => required.includes(n)));
   const state = {
-    frame: marksValid && sameView ? Math.min(s.marks.address_frame, v.frame_count - 1) : 0,
-    // Point positions survive a re-trim (the camera didn't move), so keep them as a starting point.
-    points: sameView ? { ...s.marks.points } : {},
+    frame: s.marks ? Math.min(s.marks.address_frame, v.frame_count - 1) : 0,
+    points: kept,
     cursor: null, // {x, y} in video pixels while hovering/aiming
     aiming: false,
     touch: false,
@@ -286,6 +287,23 @@ export async function renderMark(view, id, isCurrent) {
     el("div", { class: "subtle small" }, "Re-cutting keeps your marked points but resets the frame."));
   trimText();
 
+  // --- Camera view ----------------------------------------------------------
+  const viewError = el("div", { class: "notice error", hidden: true });
+  const viewButtons = ["dtl", "fo"].map(choice => el("button", {
+    type: "button", class: `btn small ${choice === s.view ? "selected" : ""}`, "aria-pressed": String(choice === s.view),
+    onclick: async () => {
+      if (choice === s.view) return;
+      if (marksValid && !confirm("Switching the view means marking this swing again for that view. Continue?")) return;
+      try {
+        await postJSON(`/api/swings/${encodeURIComponent(id)}/view`, { view: choice });
+        if (isCurrent()) await renderMark(view, id, isCurrent);
+      } catch (err) {
+        viewError.textContent = err.message;
+        viewError.hidden = false;
+      }
+    },
+  }, choice === "dtl" ? "Down-the-line" : "Face-on"));
+
   // --- Keyboard -------------------------------------------------------------
   function onKey(e) {
     if (!isCurrent()) { document.removeEventListener("keydown", onKey); return; }
@@ -316,6 +334,10 @@ export async function renderMark(view, id, isCurrent) {
         el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),
         el("div", { class: "subtle small center" }, frameLabel, " · ← → step, Shift = 10 frames")),
       el("aside", { class: "mark-side stack" },
+        el("section", { class: "panel" },
+          el("h2", {}, "Camera view"),
+          el("div", { class: "actions" }, viewButtons),
+          viewError),
         el("section", { class: "panel" },
           el("h2", {}, "Mark your address"),
           el("p", { class: "subtle small" }, intro),

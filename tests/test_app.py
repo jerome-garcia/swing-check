@@ -135,6 +135,15 @@ def test_trim_reconverts_and_invalidates_marks(client, converted):
     assert d["status"] == "converted"  # old marks were for the untrimmed clip
 
 
+def test_change_view_requires_marking_again(client, runs):
+    assert client.get("/api/swings/old_swing").json()["status"] == "analyzed"
+    assert client.post("/api/swings/old_swing/view", json={"view": "side"}).status_code == 400
+    r = client.post("/api/swings/old_swing/view", json={"view": "fo"})
+    assert r.status_code == 200 and r.json()["view"] == "fo"
+    assert r.json()["status"] == "converted"  # its marks were for down-the-line
+    assert json.loads((runs / "old_swing" / "swing.json").read_text())["view"] == "fo"
+
+
 def test_analyze_requires_marks(client, converted):
     r = client.post(f"/api/swings/{converted}/analyze", json={})
     assert r.status_code == 409 and "Mark" in r.json()["detail"]

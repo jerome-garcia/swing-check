@@ -28,6 +28,10 @@ class MarksIn(BaseModel):
     points: dict[str, tuple[float, float]]
 
 
+class ViewIn(BaseModel):
+    view: str
+
+
 class TrimIn(BaseModel):
     start: float | None = None  # seconds into the original video
     end: float | None = None
@@ -102,6 +106,18 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
         except PipelineError as e:
             raise HTTPException(400, str(e)) from None
         return {"view": marks.view, "address_frame": marks.address_frame, "points": marks.points}
+
+    @app.post("/api/swings/{swing_id}/view")
+    def set_view(swing_id: str, body: ViewIn) -> dict[str, Any]:
+        swing_or_404(swing_id)
+        if body.view not in ("dtl", "fo"):
+            raise HTTPException(400, "Choose down-the-line or face-on")
+        if jobs.active_for(swing_id):
+            raise HTTPException(409, "This swing is still being processed.")
+        meta = store.meta(swing_id)
+        meta.view = body.view
+        store.save_meta(meta)  # marks made for the other view no longer count
+        return store.summary(swing_id)
 
     @app.post("/api/swings/{swing_id}/trim")
     def trim_swing(swing_id: str, body: TrimIn) -> dict[str, Any]:
