@@ -114,8 +114,8 @@ arm_max_from_vertical = 10
 spine_bend_min = 30
 spine_bend_max = 45
 # Knee flex: 180 minus the hip-knee-ankle angle (0 = straight leg).
-knee_flex_min = 15
-knee_flex_max = 30
+knee_flex_min = 25
+knee_flex_max = 35
 # Back rounding: how far the outline of your back bulges out from a straight
 # line between hip and shoulder level, in body lengths (from the body
 # silhouette; loose clothing can add to it).

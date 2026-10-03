@@ -262,7 +262,7 @@ behind_threshold = -0.03
 min_shift = 0.12
 
 [analyzers.address]
-knee_flex_max = 35
+knee_flex_max = 38
 
 [analyzers]
 disabled = ["head_drift"]     # skip a check entirely

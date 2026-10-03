@@ -67,7 +67,7 @@ def test_edge_skips_points_off_the_body():
 
 # --- analyzer ---------------------------------------------------------------
 
-def dtl_address_pose(arm_deg=0.0, spine_deg=35.0, knee_flex=22.0):
+def dtl_address_pose(arm_deg=0.0, spine_deg=35.0, knee_flex=30.0):
     """Right-hander, DTL, facing screen-right (ball on the right). Trail side = right."""
     data = np.full((FRAMES, len(LANDMARKS), 4), np.nan)
     hip = np.array([300.0, 700.0])
@@ -105,7 +105,7 @@ def test_good_address():
     m = v.measurements
     assert m["arm_from_vertical_deg"] == pytest.approx(0, abs=0.5)
     assert m["spine_bend_deg"] == pytest.approx(35, abs=1)
-    assert m["knee_flex_deg"] == pytest.approx(22, abs=0.5)
+    assert m["knee_flex_deg"] == pytest.approx(30, abs=0.5)
     # No video here, so the back isn't measured; the other checks still pass.
     assert m["back"].startswith("not measured")
     assert v.status == "ok" and v.label == "good"
@@ -116,8 +116,8 @@ def test_good_address():
     ({"arm_deg": -15}, "arms too close to body"),
     ({"spine_deg": 20}, "spine too upright"),
     ({"spine_deg": 55}, "spine bent over too far"),
-    ({"knee_flex": 5}, "knees too straight"),
-    ({"knee_flex": 45}, "knees too much bend"),
+    ({"knee_flex": 20}, "knees too straight"),
+    ({"knee_flex": 40}, "knees too much bend"),
 ])
 def test_each_fault_flagged(kwargs, problem):
     v = run_address(dtl_address_pose(**kwargs))
