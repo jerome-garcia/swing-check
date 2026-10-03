@@ -111,6 +111,21 @@ knee_flex_max = 35
 # silhouette; loose clothing can add to it).
 back_bulge_max = 0.06
 
+[analyzers.swing_plane]
+# DTL checkpoint 2, on the address frame: the line through the clicked
+# clubhead (hosel) and grip.
+#
+# Key check: extended up past the hands, the line should point roughly at the
+# belt buckle. Measured as where it crosses the torso, as a fraction of the
+# way from hip center (0) to shoulder center (1).
+belt_min = 0.0     # below this -> points below the belt (shaft too flat)
+belt_max = 0.45    # above this -> points above the belt (shaft too upright)
+# Shaft angle from horizontal, a broad sanity range covering all clubs.
+# Typical by club: driver 45-50, mid-irons 50-55, short irons/wedges 55-65.
+# Camera height also shifts it, so outside this range is only a "watch".
+angle_min = 45
+angle_max = 65
+
 [analyzers.hands_at_impact]
 # Lead wrist x minus ball x along the target direction, body units.
 ahead_threshold = 0.10        # >= this -> "ahead" (good shaft lean)

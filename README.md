@@ -25,7 +25,7 @@ of the swing.
 | # | Checkpoint | What it checks | Status |
 |---|---|---|---|
 | 1 | **Address / alignment** | Arms perpendicular to the ground, spine tilt at the right angle, knee bend correct (plus back rounding) | ✅ Implemented |
-| 2 | **Swing plane** | At address, a line through the clubhead and shaft points you click is the swing plane; check that its angle is correct | ⬜ Not yet |
+| 2 | **Swing plane** | At address, a line through the clubhead and shaft points you click is the swing plane; check that its angle is correct and that it points roughly at the belt buckle | ✅ Implemented |
 | 3 | **Takeaway** | When the club is parallel to the target line in the takeaway, the club should cover the hands | ⬜ Not yet |
 | 4 | **Backswing (halfway back)** | The hands should split the biceps, and the club should point back inside the golf ball | ⬜ Not yet |
 | 5 | **Top of backswing** | The lead (left) arm matches the shoulders, 90° to the spine, and the club is on plane | ⬜ Not yet |
@@ -45,11 +45,21 @@ camera side (your trail side). Settings live in `[analyzers.address]` in
 | Knee bend | knee flex = 180° − the hip-knee-ankle angle (0 = straight leg) | 15–35° |
 | Back rounding (hump) | how far the outline of your back bulges beyond a straight line from hip to shoulder level, from the body silhouette (MediaPipe segmentation), in body lengths | ≤ 0.06 |
 
-**Notes for the checkpoints still to build:**
+**2. Swing plane (implemented).** The line through the clubhead (hosel) and
+grip you click at address. Drawn in orange on the address key frame, extended
+up to where it meets your body. Settings live in `[analyzers.swing_plane]`.
 
-- **Swing plane (2)** uses the clubhead (hosel) and grip points you already
-  click at address. The correct angle range still needs to be decided (from a
-  reference photo or a range you choose).
+| Measurement | How | Good range (default) | If outside |
+|---|---|---|---|
+| **Points at** (key check) | where the extended shaft line crosses your torso, as a fraction of the way from hip center (0) to shoulder center (1) | 0–0.45, the belt-buckle area | **Flag**. Above: shaft too upright (standing too close / hands too high). Below: shaft too flat (too far from the ball / hands too low) |
+| **Shaft angle** | angle of the line above horizontal | 45–65° | **Watch** only: it depends on the club and camera height |
+
+Typical shaft angles by club, for reference: driver 45–50°, mid-irons 50–55°,
+short irons and wedges 55–65°. The reference photo used to set these measured
+53°, pointing at 0.30 of the way up the torso; Tiger and McIlroy measure 55° and
+58° at 0.25.
+
+**Notes for the checkpoints still to build:**
 - **Takeaway, backswing, top and follow-through (3, 4, 5, 8)** judge where the
   **club** is. The pose model only tracks the body, so these need the club's
   position on those frames. The proposed approach is for you to click the shaft
@@ -293,6 +303,12 @@ the camera side (your trail side). Default ranges are in the [Roadmap](#roadmap)
 
 The address key frame draws each line with its value, green when in range and
 red when not.
+
+**Swing plane.** The orange line on the address key frame runs along your shaft,
+from the clubhead up through your hands to where it meets your body; the green
+band on the torso is the belt-buckle zone it should hit. "Crosses torso at" is that
+crossing as a fraction from hip (0) to shoulder (1). The shaft angle is shown
+too, but only warns, since it changes with the club and camera height.
 
 Face-on checks are described in the [Roadmap](#roadmap) (future release).
 
