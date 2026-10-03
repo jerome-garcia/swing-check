@@ -1,10 +1,13 @@
 import json
+import shutil
 
+import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
 from swingcheck.app.server import create_app
 from swingcheck.app.store import Store, SwingNotFound
+from swingcheck.output.video import VideoWriter
 
 
 @pytest.fixture
@@ -58,6 +61,39 @@ def test_delete(client, runs):
 def test_frontend_served(client):
     r = client.get("/")
     assert r.status_code == 200 and "swing-check" in r.text
+
+
+def test_upload_rejects_non_video_and_bad_view(client):
+    r = client.post("/api/swings", files={"file": ("notes.txt", b"hi")}, data={"view": "dtl"})
+    assert r.status_code == 400 and "video" in r.json()["detail"]
+    r = client.post("/api/swings", files={"file": ("a.mov", b"x")}, data={"view": "side"})
+    assert r.status_code == 400
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg not on PATH")
+def test_upload_converts_in_background(client, tmp_path):
+    clip = tmp_path / "My Swing.mp4"
+    with VideoWriter(clip, 64, 96, 30.0) as w:
+        for i in range(30):
+            w.write(np.full((96, 64, 3), i * 8, np.uint8))
+    with open(clip, "rb") as f:
+        r = client.post("/api/swings", files={"file": ("My Swing.mp4", f, "video/mp4")}, data={"view": "fo"})
+    assert r.status_code == 200
+    swing_id, job_id = r.json()["id"], r.json()["job"]["id"]
+    job = client.app.state.jobs.wait(job_id, timeout=60)
+    assert job.state == "done", job.error
+    d = client.get(f"/api/swings/{swing_id}").json()
+    assert d["status"] == "converted" and d["view"] == "fo" and d["name"] == "My Swing"
+    assert d["video"]["frame_count"] == 30
+    assert d["job"]["state"] == "done"
+
+
+def test_broken_video_conversion_fails_cleanly(client):
+    r = client.post("/api/swings", files={"file": ("broken.mov", b"not really a video")}, data={"view": "dtl"})
+    job = client.app.state.jobs.wait(r.json()["job"]["id"], timeout=60)
+    assert job.state == "failed" and job.error
+    d = client.get(f"/api/swings/{r.json()['id']}").json()
+    assert d["status"] == "uploaded" and d["job"]["state"] == "failed"
 
 
 def test_store_ids_are_unique_and_safe(runs):

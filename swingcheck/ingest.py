@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from fractions import Fraction
 from pathlib import Path
@@ -151,8 +152,12 @@ def normalize(
     start: float | None = None,
     end: float | None = None,
     force: bool = False,
+    progress: Callable[[float], None] | None = None,
 ) -> VideoInfo:
-    """Write run_dir/normalized.mp4 and run_dir/video.json; reuse them if the input is unchanged."""
+    """Write run_dir/normalized.mp4 and run_dir/video.json; reuse them if the input is unchanged.
+
+    `progress(fraction)` is called as ffmpeg works through the clip.
+    """
     run_dir.mkdir(parents=True, exist_ok=True)
     out_path = run_dir / "normalized.mp4"
     info_path = run_dir / "video.json"
@@ -188,11 +193,13 @@ def normalize(
         "-c:v", "libx264", "-preset", "fast", "-crf", str(ingest_cfg["crf"]),
         "-pix_fmt", "yuv420p",
         "-movflags", "+faststart",
+        "-progress", "pipe:1", "-nostats",
         str(out_path),
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        raise IngestError(f"ffmpeg failed: {result.stderr.strip()}")
+    # Expected output length, for progress: the trimmed span of the source.
+    src_duration = float((data.get("format") or {}).get("duration") or 0.0)
+    span = (end if end is not None else src_duration) - (start or 0.0)
+    _run_with_progress(cmd, span, progress)
 
     out_stream = video_stream(probe_output(out_path))
     stat = source.stat()
@@ -214,6 +221,22 @@ def normalize(
     )
     info.save(info_path)
     return info
+
+
+def _run_with_progress(cmd: list[str], duration_s: float, progress: Callable[[float], None] | None) -> None:
+    """Run ffmpeg with `-progress pipe:1`, reporting the fraction of `duration_s` done."""
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    assert proc.stdout is not None
+    for line in proc.stdout:
+        key, _, value = line.strip().partition("=")
+        if progress is not None and key == "out_time_us" and duration_s > 0:
+            try:
+                progress(min(1.0, max(0.0, int(value) / 1e6 / duration_s)))
+            except ValueError:
+                pass
+    stderr = proc.stderr.read() if proc.stderr else ""
+    if proc.wait() != 0:
+        raise IngestError(f"ffmpeg failed: {stderr.strip()}")
 
 
 def probe_output(path: Path) -> dict[str, Any]:

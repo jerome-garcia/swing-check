@@ -64,8 +64,9 @@ def load_marks(path: Path, view: str, info: VideoInfo) -> Marks | None:
 def ingest(source: Path, run_dir: Path, config: dict[str, Any], start: float | None = None,
            end: float | None = None, force: bool = False, progress: ProgressFn | None = None) -> VideoInfo:
     progress = progress or _noop
-    progress("normalize", None, "Converting video")
-    info = normalize(source, run_dir, config, start=start, end=end, force=force)
+    progress("normalize", 0.0, "Converting video")
+    info = normalize(source, run_dir, config, start=start, end=end, force=force,
+                     progress=lambda f: progress("normalize", f, "Converting video"))
     progress("normalize", 1.0, f"{info.width}x{info.height} @ {info.fps:g} fps, {info.frame_count} frames")
     return info
 
