@@ -1,4 +1,5 @@
-import { api, el, formatDate, pollJob, progressBlock, STATUS_TEXT, swingUrl, verdictChips, VIEW_NAMES } from "./util.js";
+import { renderResults } from "./results.js";
+import { api, el, formatDate, pollJob, progressBlock, STATUS_TEXT, swingUrl, VIEW_NAMES } from "./util.js";
 
 const JOB_TITLES = { convert: "Converting video", analyze: "Analyzing swing" };
 
@@ -52,12 +53,6 @@ export async function renderSwing(view, id, isCurrent) {
     location.replace(swingUrl(id, "mark"));
     return;
   }
-  if (s.status === "marked") {
-    view.replaceChildren(swingHeader(s, [el("a", { class: "btn", href: swingUrl(id, "mark") }, "Edit marks")]),
-      el("div", { class: "empty" }, el("h2", {}, "Ready to analyze"),
-        el("p", {}, "Analysis from the app is coming in the next step.")));
-    return;
-  }
-  view.replaceChildren(swingHeader(s, [el("a", { class: "btn", href: swingUrl(id, "mark") }, "Edit marks")]),
-    verdictChips(s.verdicts));
+  const header = (extra = []) => swingHeader(s, [...extra, el("a", { class: "btn", href: swingUrl(id, "mark") }, "Edit marks")]);
+  renderResults(view, s, header, isCurrent, () => renderSwing(view, id, isCurrent));
 }

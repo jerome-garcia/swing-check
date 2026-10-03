@@ -84,6 +84,22 @@ def test_tracking_gap_at_impact():
     assert_close(phases, truth, fps, {"impact": 20})
 
 
+def test_tracker_seam_outside_search_window_is_ignored():
+    # A pass boundary early in the clip makes the hands jump down 150 px in one frame,
+    # faster than the real downswing. Limiting the search to the swing's stretch ignores it.
+    fps = 240.0
+    track, truth = synthetic_swing(fps)
+    track[20:, 1] += 150
+    track[40:, 1] -= 150
+    try:
+        fooled = detect_phases(track, fps, SCALE, CFG)
+        assert fooled.impact < 60  # without a search window the seam wins
+    except PhaseError:
+        pass  # or detection gives up entirely
+    phases = detect_phases(track, fps, SCALE, CFG, search=(60, len(track) - 1))
+    assert_close(phases, truth, fps, {"top": 60, "impact": 15})
+
+
 def test_scale_invariant():
     fps = 240.0
     track, _ = synthetic_swing(fps, noise=0.0)

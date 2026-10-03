@@ -17,7 +17,7 @@ from swingcheck.app.jobs import JobManager
 from swingcheck.app.store import Store, SwingNotFound
 from swingcheck.config import PROJECT_ROOT, load_config
 from swingcheck.ingest import VideoInfo
-from swingcheck.pipeline import PipelineError, ingest, save_marks
+from swingcheck.pipeline import PipelineError, analyze, ingest, save_marks
 
 STATIC = Path(__file__).parent / "static"
 VIDEO_EXTENSIONS = {".mov", ".mp4", ".m4v", ".avi", ".mkv", ".webm", ".3gp"}
@@ -31,6 +31,11 @@ class MarksIn(BaseModel):
 class TrimIn(BaseModel):
     start: float | None = None  # seconds into the original video
     end: float | None = None
+
+
+class AnalyzeIn(BaseModel):
+    phases: dict[str, int] = {}  # manual phase frames, e.g. {"impact": 412}; saved for later runs
+    reset_phases: bool = False   # drop saved manual phases and use detection
 
 
 def create_app(runs_dir: Path | None = None) -> FastAPI:
@@ -112,6 +117,23 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
         store.save_meta(meta)
         frames.forget(folder / "normalized.mp4")
         job = start_convert(swing_id, body.start, body.end)
+        return {"job": job.to_json()}
+
+    @app.post("/api/swings/{swing_id}/analyze")
+    def analyze_swing(swing_id: str, body: AnalyzeIn) -> dict[str, Any]:
+        folder = swing_or_404(swing_id)
+        meta = store.meta(swing_id)
+        if jobs.active_for(swing_id):
+            raise HTTPException(409, "This swing is already being processed.")
+        if store.status(swing_id) not in ("marked", "analyzed"):
+            raise HTTPException(409, "Mark the ball (and club, for down-the-line) first.")
+        overrides = {k: v for k, v in body.phases.items() if k in ("address", "top", "impact")}
+
+        def run(progress):
+            analyze(folder, meta.view, config, overrides=overrides, clear_overrides=body.reset_phases,
+                    progress=progress)
+
+        job = jobs.submit(swing_id, "analyze", run)
         return {"job": job.to_json()}
 
     @app.get("/api/jobs/{job_id}")

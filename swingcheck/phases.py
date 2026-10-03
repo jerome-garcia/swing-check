@@ -70,8 +70,13 @@ def checkpoints(y: np.ndarray, address: int, top: int, impact: int, fraction: fl
     return takeaway, early
 
 
-def detect_phases(hands: np.ndarray, fps: float, scale: float, cfg: dict[str, Any]) -> Phases:
-    """Detect phases from a (frames, 2) hand track in pixels; `scale` is body length in pixels."""
+def detect_phases(hands: np.ndarray, fps: float, scale: float, cfg: dict[str, Any],
+                  search: tuple[int, int] | None = None) -> Phases:
+    """Detect phases from a (frames, 2) hand track in pixels; `scale` is body length in pixels.
+
+    `search` limits where the downswing is looked for (e.g. the part of the
+    clip tracked at full frame rate, away from seams with other passes).
+    """
     n = len(hands)
     xy = clean_track(hands, fps, max_gap_ms=0, smoothing_ms=cfg["smoothing_ms"])
     y = xy[:, 1]
@@ -82,7 +87,14 @@ def detect_phases(hands: np.ndarray, fps: float, scale: float, cfg: dict[str, An
     speed = np.linalg.norm(np.gradient(xy, axis=0), axis=1)
 
     # 1. Fastest downward hand movement = middle of the downswing.
-    d = int(np.nanargmax(vy))
+    vy_search = vy
+    if search is not None:
+        lo, hi = max(0, search[0]), min(n - 1, search[1])
+        windowed = np.full(n, np.nan)
+        windowed[lo : hi + 1] = vy[lo : hi + 1]
+        if np.isfinite(windowed).any():
+            vy_search = windowed
+    d = int(np.nanargmax(vy_search))
 
     # 2. Impact: hands bottom out after D (first frame they stop dropping).
     stop = _first(vy[d + 1 :] <= 0)
@@ -205,6 +217,7 @@ def get_phases(
     new_overrides: dict[str, int],
     clear_overrides: bool = False,
     marked_address: int | None = None,
+    search: tuple[int, int] | None = None,
 ) -> tuple[Phases, str | None]:
     """Detect phases, merge saved + new manual overrides, save phases.json.
 
@@ -218,7 +231,7 @@ def get_phases(
     overrides = {} if clear_overrides else load_overrides(path, signature)
     overrides.update(new_overrides)
     try:
-        auto: Phases | None = detect_phases(hands, fps, scale, cfg)
+        auto: Phases | None = detect_phases(hands, fps, scale, cfg, search)
         error = None
     except PhaseError as e:
         auto, error = None, str(e)

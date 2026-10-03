@@ -84,6 +84,16 @@ def save_marks(run_dir: Path, view: str, address_frame: int, points: dict[str, P
     return marks
 
 
+def _downswing_search(pose: PoseSeq) -> tuple[int, int] | None:
+    """Where to look for the downswing: the full-rate stretch, a few frames in from its
+    edges, where it meets the quick-pass frames (the tracker restart leaves a jump there)."""
+    if not pose.dense or pose.dense == (0, len(pose) - 1):
+        return None
+    margin = max(3, round(0.03 * pose.fps))
+    lo, hi = pose.dense[0] + margin, pose.dense[1] - margin
+    return (lo, hi) if hi > lo else None
+
+
 @dataclass
 class AnalysisResult:
     info: VideoInfo
@@ -144,6 +154,7 @@ def analyze(
         phases, detect_error = get_phases(
             run_dir, hand_track, pose.fps, scale, config, video_signature(info), overrides or {}, clear_overrides,
             marked_address=marks.address_frame if view == "dtl" else None,
+            search=_downswing_search(pose),
         )
     except (PhaseError, ValueError) as e:
         raise PipelineError(f"{e} Set the phase frames manually.") from e

@@ -226,15 +226,15 @@ def get_pose(
     a quick pass at ~`trim.coarse_fps` over the whole clip, `locate_swing` finds
     the swing in it (returns a first/last frame range or None), then a full-rate
     pass fills in every frame of that range. Outside it, only the quick-pass
-    frames have keypoints. `extra_ranges` (first, last) are always processed
-    at full rate too, e.g. around the marked address frame. Returns (pose, reused).
+    frames have keypoints. `extra_ranges` (first, last) must be covered at full
+    rate too, e.g. around the marked address frame; the full-rate pass is
+    widened to include them rather than run separately, because every
+    separate pass restarts the tracker and leaves a jump in the keypoints at
+    its edges. Returns (pose, reused).
     """
     path = run_dir / "pose.json"
     extra = [(int(a), int(b)) for a, b in (extra_ranges or [])]
     params = {**_cache_params(info, config), "extra_ranges": [list(r) for r in extra]}
-
-    def in_extra(i: int) -> bool:
-        return any(a <= i <= b for a, b in extra)
     if not force and path.exists():
         try:
             pose, cached_params = load_pose(path)
@@ -257,9 +257,11 @@ def get_pose(
         else:
             pad_before = round(trim_cfg["pad_before_s"] * info.fps)
             pad_after = round(trim_cfg["pad_after_s"] * info.fps)
-            dense = (max(0, found[0] - pad_before), min(len(coarse) - 1, found[1] + pad_after))
+            first = min([found[0] - pad_before] + [a for a, _ in extra])
+            last = max([found[1] + pad_after] + [b for _, b in extra])
+            dense = (max(0, first), min(len(coarse) - 1, last))
             data = extract_pose(
-                video, info, config, select=lambda i: dense[0] <= i <= dense[1] or in_extra(i), data=coarse,
+                video, info, config, select=lambda i: dense[0] <= i <= dense[1], data=coarse,
                 label="Tracking the swing", progress=progress,
             )
     else:

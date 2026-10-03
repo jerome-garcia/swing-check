@@ -135,6 +135,11 @@ def test_trim_reconverts_and_invalidates_marks(client, converted):
     assert d["status"] == "converted"  # old marks were for the untrimmed clip
 
 
+def test_analyze_requires_marks(client, converted):
+    r = client.post(f"/api/swings/{converted}/analyze", json={})
+    assert r.status_code == 409 and "Mark" in r.json()["detail"]
+
+
 def test_broken_video_conversion_fails_cleanly(client):
     r = client.post("/api/swings", files={"file": ("broken.mov", b"not really a video")}, data={"view": "dtl"})
     job = client.app.state.jobs.wait(r.json()["job"]["id"], timeout=60)
