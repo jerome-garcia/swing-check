@@ -69,15 +69,27 @@ class Overlay:
 
 
 @dataclass
+class Row:
+    """One line on the results card: a measurement, its value and what it means."""
+
+    label: str  # e.g. "Knee flex"
+    value: str  # formatted, e.g. "33.7°"
+    note: str = ""  # short verdict, e.g. "good flex"
+    status: str = "ok"  # one of STATUSES; colors the row's dot
+
+
+@dataclass
 class Verdict:
     status: str  # one of STATUSES
     label: str  # short result, e.g. "behind", "on plane"
     summary: str  # one sentence for the report
     measurements: dict[str, Any] = field(default_factory=dict)
     overlays: list[Overlay] = field(default_factory=list)
+    rows: list[Row] = field(default_factory=list)  # compact display; falls back to measurements if empty
     name: str = ""
     view: str = ""
     title: str = ""
+    phase: str | None = None  # swing phase the check is judged on (its key frame)
 
     def to_json(self) -> dict[str, Any]:
         d = asdict(self)
@@ -183,19 +195,23 @@ class Analyzer:
     view: str
     title: str
     func: Callable[[SwingContext], Verdict]
+    phase: str | None = None
 
 
 REGISTRY: dict[str, Analyzer] = {}
 
 
-def register(name: str, view: str, title: str) -> Callable[[Callable[[SwingContext], Verdict]], Callable[[SwingContext], Verdict]]:
+def register(name: str, view: str, title: str, phase: str | None = None
+             ) -> Callable[[Callable[[SwingContext], Verdict]], Callable[[SwingContext], Verdict]]:
+    """Register an analyzer. `phase` is the swing phase it's judged on; the app shows
+    that frame, drawn with only this analyzer's overlays, as its key frame."""
     if view not in ("dtl", "fo"):
         raise ValueError(f"view must be dtl or fo, not {view!r}")
 
     def decorator(func: Callable[[SwingContext], Verdict]) -> Callable[[SwingContext], Verdict]:
         if name in REGISTRY and REGISTRY[name].func is not func:
             raise ValueError(f"analyzer {name!r} registered twice")
-        REGISTRY[name] = Analyzer(name=name, view=view, title=title, func=func)
+        REGISTRY[name] = Analyzer(name=name, view=view, title=title, func=func, phase=phase)
         return func
 
     return decorator
@@ -230,5 +246,6 @@ def run_analyzers(ctx: SwingContext) -> list[Verdict]:
         if verdict.status not in STATUSES:
             raise ValueError(f"{analyzer.name} returned unknown status {verdict.status!r}")
         verdict.name, verdict.view, verdict.title = analyzer.name, analyzer.view, analyzer.title
+        verdict.phase = analyzer.phase
         verdicts.append(verdict)
     return verdicts

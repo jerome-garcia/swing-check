@@ -10,7 +10,7 @@ from __future__ import annotations
 from swingcheck.analyzers import REFERENCE_COLOR, STATUS_COLORS, Overlay, SwingContext, Verdict, register
 
 
-@register("weight_shift", view="fo", title="Weight shift at impact")
+@register("weight_shift", view="fo", title="Weight shift at impact", phase="impact")
 def weight_shift(ctx: SwingContext) -> Verdict:
     hips = ctx.midpoint("left_hip", "right_hip")
     address_xy = ctx.at(hips, "address")

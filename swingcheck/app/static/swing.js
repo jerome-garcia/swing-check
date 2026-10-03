@@ -54,5 +54,5 @@ export async function renderSwing(view, id, isCurrent) {
     return;
   }
   const header = (extra = []) => swingHeader(s, [...extra, el("a", { class: "btn", href: swingUrl(id, "mark") }, "Edit marks")]);
-  renderResults(view, s, header, isCurrent, () => renderSwing(view, id, isCurrent));
+  await renderResults(view, s, header, isCurrent, () => renderSwing(view, id, isCurrent));
 }

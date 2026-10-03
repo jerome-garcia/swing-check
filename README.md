@@ -259,9 +259,13 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
 3. **Analyze.** Tracking your body takes about a minute for a few seconds of
    240 fps slo-mo on a laptop, with live progress. You can leave the page and
    come back.
-4. **Results.** The annotated video (with 0.25× and 0.5× speeds), a card per
-   check with its verdict and numbers, the key frames, and the phases.
-   **Report** opens a plain-text summary.
+4. **Results.** The annotated video (with 0.25× and 0.5× speeds) on one side;
+   on the other, the **checkpoints**: a strip of the eight down-the-line
+   checkpoints in swing order, each colored by its result (dashed = coming
+   soon). Pick one, or use ‹ › / the arrow keys, to see its key frame (drawn with
+   only that check's lines) next to its card. Each card lists its measurements
+   one per row with a status dot. **Phases** (collapsed) lets you fix a frame,
+   and **Report** opens a plain-text summary.
 
 Your swings are listed on the home page, newest first, with their verdicts. Open
 one to see it again, **Edit marks** to re-mark, **Re-analyze** after changing
@@ -374,36 +378,45 @@ Other useful settings:
 
 ## Adding a check
 
-Checks are plug-ins. Create a new file in `swingcheck/analyzers/`; it's picked
-up automatically and appears in the app, and nothing else needs to change:
+Checks are plug-ins. To build one of the down-the-line checkpoints, create a
+file in `swingcheck/analyzers/` that registers an analyzer under the **name and
+phase listed for that checkpoint in `swingcheck/checkpoints.py`**. It's picked
+up automatically and appears in the app's checkpoint stepper; nothing else
+needs to change. An illustration (not the real top-of-backswing check):
 
 ```python
-# swingcheck/analyzers/fo_sway.py
-from swingcheck.analyzers import STATUS_COLORS, Overlay, SwingContext, Verdict, register
+# swingcheck/analyzers/dtl_top.py
+from swingcheck.analyzers import STATUS_COLORS, Overlay, Row, SwingContext, Verdict, register
+from swingcheck.geometry import angle_between_deg
 
-@register("sway", view="fo", title="Backswing sway")
-def sway(ctx: SwingContext) -> Verdict:
-    hips = ctx.midpoint("left_hip", "right_hip")
-    moved = ctx.units((ctx.at(hips, "top")[0] - ctx.at(hips, "address")[0]) * -ctx.target_sign)
-    flagged = moved > ctx.cfg["max_sway"]          # from [analyzers.sway] in the config
-    status = "flag" if flagged else "ok"
+@register("top", view="dtl", title="Top", phase="top")  # name and phase from checkpoints.py
+def top(ctx: SwingContext) -> Verdict:
+    f = ctx.frame("top")
+    shoulder = ctx.value(ctx.track(ctx.side("shoulder", "lead")), f, "lead shoulder")
+    wrist = ctx.value(ctx.track(ctx.side("wrist", "lead")), f, "lead wrist")
+    hip = ctx.value(ctx.track(ctx.side("hip", "lead")), f, "lead hip")
+    angle = angle_between_deg(wrist - shoulder, hip - shoulder)
+    ok = abs(angle - 90) <= ctx.cfg["tolerance"]  # from [analyzers.top] in the config
+    status = "ok" if ok else "flag"
     return Verdict(
         status=status,
-        label="swayed" if flagged else "stable",
-        summary="Hips moved away from the target in the backswing." if flagged else "Hips stayed centered.",
-        measurements={"sway": round(moved, 3)},
-        overlays=[Overlay("point", [tuple(ctx.at(hips, "top"))], STATUS_COLORS[status], "hips @ top",
-                          frames=(ctx.frame("top"), len(hips) - 1))],
+        label="lead arm square to the torso" if ok else "lead arm off 90°",
+        summary=f"Lead arm is {angle:.0f}° from the torso at the top.",
+        measurements={"lead_arm_to_torso_deg": round(angle, 1)},          # for the report
+        rows=[Row("Lead arm to torso", f"{angle:.0f}°", "good" if ok else "off 90°", status)],  # for the card
+        overlays=[Overlay("segment", [tuple(shoulder), tuple(wrist)], STATUS_COLORS[status], frames=(f, f))],
     )
 ```
 
-Then add its thresholds under `[analyzers.sway]` in `config/default.toml`.
+Then add its settings under `[analyzers.top]` in `config/default.toml`, mark it
+✅ in the [Roadmap](#roadmap), and update the expected list in
+`tests/test_app.py::test_checkpoint_list_marks_built_ones`.
 
 The context gives you the pose (`ctx.track(name)` for any MediaPipe landmark,
 `ctx.hands()`, `ctx.midpoint(a, b)`), your marks (`ctx.marks.points`), phase
-frames (`ctx.frame("top")`, `ctx.at(track, "impact")`), lead/trail sides
-(`ctx.side("shoulder", "trail")`), the target direction (`ctx.target_sign`), the
-video frame (`ctx.image(frame)`), and body-unit conversion (`ctx.units(px)`).
+frames (`ctx.frame("top")`, `ctx.at(track, "impact")`, `ctx.value(track, frame,
+what)`), lead/trail sides (`ctx.side("shoulder", "trail")`), the video frame
+(`ctx.image(frame)`), and body-unit conversion (`ctx.units(px)`).
 Overlay kinds are documented in `swingcheck/analyzers/__init__.py`.
 
 ---

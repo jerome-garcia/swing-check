@@ -10,7 +10,7 @@ from __future__ import annotations
 from swingcheck.analyzers import BALL_COLOR, STATUS_COLORS, Overlay, SwingContext, Verdict, register
 
 
-@register("hands_at_impact", view="fo", title="Hands at impact")
+@register("hands_at_impact", view="fo", title="Hands at impact", phase="impact")
 def hands_at_impact(ctx: SwingContext) -> Verdict:
     ball_x = ctx.marks.points["ball"][0]
     hands = ctx.hands()

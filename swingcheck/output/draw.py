@@ -51,7 +51,10 @@ def _pt(p: Sequence[float]) -> tuple[int, int]:
     return int(round(p[0])), int(round(p[1]))
 
 
-def draw_line_overlay(img, kind: str, points, color, thickness: int, label: str, s: float, label_slot: int = 0) -> None:
+def draw_line_overlay(img, kind: str, points, color, thickness: int, label: str, s: float, label_slot: int = 0,
+                      ring: bool = False) -> None:
+    """Draw one overlay. `thickness` is already scaled to the video; `ring` draws a point as a
+    hollow reference marker (decided from the overlay's own style, not the scaled thickness)."""
     h, w = img.shape[:2]
     if kind in ("line", "ray"):
         o, through = np.asarray(points[0], float), np.asarray(points[1], float)
@@ -92,7 +95,7 @@ def draw_line_overlay(img, kind: str, points, color, thickness: int, label: str,
             draw_text(img, label, (min(max(4, x + 5), w - tw - 4), max(th + 2, y)), 0.45 * s, color)
     elif kind == "point":
         r = max(4, int(round(7 * s)))
-        if thickness <= 1:
+        if ring:
             # Thin points are reference markers (ball, address hands): draw a
             # ring so what's underneath stays visible.
             r = max(6, int(round(11 * s)))

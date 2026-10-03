@@ -20,7 +20,7 @@ def head_center(ctx: SwingContext) -> np.ndarray:
     return np.nanmean(tracks, axis=0) if np.isfinite(tracks).any() else tracks[0]
 
 
-@register("head_drift", view="fo", title="Head drift")
+@register("head_drift", view="fo", title="Head drift", phase="impact")
 def head_drift(ctx: SwingContext) -> Verdict:
     import warnings
 

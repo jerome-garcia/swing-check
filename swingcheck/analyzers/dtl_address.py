@@ -15,7 +15,7 @@ from __future__ import annotations
 import numpy as np
 
 from swingcheck import pose as pose_mod
-from swingcheck.analyzers import REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, SwingContext, Verdict, register
+from swingcheck.analyzers import REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, register
 from swingcheck.geometry import angle_between_deg, max_bulge, normal, silhouette_edge, tilt_from_vertical_deg
 
 # Back outline is sampled from this fraction of the way up the spine (skipping
@@ -27,7 +27,7 @@ def _status(ok: bool) -> str:
     return "ok" if ok else "flag"
 
 
-@register("address", view="dtl", title="Address posture")
+@register("address", view="dtl", title="Address posture", phase="address")
 def address(ctx: SwingContext) -> Verdict:
     cfg = ctx.cfg
     f = ctx.marks.address_frame
@@ -122,4 +122,11 @@ def address(ctx: SwingContext) -> Verdict:
         if bulge is not None:
             mid = pts[len(pts) // 2]
             overlays.append(Overlay("text", [(mid[0] - forward * 0.35 * s, mid[1])], col["back"], f"back {bulge:.2f}", show))
-    return Verdict(status=status, label=label, summary=summary, measurements=measurements, overlays=overlays)
+    rows = [
+        Row("Arms", f"{arm:+.1f}°", items["arms"][1], items["arms"][0]),
+        Row("Spine bend", f"{spine:.1f}°", items["spine"][1], items["spine"][0]),
+        Row("Knee flex", f"{knee_flex:.1f}°", items["knees"][1], items["knees"][0]),
+        Row("Back", f"{bulge:.3f}" if bulge is not None else "–", items["back"][1], items["back"][0]),
+    ]
+    return Verdict(status=status, label=label, summary=summary, measurements=measurements, overlays=overlays,
+                   rows=rows)

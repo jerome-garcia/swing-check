@@ -139,6 +139,14 @@ def test_trim_reconverts_and_invalidates_marks(client, converted):
     assert d["status"] == "converted"  # old marks were for the untrimmed clip
 
 
+def test_checkpoint_list_marks_built_ones(client):
+    cps = client.get("/api/features").json()["checkpoints"]["dtl"]
+    assert [c["number"] for c in cps] == list(range(1, 9))
+    built = {c["analyzer"] for c in cps if c["built"]}
+    assert built == {"address", "swing_plane"}  # update as checkpoints land
+    assert cps[0]["title"] == "Address" and cps[0]["phase"] == "address"
+
+
 def test_face_on_held_back_for_future_release(client, runs):
     assert client.get("/api/features").json()["face_on"] is False
     r = client.post("/api/swings", files={"file": ("a.mov", b"x")}, data={"view": "fo"})

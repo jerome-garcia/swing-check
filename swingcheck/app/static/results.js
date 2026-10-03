@@ -1,4 +1,4 @@
-import { el, fileUrl, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
+import { el, features, fileUrl, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
 
 const STATUS_WORD = { ok: "OK", warn: "Watch", flag: "Flag", error: "No data" };
 const PHASE_LABELS = {
@@ -19,17 +19,95 @@ function prettyValue(v) {
   return String(v);
 }
 
+// One compact line per measurement: status dot, name, value, short verdict.
+// Checks that don't supply rows (older analyses, face-on) fall back to their raw measurements.
+function measurementRows(v) {
+  if (v.rows && v.rows.length) return v.rows;
+  return Object.entries(v.measurements || {}).filter(([k]) => !HIDDEN_MEASUREMENTS.has(k))
+    .map(([k, val]) => ({ label: prettyKey(k), value: prettyValue(val), note: "", status: null }));
+}
+
 function verdictCard(v) {
-  const rows = Object.entries(v.measurements || {}).filter(([k]) => !HIDDEN_MEASUREMENTS.has(k));
+  const rows = measurementRows(v);
   return el("article", { class: `verdict ${v.status}` },
     el("div", { class: "verdict-head" },
       el("h3", {}, v.title),
       el("span", { class: `status-pill ${v.status}` }, STATUS_WORD[v.status] || v.status)),
     el("div", { class: "verdict-label" }, v.label),
     el("p", { class: "verdict-summary" }, v.summary),
-    rows.length ? el("table", { class: "measurements" },
-      el("tbody", {}, rows.map(([k, val]) => el("tr", {}, el("th", {}, prettyKey(k)), el("td", {}, prettyValue(val)))))) : null,
-    v.measurements && v.measurements.units ? el("div", { class: "subtle small" }, v.measurements.units) : null);
+    rows.length ? el("ul", { class: "rows" }, rows.map(r => el("li", {},
+      r.status ? el("span", { class: `dot ${r.status}`, title: STATUS_WORD[r.status] }) : el("span", {}),
+      el("span", { class: "row-label" }, r.label),
+      el("span", { class: "row-value" }, r.value),
+      el("span", { class: "row-note" }, r.note)))) : null);
+}
+
+// --- Checkpoint stepper (down-the-line) ---------------------------------------
+function checkpointStepper(s, checkpoints) {
+  const verdicts = Object.fromEntries(((s.analysis && s.analysis.verdicts) || []).map(v => [v.name, v]));
+  const stateOf = cp => (!cp.built ? "soon" : verdicts[cp.analyzer] ? verdicts[cp.analyzer].status : "missing");
+  const STATE_WORD = { soon: "coming soon", missing: "not run yet", ...STATUS_WORD };
+  // Start on the first flagged checkpoint, else the first one that has a result.
+  let index = Math.max(0, checkpoints.findIndex(cp => stateOf(cp) === "flag"));
+  if (stateOf(checkpoints[index]) !== "flag") index = Math.max(0, checkpoints.findIndex(cp => verdicts[cp.analyzer]));
+
+  const chips = checkpoints.map((cp, i) => el("button", {
+    type: "button", class: `step ${stateOf(cp)}`, title: `${cp.title}: ${STATE_WORD[stateOf(cp)]}`,
+    onclick: () => select(i),
+  }, el("span", { class: "step-num" }, cp.number), el("span", { class: "step-title" }, cp.title)));
+  const prev = el("button", { class: "btn small", type: "button", "aria-label": "Previous checkpoint", onclick: () => select(index - 1) }, "‹");
+  const next = el("button", { class: "btn small", type: "button", "aria-label": "Next checkpoint", onclick: () => select(index + 1) }, "›");
+  const heading = el("div", { class: "step-heading" });
+  const body = el("div", { class: "step-body" });
+
+  function keyFrame(cp) {
+    // This check's own annotated frame; else the phase's freeze frame; else the plain video
+    // frame where that phase was detected (for checkpoints not built yet).
+    const name = [`check_${cp.analyzer}.png`, cp.phase ? `${cp.phase}.png` : null].find(f => f && s.files.includes(f));
+    const frame = cp.phase && s.analysis && s.analysis.phases ? s.analysis.phases[cp.phase] : undefined;
+    let url = null;
+    if (name) url = fileUrl(s.id, name);
+    else if (frame !== undefined && s.video) url = `/api/swings/${encodeURIComponent(s.id)}/frames/${frame}.jpg?w=720`;
+    if (!url) return el("div", { class: "step-frame empty-frame" }, "This moment isn't detected yet");
+    return el("a", { class: "step-frame", href: url, target: "_blank", rel: "noopener", title: "Open full size" },
+      el("img", { src: url, alt: `${cp.title} frame` }));
+  }
+
+  function card(cp) {
+    const v = verdicts[cp.analyzer];
+    if (v) return verdictCard(v);
+    const missing = cp.built;
+    return el("article", { class: "verdict soon" },
+      el("div", { class: "verdict-head" }, el("h3", {}, cp.title),
+        el("span", { class: "status-pill soon" }, missing ? "Not run" : "Coming soon")),
+      el("p", { class: "verdict-summary" }, cp.description),
+      missing ? el("p", { class: "small" }, "Press Re-analyze to run this check on this swing.") : null);
+  }
+
+  function select(i) {
+    index = Math.max(0, Math.min(checkpoints.length - 1, i));
+    const cp = checkpoints[index];
+    chips.forEach((c, j) => { c.classList.toggle("current", j === index); c.setAttribute("aria-current", j === index ? "step" : "false"); });
+    prev.disabled = index === 0;
+    next.disabled = index === checkpoints.length - 1;
+    heading.replaceChildren(el("span", { class: "subtle" }, `${cp.number} / ${checkpoints.length}`), el("strong", {}, cp.title));
+    body.replaceChildren(keyFrame(cp), card(cp));
+  }
+
+  const node = el("section", { class: "panel stepper", tabindex: "-1" },
+    el("div", { class: "panel-head" }, el("h2", {}, "Checkpoints"),
+      el("div", { class: "legend small subtle" },
+        ...["ok", "warn", "flag", "soon"].map(st => el("span", {}, el("span", { class: `dot ${st}` }), STATE_WORD[st])))),
+    el("div", { class: "steps" }, chips),
+    el("div", { class: "step-nav" }, prev, heading, next),
+    body);
+  node.addEventListener("keydown", e => {
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLVideoElement) return;
+    if (e.key === "ArrowLeft") { e.preventDefault(); select(index - 1); }
+    if (e.key === "ArrowRight") { e.preventDefault(); select(index + 1); }
+  });
+  select(index);
+  return node;
 }
 
 function videoPlayer(s) {
@@ -115,10 +193,13 @@ function phasesPanel(s, startAnalysis) {
   }
 
   list();
-  return el("section", { class: "panel" }, el("h2", {}, "Phases"), body);
+  // Collapsed by default: it's only needed when a detected phase is wrong.
+  return el("details", { class: "panel phases-panel" },
+    el("summary", {}, el("strong", {}, "Phases"), el("span", { class: "subtle small" }, " · adjust if a frame is wrong")),
+    body);
 }
 
-export function renderResults(view, s, header, isCurrent, rerender) {
+export async function renderResults(view, s, header, isCurrent, rerender) {
   async function startAnalysis(body = {}) {
     const progress = progressBlock("Analyzing swing");
     view.replaceChildren(header(), progress.node);
@@ -146,13 +227,18 @@ export function renderResults(view, s, header, isCurrent, rerender) {
 
   const a = s.analysis;
   const warnings = (a && a.warnings) || [];
+  const checkpoints = ((await features()).checkpoints || {})[s.view] || [];
+  if (!isCurrent()) return;
+  // Down-the-line: one checkpoint at a time. Other views (older face-on swings): all cards in a list.
+  const checks = checkpoints.length
+    ? checkpointStepper(s, checkpoints)
+    : el("div", { class: "stack" }, el("section", { class: "stack-sm" }, (a.verdicts || []).map(verdictCard)), freezeFrames(s));
+  const phases = phasesPanel(s, startAnalysis);
   view.replaceChildren(
     header([el("a", { class: "btn", href: fileUrl(s.id, "report.txt"), target: "_blank", rel: "noopener" }, "Report"),
       el("button", { class: "btn", type: "button", onclick: () => startAnalysis() }, "Re-analyze")]),
     ...warnings.map(w => el("div", { class: "notice" }, w)),
     el("div", { class: "results-layout" },
-      el("div", { class: "stack" }, videoPlayer(s), freezeFrames(s)),
-      el("div", { class: "stack" },
-        el("section", { class: "stack-sm" }, (a.verdicts || []).map(verdictCard)),
-        phasesPanel(s, startAnalysis))));
+      el("div", { class: "stack video-col" }, videoPlayer(s)),
+      el("div", { class: "stack" }, checks, phases)));
 }

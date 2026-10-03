@@ -12,7 +12,9 @@ from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from swingcheck.analyzers import REGISTRY, discover
 from swingcheck.app.frames import FrameReader
+from swingcheck.checkpoints import checkpoints_json
 from swingcheck.app.jobs import JobManager
 from swingcheck.app.store import Store, SwingNotFound
 from swingcheck.config import PROJECT_ROOT, load_config
@@ -75,7 +77,13 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
 
     @app.get("/api/features")
     def features() -> dict[str, Any]:
-        return {"face_on": FACE_ON_ENABLED, "face_on_message": FACE_ON_DISABLED_MESSAGE}
+        discover()
+        built = {name for name, a in REGISTRY.items() if a.view == "dtl"}
+        return {
+            "face_on": FACE_ON_ENABLED,
+            "face_on_message": FACE_ON_DISABLED_MESSAGE,
+            "checkpoints": {"dtl": checkpoints_json("dtl", built)},
+        }
 
     @app.post("/api/swings")
     def upload_swing(file: UploadFile = File(...), view: str = Form(...)) -> dict[str, Any]:

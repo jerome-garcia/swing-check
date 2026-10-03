@@ -8,6 +8,7 @@ and a header listing each verdict.
 
 from __future__ import annotations
 
+import copy
 from pathlib import Path
 from typing import Any
 
@@ -53,6 +54,13 @@ class Annotator:
             (phases.impact, len(self.path) - 1, FOLLOW_COLOR),
         ]
 
+    def only(self, verdict: Verdict) -> "Annotator":
+        """A copy that draws just this verdict (its overlays and header line), for its key frame."""
+        clone = copy.copy(self)
+        clone.verdicts = [verdict]
+        clone.overlays = [o for o in verdict.overlays if o.kind != "path"]
+        return clone
+
     def segment_name(self, i: int) -> str:
         p = self.phases
         if i < p.address:
@@ -79,7 +87,8 @@ class Annotator:
                 continue
             slot = slots.get(o.kind, 0)
             slots[o.kind] = slot + 1
-            draw_line_overlay(img, o.kind, o.points, o.color, max(1, int(round(o.thickness * s))), o.label, s, slot)
+            draw_line_overlay(img, o.kind, o.points, o.color, max(1, int(round(o.thickness * s))), o.label, s, slot,
+                              ring=o.thickness <= 1)
 
         self._header(img)
         label = big_label or self._phase_flash(i)
@@ -129,7 +138,16 @@ def write_outputs(run_dir: Path, annotator: Annotator, frame_range: tuple[int, i
     slow = fps / playback
     slow_note = f"  {slow:g}x slow" if slow > 1.01 else ""
     freeze_names = [n for n in out_cfg["freeze_frames"] if n in PHASE_NAMES]
-    freeze_at = {getattr(annotator.phases, n): n for n in freeze_names}
+    # frame -> images to save there: (file stem, annotator, big label, phase name for the footer)
+    stills: dict[int, list[tuple[str, Annotator, str, str]]] = {}
+    for n in freeze_names:
+        stills.setdefault(getattr(annotator.phases, n), []).append((n, annotator, n.upper(), n))
+    # Each check's own key frame, drawn with only its lines (shown in the app's checkpoint stepper).
+    for v in annotator.verdicts:
+        if v.phase in PHASE_NAMES and v.status != "error":
+            stills.setdefault(getattr(annotator.phases, v.phase), []).append(
+                (f"check_{v.name}", annotator.only(v), v.title.upper(), v.phase))
+    last_still = max(stills, default=0)
 
     written: dict[str, Path] = {}
     freezes: dict[str, np.ndarray] = {}
@@ -137,8 +155,8 @@ def write_outputs(run_dir: Path, annotator: Annotator, frame_range: tuple[int, i
     try:
         for i, frame in enumerate(iter_frames(run_dir / "normalized.mp4")):
             in_range = frame_range[0] <= i <= frame_range[1]
-            if not in_range and i not in freeze_at:
-                if i > max(frame_range[1], max(freeze_at, default=0)):
+            if not in_range and i not in stills:
+                if i > max(frame_range[1], last_still):
                     break
                 continue
             footer = f"{annotator.segment_name(i)}   frame {i}   {i / fps:.3f}s{slow_note}"
@@ -147,12 +165,13 @@ def write_outputs(run_dir: Path, annotator: Annotator, frame_range: tuple[int, i
                     written["video"] = run_dir / "annotated.mp4"
                     writer = VideoWriter(written["video"], frame.shape[1], frame.shape[0], playback)
                 writer.write(annotator.render(frame, i, footer))
-            if i in freeze_at:
-                name = freeze_at[i]
-                freezes[name] = annotator.render(frame, i, f"{name}   frame {i}   {i / fps:.3f}s", big_label=name.upper())
-                path = run_dir / f"{name}.png"
-                cv2.imwrite(str(path), freezes[name])
-                written[name] = path
+            for stem, ann, big, phase in stills.get(i, []):
+                img = ann.render(frame, i, f"{phase.replace('_', ' ')}   frame {i}   {i / fps:.3f}s", big_label=big)
+                if stem in freeze_names:
+                    freezes[stem] = img
+                path = run_dir / f"{stem}.png"
+                cv2.imwrite(str(path), img)
+                written[stem] = path
     finally:
         if writer is not None:
             writer.close()

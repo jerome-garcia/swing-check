@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from swingcheck.analyzers import REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, SwingContext, Verdict, register
+from swingcheck.analyzers import REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, register
 
 PLANE_COLOR = (0, 140, 255)  # orange, like the classic drawn-on shaft line
 ZONE_COLOR = (80, 200, 80)
@@ -39,7 +39,7 @@ def torso_crossing(clubhead, grip, hip, shoulder) -> float:
     return float(u)
 
 
-@register("swing_plane", view="dtl", title="Swing plane")
+@register("swing_plane", view="dtl", title="Swing plane", phase="address")
 def swing_plane(ctx: SwingContext) -> Verdict:
     cfg = ctx.cfg
     f = ctx.marks.address_frame
@@ -112,4 +112,8 @@ def swing_plane(ctx: SwingContext) -> Verdict:
                      f"{cfg['belt_min']:g}-{cfg['belt_max']:g}",
         },
         overlays=overlays,
+        rows=[
+            Row("Alignment", f"{u:.2f} up torso", aim, aim_status),
+            Row("Shaft angle", f"{angle:.1f}°", angle_text, "ok" if angle_ok else "warn"),
+        ],
     )
