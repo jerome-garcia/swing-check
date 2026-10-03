@@ -125,6 +125,10 @@ min_shift = 0.15              # less than this -> flagged (fat-shot / low-point 
 max_drift_away = 0.10         # more than this -> flagged
 
 [output]
+# Draw the hand path (wrist trail) on the video and key frames. Off for now:
+# no current check uses it and wrist tracking makes it jittery. A future
+# checkpoint (e.g. downswing shallowing) may turn it back on, smoothed.
+show_hand_path = false
 # How much hand path to draw behind the current frame; 0 = all of it since address.
 trail_length_ms = 0
 # Phases saved as images (any of address, takeaway, top, early_downswing, impact).

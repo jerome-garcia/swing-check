@@ -2,7 +2,8 @@
 
 Everything an analyzer wants drawn comes from its Verdict.overlays, so new
 analyzers show up here without changes. This module adds the shared parts:
-the hand-path trail, phase labels, and a header listing each verdict.
+the hand-path trail (off by default, see [output] show_hand_path), phase labels,
+and a header listing each verdict.
 """
 
 from __future__ import annotations
@@ -68,7 +69,7 @@ class Annotator:
         thick = max(1, int(round(2 * s)))
 
         # Hand path from address (or the trail window) to now.
-        if i > self.phases.address:
+        if self.out_cfg["show_hand_path"] and i > self.phases.address:
             start = self.phases.address if self.trail_frames is None else max(self.phases.address, i - self.trail_frames)
             draw_path(img, self.path, min(i, len(self.path) - 1), start, self.segments, thick + 1)
 

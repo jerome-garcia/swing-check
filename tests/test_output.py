@@ -48,6 +48,21 @@ def test_face_on_verdicts_render_through_impact():
     assert not np.array_equal(before, after)  # impact-only overlays appear at impact
 
 
+def test_hand_path_hidden_by_default():
+    import copy
+
+    hands = np.stack([np.linspace(300, 700, 100), np.linspace(1500, 500, 100)], axis=1)
+    frame = np.zeros((1920, 1080, 3), np.uint8)
+    off = Annotator([], PHASES, hands, 240.0, 1080, 1920, CONFIG).render(frame, 60)
+    cfg = copy.deepcopy(CONFIG)
+    cfg["output"]["show_hand_path"] = True
+    on = Annotator([], PHASES, hands, 240.0, 1080, 1920, cfg).render(frame, 60)
+    # The path runs through the middle of the frame, away from the labels at the edges.
+    middle = (slice(900, 1300), slice(400, 600))
+    assert not off[middle].any()
+    assert on[middle].any()
+
+
 def test_unknown_overlay_kind_rejected():
     verdict = Verdict(status="ok", label="x", summary="y", overlays=[Overlay("blob", [(0.0, 0.0)])])
     ann = Annotator([verdict], PHASES, np.zeros((100, 2)), 240.0, 100, 100, CONFIG)

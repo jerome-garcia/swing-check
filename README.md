@@ -58,6 +58,10 @@ camera side (your trail side). Settings live in `[analyzers.address]` in
 - The app already finds takeaway, top, early downswing and impact frames
   automatically from the hand path (adjustable on the results page), so new
   checkpoints can use them.
+- Drawing the hand path (wrist trail) on the video and key frames is switched
+  off (`[output] show_hand_path = false`): no current check uses it, and wrist
+  tracking makes it jittery. The downswing checkpoint (6) may bring it back,
+  smoothed.
 - The earlier down-the-line check (hands between a shaft line and a shoulder
   line at takeaway, top and early downswing) was removed when this list
   replaced it.
