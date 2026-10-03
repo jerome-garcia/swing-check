@@ -137,8 +137,12 @@ angle_max = 65
 # DTL checkpoint 3, on the takeaway frame you mark (shaft parallel to the
 # target line): the clubhead should still be on the address shaft line (the
 # club is on plane). Distance allowed either side of that line, square to it,
-# in body lengths, before it counts as inside (your side) or outside (ball side).
-line_tolerance = 0.10
+# in body lengths, to count as on plane (OK).
+line_tolerance = 0.15
+# Beyond line_tolerance and up to this: slightly inside/outside, a "watch" (many
+# good players take it back a little inside or outside). Beyond this: flagged.
+# First guess from McIlroy (0.04 out), Tiger (0.38 in) and an amateur (0.50 in).
+flag_distance = 0.45
 
 [analyzers.hands_at_impact]
 # Lead wrist x minus ball x along the target direction, body units.

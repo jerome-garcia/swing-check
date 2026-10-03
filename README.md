@@ -74,16 +74,25 @@ takeaway checkpoint. Settings live in `[analyzers.takeaway]`.
 
 | Measurement | How | Good (default) | If not |
 |---|---|---|---|
-| **Clubhead vs shaft line** | distance of the clubhead from the address shaft line (checkpoint 2's line), square to it, in body lengths | within ±0.10: **Club on plane** | **Flag**. **Clubhead inside the line** (your side): pulled inside or rolled open. **Clubhead outside the line** (ball side): picked up outside |
+| **Clubhead vs shaft line** | distance of the clubhead from the address shaft line (checkpoint 2's line), square to it, in body lengths | within ±0.15: **Club on plane** | 0.15–0.45: **Watch**, *slightly inside / outside the line*. Past 0.45: **Flag**, *well inside* (your side: pulled inside or rolled open) or *well outside* (ball side: picked up outside) |
 
 Where your hands are doesn't matter for this check. The rule started as "the
 club covers the hands", but that depends on where the hands went, and the
-clubhead staying on the address shaft line is the cleaner on-plane test. On the
-reference clips: McIlroy 0.04 outside (on plane); an amateur swing taken away
-inside, 0.50. The key frame shows the address shaft line (orange) with the
-tolerance band either side (grey), a tick from the clubhead square to the line,
-and the hands for reference. If the takeaway isn't marked, this checkpoint says
-so instead of guessing.
+clubhead staying on the address shaft line is the cleaner on-plane test.
+
+Good players vary here, which is why there's a Watch band: McIlroy reads 0.04
+outside (on plane), Tiger 0.38 inside (slightly inside), Morikawa by eye goes
+back with the clubhead outside his hands; an amateur swing taken away low and
+inside reads 0.50 (well inside). Camera aim also matters: the clubhead is about
+a metre closer to the camera than at address, so a camera pointed 5° off the
+target line moves it sideways by about 0.18. The thresholds (`line_tolerance`,
+`flag_distance`) are a first guess from these few swings; tune them as more
+clips come in.
+
+The key frame shows the address shaft line (orange) with the on-plane band
+either side (grey), a tick from the clubhead square to the line, and the hands
+for reference. If the takeaway isn't marked, this checkpoint says so instead of
+guessing.
 
 **Notes for the checkpoints still to build:**
 - **Takeaway, backswing, top and follow-through (3, 4, 5, 8)** judge where the

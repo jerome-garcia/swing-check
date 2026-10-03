@@ -5,9 +5,16 @@ behind it points at the camera), the clubhead should still be on the shaft
 line you set at address: the club is on plane. Measured as the clubhead's
 distance from that line (square to it), in body lengths:
 
-  on the line  within the tolerance either way
-  inside       clubhead behind the line, on your side: pulled inside / rolled open
-  outside      clubhead in front of the line, toward the ball: picked up outside
+  on the line        within line_tolerance either way (OK)
+  slightly in / out  up to flag_distance: a style many good players have (Watch)
+  well inside        clubhead far behind the line, on your side: pulled inside /
+                     rolled open (Flag)
+  well outside       clubhead far in front of the line, toward the ball: picked
+                     up outside (Flag)
+
+Camera aim matters here: the clubhead is about a metre closer to the camera
+than at address, so a camera pointed a few degrees off the target line shifts
+it sideways. That's one reason for the Watch band.
 
 Where the hands are doesn't matter for this; the key frame shows them for
 reference.
@@ -30,6 +37,7 @@ def takeaway(ctx: SwingContext) -> Verdict:
     if mark is None:
         raise MissingData("the takeaway isn't marked yet: Edit marks → Takeaway, then click the clubhead and hands")
     tol = ctx.cfg["line_tolerance"]
+    flag_at = ctx.cfg["flag_distance"]
     clubhead = np.asarray(mark.points["clubhead"], float)
     hands = np.asarray(mark.points["grip"], float)
     pts = ctx.marks.points
@@ -53,12 +61,18 @@ def takeaway(ctx: SwingContext) -> Verdict:
     # inside_by > 0: clubhead on the golfer's side of the line (inside).
     inside_by = ctx.units(float(np.dot(clubhead - ch0, normal)))
 
-    if inside_by > tol:
-        status, label = "flag", "Clubhead inside the line"
-        meaning = "Taken away too far inside: the clubhead is behind your address shaft line."
+    if inside_by > flag_at:
+        status, label = "flag", "Clubhead well inside the line"
+        meaning = "Taken away too far inside: the clubhead is well behind your address shaft line."
+    elif inside_by < -flag_at:
+        status, label = "flag", "Clubhead well outside the line"
+        meaning = "Taken away outside: the clubhead is well in front of your address shaft line."
+    elif inside_by > tol:
+        status, label = "warn", "Clubhead slightly inside the line"
+        meaning = "A little inside your address shaft line. Many good players go back like this; watch it doesn't grow."
     elif inside_by < -tol:
-        status, label = "flag", "Clubhead outside the line"
-        meaning = "Taken away outside: the clubhead is in front of your address shaft line."
+        status, label = "warn", "Clubhead slightly outside the line"
+        meaning = "A little outside your address shaft line. Many good players go back like this; watch it doesn't grow."
     else:
         status, label = "ok", "Club on plane"
         meaning = "The clubhead is still on your address shaft line."
@@ -91,12 +105,23 @@ def takeaway(ctx: SwingContext) -> Verdict:
         measurements={
             "clubhead_inside_line": round(inside_by, 3),
             "line_tolerance": tol,
+            "flag_distance": flag_at,
             "takeaway_frame": f,
             "units": "body lengths, square to the address shaft line; + = golfer's side (inside), - = ball side (outside)",
         },
         rows=[
-            Row("Clubhead vs shaft line", offset_text, label.removeprefix("Clubhead ").removeprefix("Club "), status),
+            Row("Clubhead vs shaft line", offset_text, _note(label, status, tol, flag_at), status),
             Row("Takeaway frame", str(f), "marked by you", "ok"),
         ],
         overlays=overlays,
     )
+
+
+def _note(label: str, status: str, tol: float, flag_at: float) -> str:
+    """Card note with the band that applies, e.g. 'slightly inside the line (flag past 0.45)'."""
+    short = label.removeprefix("Clubhead ").removeprefix("Club ")
+    if status == "ok":
+        return f"{short} (within ±{tol:g})"
+    if status == "warn":
+        return f"{short} (flag past {flag_at:g})"
+    return f"{short} (on plane within ±{tol:g})"
