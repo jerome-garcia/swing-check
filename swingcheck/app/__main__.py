@@ -32,6 +32,11 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--runs-dir", type=Path, help="where swings are stored (default: runs/ in the project)")
     args = parser.parse_args(argv)
 
+    try:
+        app = create_app(args.runs_dir)
+    except KeyError as e:  # unknown key in config/local.toml
+        raise SystemExit(f"Config error: {e.args[0]}") from None
+
     host = "0.0.0.0" if args.phone else "127.0.0.1"
     url = f"http://localhost:{args.port}"
     print(f"swing-check is running at {url}")
@@ -43,7 +48,7 @@ def main(argv: list[str] | None = None) -> None:
         print("Stop with Ctrl+C. Add --phone to open it from your phone on the same Wi-Fi.")
     if not args.no_browser:
         threading.Timer(1.0, lambda: webbrowser.open(url)).start()
-    uvicorn.run(create_app(args.runs_dir), host=host, port=args.port, log_level="warning")
+    uvicorn.run(app, host=host, port=args.port, log_level="warning")
 
 
 if __name__ == "__main__":

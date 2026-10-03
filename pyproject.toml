@@ -20,7 +20,7 @@ dependencies = [
 dev = ["pytest>=7", "httpx>=0.27"]
 
 [project.scripts]
-swingcheck = "swingcheck.cli:main"
+swingcheck = "swingcheck.app.__main__:main"
 
 [tool.setuptools.packages.find]
 include = ["swingcheck*"]

@@ -1,7 +1,7 @@
-"""The analysis pipeline as reusable stages, independent of any UI.
+"""The analysis pipeline as reusable stages, independent of the UI.
 
     info = ingest(video, run_dir, config, start, end)        # normalize + trim
-    save_marks(run_dir, view, address_frame, points, info)    # from the marking UI
+    save_marks(run_dir, view, address_frame, points, info)    # from the marking screen
     result = analyze(run_dir, view, config)                   # pose -> phases -> checks -> outputs
 
 Each stage reports progress through an optional callback

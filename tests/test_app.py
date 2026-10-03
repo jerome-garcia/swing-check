@@ -9,7 +9,7 @@ from swingcheck.app.server import create_app
 from swingcheck.app.store import Store, SwingNotFound
 from swingcheck.output.video import VideoWriter
 from swingcheck.pipeline import save_marks
-from tests.test_marking import make_info
+from tests.helpers import make_info
 
 
 @pytest.fixture

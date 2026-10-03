@@ -2,7 +2,7 @@ import pytest
 
 from swingcheck.config import load_config
 from swingcheck.pipeline import PipelineError, analyze, load_marks, save_marks
-from tests.test_marking import make_info
+from tests.helpers import make_info
 
 CONFIG = load_config()
 
@@ -30,3 +30,12 @@ def test_analyze_needs_marks(tmp_path):
     make_info().save(tmp_path / "video.json")
     with pytest.raises(PipelineError, match="Mark"):
         analyze(tmp_path, "dtl", CONFIG)
+
+
+def test_saved_marks_reused_only_when_video_matches(tmp_path):
+    info = make_info()
+    save_marks(tmp_path, "fo", 3, {"ball": (5.0, 6.0)}, info)
+    path = tmp_path / "marks.json"
+    assert load_marks(path, "fo", info).points["ball"] == (5.0, 6.0)
+    assert load_marks(path, "dtl", info) is None  # wrong view
+    assert load_marks(path, "fo", make_info(trim_start=1.0)) is None  # re-trimmed video

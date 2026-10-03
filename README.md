@@ -1,8 +1,9 @@
 # swing-check
 
-A local command-line golf swing analyzer. Give it one video of one swing, say
-whether it was filmed **down-the-line** (`dtl`) or **face-on** (`fo`), and it
-produces an annotated video, freeze frames and a short text report.
+A golf swing analyzer that runs on your own computer. Upload a video of one
+swing, say whether it was filmed **down-the-line** or **face-on**, click the
+ball (and club), and it gives you an annotated video, key frames and a verdict
+for each check. Open it in your browser on the PC, or on your phone over Wi-Fi.
 
 v1 focuses on fat shots, scooping, and wedges/hybrids flying high instead of far.
 The down-the-line checks are being rebuilt as a series of checkpoints (address,
@@ -11,12 +12,13 @@ address is done so far.
 
 | View | Check | What it tells you |
 |---|---|---|
-| DTL | **Address posture** | Arms hanging straight down, spine forward bend, knee flex, and whether the back is rounded |
+| Down-the-line | **Address posture** | Arms hanging straight down, spine forward bend, knee flex, and whether the back is rounded |
 | Face-on | **Hands at impact** | Hands ahead of, level with, or behind the ball (scoop / shaft lean) |
 | Face-on | **Weight shift** | How far the hips moved toward the target by impact (low point / fat shots) |
 | Face-on | **Head drift** | Whether the head moved away from the target by impact |
 
-Everything runs on your machine with Python, OpenCV, MediaPipe Pose and ffmpeg.
+Everything runs locally with Python, OpenCV, MediaPipe Pose and ffmpeg. Nothing
+is uploaded anywhere.
 
 ---
 
@@ -47,37 +49,70 @@ Everything runs on your machine with Python, OpenCV, MediaPipe Pose and ffmpeg.
 The first analysis downloads the MediaPipe pose model (about 30 MB) into
 `models/`. After that, everything works offline.
 
-Run the tests with `pytest`.
+## Starting the app
+
+From the project folder, with the virtual environment active:
+
+```bash
+swingcheck
+```
+
+Your browser opens at `http://localhost:8765`. Leave the terminal open while you
+use the app; press **Ctrl+C** there to stop it.
+
+### Using it from your phone
+
+```bash
+swingcheck --phone
+```
+
+The terminal prints an address like `http://192.168.1.20:8765`. Open it in your
+phone's browser while it's on the **same Wi-Fi** as the PC. Then you can upload a
+clip straight from the simulator bay.
+
+- The first time, Windows asks whether to allow Python through the firewall.
+  Allow it on **private** networks.
+- There is no login: anyone on the same Wi-Fi can open the app while it's
+  running with `--phone`. Use it on your home network, and stop it when you're
+  done.
+- If the app warns that a slo-mo clip came through at 30 fps, your phone
+  converted it on upload. Save the video to Files first (Share → Save to Files),
+  then pick it from Files in the upload screen.
+
+Other options: `--port 9000` to use a different port, `--no-browser` to not open
+a tab, `--runs-dir D:\golf` to store swings elsewhere.
 
 ---
 
 ## Filming your swing
 
-The tool measures positions in the image, so **the camera must not move**
+The app measures positions in the image, so **the camera must not move**
 during the clip. A tripod is the single most important thing.
 
 ### For every clip
 
 - **Tripod, fixed position.** No zooming, panning or hand-holding. The ball and
   club points you click once are assumed to stay put.
-- **One swing per clip.** Extra footage before and after the swing is fine;
-  practice swings in the same clip can confuse phase detection. Trim them with
-  `--start` / `--end`.
+- **One swing per clip.** Extra footage before and after is fine; practice
+  swings in the same clip can confuse phase detection. Cut them out with
+  **Trim the clip** on the marking screen.
 - **Whole body in frame**, including feet, the ball, and room above the head
   for the club at the top. Portrait or landscape both work.
 - **Slo-mo (120 or 240 fps) if your phone has it.** 30 fps works, but the hands
   move so fast near impact that the impact frame can be off by a frame or two.
 - **Steady, even light.** Avoid strong backlight (a bright window or screen
   behind you).
-- **Copy the original file.** Sharing or messaging an iPhone slo-mo clip often
-  re-exports it at 30 fps. Use iCloud.com "download original", the Windows
-  Photos app import, or a USB copy from the iPhone's DCIM folder. The tool warns
-  if a clip is 60 fps or slower.
-- **Use the same camera spot every session** (mark the tripod feet with tape).
-  Angles and distances are measured in 2D, so moving the camera changes the
-  numbers even when your swing doesn't.
+- **Use the original file.** Sharing or messaging an iPhone slo-mo clip often
+  re-exports it at 30 fps. On the PC, use iCloud.com "download original", the
+  Windows Photos app import, or a USB copy from the iPhone's DCIM folder. The app
+  warns if a clip is 60 fps or slower.
+- **Same camera spot every session** (mark the tripod feet with tape). Angles
+  and distances are measured in 2D, so moving the camera changes the numbers even
+  when your swing doesn't.
+- **Reasonably fitted clothing.** A loose shirt changes your outline, which the
+  back-rounding check reads.
 
-### Down-the-line (`--view dtl`)
+### Down-the-line
 
 ```
             target
@@ -96,12 +131,12 @@ during the clip. A tripod is the single most important thing.
   target line (not on the ball-to-target line, which hides the hands behind the
   body).
 - Height: about **hand/hip height** (roughly 1 m). Higher or lower changes the
-  measured angles (spine bend, plane lines).
+  measured angles.
 - Distance: far enough that your full swing, including the club at the top, stays
   in frame (often 3 to 4 m).
 - Aim the camera straight down the target line, not angled toward you.
 
-### Face-on (`--view fo`)
+### Face-on
 
 ```
        target <-- (for a left-hander)        (for a right-hander) --> target
@@ -123,99 +158,62 @@ during the clip. A tripod is the single most important thing.
 
 ---
 
-## Usage
+## Using the app
 
-```bash
-swingcheck samples/my_swing.mov --view dtl
-```
+1. **New swing.** Choose a video (or drop it on the page) and pick
+   down-the-line or face-on. It uploads and converts with a progress bar; the
+   conversion straightens rotated phone video and keeps the slo-mo frame rate.
+2. **Mark your address.** Scrub to your address position with the slider, the
+   ‹ › buttons or the arrow keys (Shift = 10 frames). Then click:
+   - the **ball** (both views)
+   - the **clubhead at the hosel**, where the shaft meets the head (down-the-line)
+   - the **grip**, the center of your hands (down-the-line)
 
-What happens:
+   A magnifier follows the cursor; on a phone, touch and hold, slide to aim with
+   the magnifier above your finger, and let go to place the point. **Undo**
+   removes the last point. In down-the-line, **the frame you mark on is your
+   address frame**: the address checks are measured on it, so pick a frame where
+   you're fully set up and still.
 
-1. **Normalize.** The clip is converted to an upright, constant-frame-rate MP4
-   (rotation and variable frame rate handled; slo-mo frame rate kept).
-2. **Mark points.** A window opens on the first frame. Scrub to your address
-   position and click:
-   - **ball** (both views)
-   - **clubhead at the hosel**, where the shaft meets the head (DTL)
-   - **grip**, the center of your hands (DTL)
+   **Trim the clip** (below the points) cuts out practice swings or idle time:
+   scrub to a frame, press **Start here** or **End here**, then **Apply trim**.
+   Your points are kept.
+3. **Analyze.** Tracking your body takes about a minute for a few seconds of
+   240 fps slo-mo on a laptop, with live progress. You can leave the page and
+   come back.
+4. **Results.** The annotated video (with 0.25× and 0.5× speeds), a card per
+   check with its verdict and numbers, the key frames, and the phases.
+   **Report** opens a plain-text summary.
 
-   Press **Enter** to save. A magnifier in the corner helps you click
-   precisely. In DTL, **the frame you mark on is your address frame**: the
-   address posture checks are measured on it, so pick a frame where you're
-   fully set up and still.
-
-   | Key | Action |
-   |---|---|
-   | `a` / `d` or left / right | step 1 frame |
-   | `A` / `D` or up / down | step 10 frames |
-   | click | place the next point |
-   | `u` or Backspace | undo last point |
-   | Enter or Space | save (once all points are placed) |
-   | Esc or `q` | cancel |
-
-   The window opens sized to your screen; drag its edges to resize it.
-3. **Pose.** MediaPipe finds your body in each frame. For high-frame-rate clips,
-   a quick pass locates the swing first and only that stretch is processed at full
-   frame rate. Expect about a minute for a few seconds of 240 fps on a laptop CPU.
-4. **Phases.** Address, takeaway, top, early downswing and impact are found from
-   the hand path.
-5. **Checks** for the view run, and the outputs are written.
-
-Everything is cached in `runs/<clip name>/`. Rerunning the same clip skips the
-slow stages and doesn't ask you to click again.
-
-### Options
-
-| Option | Use |
-|---|---|
-| `--view dtl` / `--view fo` | Camera view (required) |
-| `--start 5 --end 12` | Trim to this time range (seconds) before analysis |
-| `--remark` | Open the marking window again even though marks are saved |
-| `--address N --top N --impact N` | Override detected phase frames (see below) |
-| `--auto-phases` | Forget saved overrides and use automatic detection |
-| `--no-video` | Skip the annotated video (faster; images and report only) |
-| `--pose-debug` | Also write `pose_debug.mp4` with the detected skeleton drawn |
-| `--force` | Redo every stage, ignoring the cache |
-| `--config my.toml` | Extra config file for this run |
-| `--runs-dir DIR` | Put outputs somewhere other than `runs/` |
-
-### Outputs (`runs/<clip name>/`)
-
-| File | Contents |
-|---|---|
-| `annotated.mp4` | The swing with plane/reference lines, the hand path (blue backswing, pink downswing, grey follow-through), checkpoint markers, verdicts and phase labels. Slo-mo clips play back slowed (240 fps plays at 60 fps, 4x slow). |
-| `address.png`, `top.png`, `impact.png` | Freeze frames with the same annotations |
-| `summary.png` | The freeze frames side by side |
-| `report.txt` | Phases, every check's verdict and measurements, and a summary of what was flagged |
-| `analysis.json` | The same results, machine-readable |
-| `marks.json`, `phases.json`, `pose.json`, `video.json`, `normalized.mp4` | Cached intermediate data |
+Your swings are listed on the home page, newest first, with their verdicts. Open
+one to see it again, **Edit marks** to re-mark, **Re-analyze** after changing
+settings, or **Delete** to remove it and its files.
 
 ### When a phase is wrong
 
-Find the right frame number: it's in the footer of every frame of
-`annotated.mp4`, and in the top-left corner of `pose_debug.mp4` (written with
-`--pose-debug`, which covers the whole clip). Then:
+In **Phases** on the results page, press **Adjust** next to top or impact (and
+address, for face-on), scrub to the right frame, and press **Set as …**. The
+swing is re-analyzed with your frame, which is remembered. **Reset to
+automatic** goes back to detection. In down-the-line, address is the frame you
+marked on; change it with **Edit marks**.
 
-```bash
-swingcheck samples/my_swing.mov --view fo --impact 412
-```
+### Where your swings are stored
 
-Overrides are saved and reused on later runs; the takeaway and early-downswing
-checkpoints are recalculated from them. `--auto-phases` clears them. Frame
-numbers refer to the normalized (and trimmed, if you used `--start`) video, the
-same numbers the footer shows.
+Each swing is a folder in `runs/` in the project. It holds the original upload,
+the converted video, your marks, the analysis, `annotated.mp4`, the key frame
+images and `report.txt`. Back up or delete that folder like any other files.
 
 ---
 
 ## Reading the results
 
-Each check reports **OK**, **WATCH** (worth a look) or **FLAG**, plus the
+Each check reports **OK**, **Watch** (worth a look) or **Flag**, plus the
 numbers behind it. Distances are in **body lengths**: your torso length
 (shoulders to hips) measured at address. So `0.10` means a tenth of your torso,
 roughly 5 cm for most adults, regardless of how far away the camera was.
 
-**Address posture (DTL).** Measured on the frame you marked, using the body
-points on the camera side (your trail side):
+**Address posture (down-the-line).** Measured on the frame you marked, using
+the body points on the camera side (your trail side):
 
 - **Arms:** the shoulder-to-wrist line should hang straight down. Reported in
   degrees from vertical; + means the hands reach out toward the ball, - means
@@ -224,10 +222,9 @@ points on the camera side (your trail side):
 - **Knees:** knee flex, 0 = straight leg.
 - **Back:** how far the outline of your back bulges beyond a straight line
   between hip and shoulder level (in body lengths), measured from the body
-  silhouette. A rounded upper back (hump) reads higher. Wear reasonably fitted
-  clothing; a loose shirt can add to it.
+  silhouette. A rounded upper back (hump) reads higher.
 
-The address freeze frame draws each line with its value, green when in range and
+The address key frame draws each line with its value, green when in range and
 red when not.
 
 **Hands at impact (face-on).** Hands relative to the ball, toward the target.
@@ -268,12 +265,14 @@ knee_flex_max = 38
 disabled = ["head_drift"]     # skip a check entirely
 ```
 
-A misspelled key is reported as an error rather than silently ignored.
+**Restart the app** (Ctrl+C, then `swingcheck`) after changing the config, then
+**Re-analyze** a swing to see the new verdicts. A misspelled key stops the app
+from starting with an error naming it, rather than being silently ignored.
 
 How to tune:
 
 1. Film several swings: some good strikes and some of the misses you're working on.
-2. Run them all and compare the numbers in each `report.txt`.
+2. Compare their numbers on the results pages.
 3. Set each threshold between your good and bad numbers.
 
 Starting values are reasonable guesses, not calibrated on your swing.
@@ -283,9 +282,8 @@ Other useful settings:
 - `[phases] impact_offset_ms`: shifts the detected impact frame. Hands bottom out
   slightly before contact, so if impact is consistently a frame or two early on
   your clips, try `4` to `8` at 240 fps.
-- `[marking] screen_fraction`: the marking window's starting size.
-- `[output] freeze_frames`: add `"takeaway"` or `"early_downswing"` for DTL.
-- `[output] max_playback_fps`: how slowed-down slo-mo videos play.
+- `[output] freeze_frames`: add `"takeaway"` or `"early_downswing"` to the key frames.
+- `[output] max_playback_fps`: how slowed-down slo-mo plays in the annotated video.
 
 ---
 
@@ -293,21 +291,22 @@ Other useful settings:
 
 | Problem | Fix |
 |---|---|
-| `ffmpeg not found on PATH` | Install it (Setup step 2) and open a new terminal. |
-| Warning that the clip is 30 or 60 fps when you filmed slo-mo | The file was re-exported on the way off the phone. Copy the original (see Filming). |
-| Address checks measured on the wrong frame | Re-mark with `--remark` and scrub to your set-up position before clicking. |
-| Back reads rounded but isn't | Loose clothing changes the silhouette; check the outline on `address.png`. |
-| Wrong address/top/impact | Override with `--address/--top/--impact`. |
-| Checks say "no data" | A body point wasn't tracked at that phase. Run `--pose-debug` and check the skeleton; usually lighting, a partly out-of-frame body, or baggy clothing. |
-| Marking window too big | Lower `[marking] screen_fraction` in `config/local.toml`, or drag the window edges. |
-| Practice swing detected instead of the real one | Trim with `--start` / `--end`. |
+| `ffmpeg not found on PATH` (conversion fails) | Install it (Setup step 2), open a new terminal, and start the app again. |
+| Warning that the clip is 30 or 60 fps when you filmed slo-mo | The file was re-exported on the way off the phone. Use the original (see Filming). |
+| Phone can't open the app | Start with `swingcheck --phone`, check the phone is on the same Wi-Fi, and allow Python through the Windows firewall on private networks. |
+| Address checks measured on the wrong frame | **Edit marks**, scrub to your set-up position, and save again. |
+| Back reads rounded but isn't | Loose clothing changes the outline; check the line drawn on the address key frame. |
+| Wrong top/impact | **Adjust** it under Phases on the results page. |
+| A check says "No data" | A body point wasn't tracked at that moment: usually lighting, part of the body out of frame, or baggy clothing. |
+| Practice swing detected instead of the real one | **Edit marks** → **Trim the clip**. |
+| Page looks broken after updating the code | Reload the page (Ctrl+R). |
 
 ---
 
 ## Adding a check
 
 Checks are plug-ins. Create a new file in `swingcheck/analyzers/`; it's picked
-up automatically, and nothing else needs to change:
+up automatically and appears in the app, and nothing else needs to change:
 
 ```python
 # swingcheck/analyzers/fo_sway.py
@@ -334,26 +333,29 @@ Then add its thresholds under `[analyzers.sway]` in `config/default.toml`.
 The context gives you the pose (`ctx.track(name)` for any MediaPipe landmark,
 `ctx.hands()`, `ctx.midpoint(a, b)`), your marks (`ctx.marks.points`), phase
 frames (`ctx.frame("top")`, `ctx.at(track, "impact")`), lead/trail sides
-(`ctx.side("shoulder", "trail")`), the target direction (`ctx.target_sign`), and
-body-unit conversion (`ctx.units(px)`). Overlay kinds are documented in
-`swingcheck/analyzers/__init__.py`.
+(`ctx.side("shoulder", "trail")`), the target direction (`ctx.target_sign`), the
+video frame (`ctx.image(frame)`), and body-unit conversion (`ctx.units(px)`).
+Overlay kinds are documented in `swingcheck/analyzers/__init__.py`.
 
 ---
 
-## Project layout
+## Development
+
+Run the tests with `pytest`. Some tests need `ffmpeg` on the PATH and are
+skipped without it.
 
 ```
 swingcheck/
-  cli.py              command-line entry point, runs the pipeline
+  app/                web app: server, background jobs, swing storage, frontend (static/)
+  pipeline.py         convert -> mark -> pose -> phases -> checks -> outputs
   config.py           loads config/default.toml + config/local.toml
-  ingest.py           ffmpeg normalization
-  marking.py          click-to-mark window
-  pose.py             MediaPipe pose extraction + cache
+  ingest.py           ffmpeg conversion
+  pose.py             MediaPipe pose tracking + cache, body silhouette
   body.py             hand path, body scale, cleaned keypoint tracks
   phases.py           address / takeaway / top / early downswing / impact
-  geometry.py         line and plane math
+  geometry.py         line, angle and outline math
   analyzers/          one file per check (auto-discovered)
-  output/             annotated video, freeze frames, report
+  output/             annotated video, key frames, report
 config/default.toml   every threshold, commented
 tests/                unit tests (pytest)
 ```

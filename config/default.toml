@@ -21,16 +21,6 @@ crf = 18
 # Warn if a clip's capture fps is at or below this (likely a flattened slo-mo).
 low_fps_warning = 60
 
-[marking]
-# The marking window opens scaled to fit this fraction of your screen (taskbar
-# excluded); drag its edges to resize. Clicks map back to full resolution.
-screen_fraction = 0.85
-# Optional hard caps in pixels on top of that; 0 = no cap.
-max_display_width = 0
-max_display_height = 0
-magnifier_size = 160          # px, the zoomed inset shown in a corner
-magnifier_zoom = 4
-
 [trim]
 # Auto-trim for high frame rate clips: a quick pose pass at coarse_fps over
 # the whole clip finds the swing, then every frame is processed only from
