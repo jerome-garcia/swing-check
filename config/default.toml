@@ -129,6 +129,13 @@ belt_max = 0.45    # above this -> points above the belt (shaft too upright)
 angle_min = 45
 angle_max = 65
 
+[analyzers.takeaway]
+# DTL checkpoint 3, on the takeaway frame you mark (shaft parallel to the
+# target line): the clubhead should sit in front of the hands ("cover" them).
+# Sideways offset allowed either way, in body lengths, before it counts as
+# inside (toward you) or outside (toward the ball). 0.10 is about a hand's width.
+covering_tolerance = 0.10
+
 [analyzers.hands_at_impact]
 # Lead wrist x minus ball x along the target direction, body units.
 ahead_threshold = 0.10        # >= this -> "ahead" (good shaft lean)

@@ -26,7 +26,7 @@ of the swing.
 |---|---|---|---|
 | 1 | **Address / alignment** | Arms perpendicular to the ground, spine tilt at the right angle, knee bend correct (plus back rounding) | ✅ Implemented |
 | 2 | **Swing plane** | At address, a line through the clubhead and shaft points you click is the swing plane; check that its angle is correct and that it points roughly at the belt buckle | ✅ Implemented |
-| 3 | **Takeaway** | When the club is parallel to the target line in the takeaway, the club should cover the hands | ⬜ Not yet |
+| 3 | **Takeaway** | When the club is parallel to the target line in the takeaway, the club should cover the hands | ✅ Implemented |
 | 4 | **Backswing (halfway back)** | The hands should split the biceps, and the club should point back inside the golf ball | ⬜ Not yet |
 | 5 | **Top of backswing** | The lead (left) arm matches the shoulders, 90° to the spine, and the club is on plane | ⬜ Not yet |
 | 6 | **Downswing** | The club comes back down the plane; check shallowing | ⬜ Not yet |
@@ -59,14 +59,29 @@ short irons and wedges 55–65°. The reference photo used to set these measured
 53°, pointing at 0.30 of the way up the torso; Tiger and McIlroy measure 55° and
 58° at 0.25.
 
+**3. Takeaway (implemented).** On the **Takeaway** step of the marking screen,
+you scrub to where the shaft is parallel to the target line (from behind it
+points at the camera) and click the clubhead and your hands; that frame is the
+takeaway checkpoint. Settings live in `[analyzers.takeaway]`.
+
+| Measurement | How | Good (default) | If not |
+|---|---|---|---|
+| **Clubhead vs hands** | sideways offset of the clubhead from the hands, in body lengths | within ±0.10 (about a hand's width): **Club covers the hands** | **Flag**. **Clubhead inside the hands** (toward you): taken away too far inside. **Clubhead outside the hands** (toward the ball): taken away outside |
+
+From the camera's angle the clubhead rarely lines up exactly, hence the
+tolerance. The key frame shows the address shaft line (orange) with a tick from
+the clubhead to it, the hands, and the tolerance band, like the reference photo
+used to define it (clubhead in front of the hands, about 0.08 to the ball side;
+hands and clubhead equally far off the address shaft line). If the takeaway
+isn't marked, this checkpoint says so instead of guessing.
+
 **Notes for the checkpoints still to build:**
 - **Takeaway, backswing, top and follow-through (3, 4, 5, 8)** judge where the
   **club** is. The pose model only tracks the body, so you mark the club on
   those frames in the marking screen. Decided for takeaway: a **Takeaway** step
   where you pick the frame (shaft parallel to the target line) and click the
-  clubhead and hands (built; stored in `marks.json` under `checkpoints`). The
-  takeaway check itself (does the clubhead cover the hands; within ~0.10 body
-  lengths either way, inside vs outside) is waiting on a reference photo.
+  clubhead and hands (stored in `marks.json` under `checkpoints`). Halfway back,
+  top and follow-through can follow the same pattern.
 - The app already finds takeaway, top, early downswing and impact frames
   automatically from the hand path (adjustable on the results page), so new
   checkpoints can use them.
