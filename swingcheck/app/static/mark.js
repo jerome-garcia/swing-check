@@ -10,7 +10,7 @@ const STEPS = {
     { key: "takeaway", title: "Takeaway", points: ["clubhead", "grip"], optional: true,
       intro: "Scrub to where the shaft is parallel to the target line (from behind, it points at the camera). Click the clubhead, then your hands. This frame is the takeaway checkpoint." },
     { key: "halfway_back", title: "Halfway back", points: ["clubhead", "grip"], optional: true,
-      intro: "Scrub to where your lead arm is parallel to the ground (hands about chest height). Click the clubhead, then your hands. This frame is the halfway-back checkpoint." },
+      intro: "Scrub to where your lead arm is parallel to the ground (hands about level with your lead shoulder). Click the clubhead, then your hands. This frame is the halfway-back checkpoint." },
   ],
   fo: [
     { key: "address", title: "Address", points: ["ball"], optional: false,
