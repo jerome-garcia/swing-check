@@ -26,7 +26,7 @@ of the swing.
 |---|---|---|---|
 | 1 | **Address / alignment** | Arms perpendicular to the ground, spine tilt at the right angle, knee bend correct (plus back rounding) | ✅ Implemented |
 | 2 | **Swing plane** | At address, a line through the clubhead and shaft points you click is the swing plane; check that its angle is correct and that it points roughly at the belt buckle | ✅ Implemented |
-| 3 | **Takeaway** | When the club is parallel to the target line in the takeaway, the club should cover the hands | ✅ Implemented |
+| 3 | **Takeaway** | When the club is parallel to the target line in the takeaway, the clubhead is still on the address shaft line (on plane) | ✅ Implemented |
 | 4 | **Backswing (halfway back)** | The hands should split the biceps, and the club should point back inside the golf ball | ⬜ Not yet |
 | 5 | **Top of backswing** | The lead (left) arm matches the shoulders, 90° to the spine, and the club is on plane | ⬜ Not yet |
 | 6 | **Downswing** | The club comes back down the plane; check shallowing | ⬜ Not yet |
@@ -66,14 +66,16 @@ takeaway checkpoint. Settings live in `[analyzers.takeaway]`.
 
 | Measurement | How | Good (default) | If not |
 |---|---|---|---|
-| **Clubhead vs hands** | sideways offset of the clubhead from the hands, in body lengths | within ±0.10 (about a hand's width): **Club covers the hands** | **Flag**. **Clubhead inside the hands** (toward you): taken away too far inside. **Clubhead outside the hands** (toward the ball): taken away outside |
+| **Clubhead vs shaft line** | distance of the clubhead from the address shaft line (checkpoint 2's line), square to it, in body lengths | within ±0.10: **Club on plane** | **Flag**. **Clubhead inside the line** (your side): pulled inside or rolled open. **Clubhead outside the line** (ball side): picked up outside |
 
-From the camera's angle the clubhead rarely lines up exactly, hence the
-tolerance. The key frame shows the address shaft line (orange) with a tick from
-the clubhead to it, the hands, and the tolerance band, like the reference photo
-used to define it (clubhead in front of the hands, about 0.08 to the ball side;
-hands and clubhead equally far off the address shaft line). If the takeaway
-isn't marked, this checkpoint says so instead of guessing.
+Where your hands are doesn't matter for this check. The rule started as "the
+club covers the hands", but that depends on where the hands went, and the
+clubhead staying on the address shaft line is the cleaner on-plane test. On the
+reference clips: McIlroy 0.04 outside (on plane); an amateur swing taken away
+inside, 0.50. The key frame shows the address shaft line (orange) with the
+tolerance band either side (grey), a tick from the clubhead square to the line,
+and the hands for reference. If the takeaway isn't marked, this checkpoint says
+so instead of guessing.
 
 **Notes for the checkpoints still to build:**
 - **Takeaway, backswing, top and follow-through (3, 4, 5, 8)** judge where the

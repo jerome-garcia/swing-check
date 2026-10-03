@@ -1,17 +1,16 @@
 """Down-the-line checkpoint 3: takeaway.
 
 On the takeaway frame you mark (shaft parallel to the target line, so from
-behind it points at the camera), the clubhead should sit in front of the
-hands, "covering" them. Measured as the clubhead's sideways offset from the
-hands, in body lengths:
+behind it points at the camera), the clubhead should still be on the shaft
+line you set at address: the club is on plane. Measured as the clubhead's
+distance from that line (square to it), in body lengths:
 
-  covering   within the tolerance either way (camera angle means it rarely
-             lines up exactly)
-  inside     clubhead toward the golfer: taken away behind the hands
-  outside    clubhead toward the ball: taken away in front of the hands
+  on the line  within the tolerance either way
+  inside       clubhead behind the line, on your side: pulled inside / rolled open
+  outside      clubhead in front of the line, toward the ball: picked up outside
 
-The key frame also shows the address shaft line, with a tick from the
-clubhead down to it, for comparison with the address position.
+Where the hands are doesn't matter for this; the key frame shows them for
+reference.
 """
 
 from __future__ import annotations
@@ -21,6 +20,7 @@ import numpy as np
 from swingcheck.analyzers import REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, register
 
 PLANE_COLOR = (0, 140, 255)
+BAND_COLOR = (150, 150, 150)
 HOLD_MS = 400  # how long the takeaway overlays stay up in the annotated video
 
 
@@ -29,53 +29,55 @@ def takeaway(ctx: SwingContext) -> Verdict:
     mark = ctx.marks.checkpoint("takeaway")
     if mark is None:
         raise MissingData("the takeaway isn't marked yet: Edit marks → Takeaway, then click the clubhead and hands")
-    tol = ctx.cfg["covering_tolerance"]
+    tol = ctx.cfg["line_tolerance"]
     clubhead = np.asarray(mark.points["clubhead"], float)
     hands = np.asarray(mark.points["grip"], float)
     pts = ctx.marks.points
     ball = np.asarray(pts["ball"], float)
+    ch0, gr0 = np.asarray(pts["clubhead"], float), np.asarray(pts["grip"], float)
     f = mark.frame
+    if np.linalg.norm(gr0 - ch0) < 1:
+        raise MissingData("the address clubhead and grip marks are on top of each other")
 
     # "Toward the golfer" on screen: from the ball toward the hips at address.
     hip = ctx.midpoint("left_hip", "right_hip")[ctx.marks.address_frame]
     if not np.all(np.isfinite(hip)):
         hip = ctx.value(ctx.track(ctx.side("hip", "trail")), ctx.marks.address_frame, "trail hip")
     toward_golfer = -1.0 if hip[0] < ball[0] else 1.0  # screen x direction pointing at the golfer
-    # inside_by > 0: clubhead is on the golfer's side of the hands.
-    inside_by = ctx.units((clubhead[0] - hands[0]) * toward_golfer)
+
+    # Unit normal to the address shaft line, pointing to the golfer's side.
+    d = (gr0 - ch0) / np.linalg.norm(gr0 - ch0)
+    normal = np.array([-d[1], d[0]])
+    if normal[0] * toward_golfer < 0:
+        normal = -normal
+    # inside_by > 0: clubhead on the golfer's side of the line (inside).
+    inside_by = ctx.units(float(np.dot(clubhead - ch0, normal)))
 
     if inside_by > tol:
-        status, label = "flag", "Clubhead inside the hands"
-        meaning = "Taken away too far inside: the club is behind your hands."
+        status, label = "flag", "Clubhead inside the line"
+        meaning = "Taken away too far inside: the clubhead is behind your address shaft line."
     elif inside_by < -tol:
-        status, label = "flag", "Clubhead outside the hands"
-        meaning = "Taken away outside: the club is in front of your hands."
+        status, label = "flag", "Clubhead outside the line"
+        meaning = "Taken away outside: the clubhead is in front of your address shaft line."
     else:
-        status, label = "ok", "Club covers the hands"
-        meaning = "The clubhead sits in front of your hands, on the same line as at address."
+        status, label = "ok", "Club on plane"
+        meaning = "The clubhead is still on your address shaft line."
     side = "inside" if inside_by > 0 else "outside"
     offset_text = f"{abs(inside_by):.2f} {side}" if abs(inside_by) >= 0.005 else "0.00"
 
-    # Drawing on the takeaway frame: the address shaft line (as in checkpoint 2), a
-    # vertical reference through the hands with the tolerance band, both points, and a
-    # tick from the clubhead down to the address shaft line.
+    # Drawing on the takeaway frame: the address shaft line (as in checkpoint 2) with
+    # the tolerance band either side, a square-on tick from the clubhead to the line,
+    # and the clicked points.
     s = ctx.scale
     show = (f, min(len(ctx.pose) - 1, f + int(round(HOLD_MS * ctx.fps / 1000))))
     color = STATUS_COLORS[status]
-    ch0, gr0 = np.asarray(pts["clubhead"], float), np.asarray(pts["grip"], float)
-    overlays = [
-        Overlay("line", [tuple(ch0), tuple(gr0)], PLANE_COLOR, "", show, 2),
-        Overlay("vline", [(float(hands[0]), float(hands[1]) - 0.35 * s), (float(hands[0]), float(hands[1]) + 0.35 * s)],
-                REFERENCE_COLOR, "", show, 1),
-    ]
+    foot = clubhead - np.dot(clubhead - ch0, normal) * normal
+    overlays = [Overlay("line", [tuple(ch0), tuple(gr0)], PLANE_COLOR, "", show, 2)]
     for edge in (-tol, tol):
-        x = float(hands[0] + edge * s * toward_golfer)
-        overlays.append(Overlay("segment", [(x, float(hands[1]) - 0.12 * s), (x, float(hands[1]) + 0.12 * s)],
-                                (150, 150, 150), "", show, 1))
-    drop = _vertical_drop_to_line(clubhead, ch0, gr0)
-    if drop is not None:
-        overlays.append(Overlay("segment", [tuple(clubhead), tuple(drop)], PLANE_COLOR, "", show, 2))
+        off = normal * edge * s
+        overlays.append(Overlay("line", [tuple(ch0 + off), tuple(gr0 + off)], BAND_COLOR, "", show, 1))
     overlays += [
+        Overlay("segment", [tuple(clubhead), tuple(foot)], color, "", show, 2),
         Overlay("point", [tuple(hands)], REFERENCE_COLOR, "", show, 1),
         Overlay("point", [tuple(clubhead)], color, "", show, 2),
         # Label on the ball side of the clubhead, away from the body.
@@ -87,23 +89,14 @@ def takeaway(ctx: SwingContext) -> Verdict:
         label=label,
         summary=meaning,
         measurements={
-            "clubhead_inside_hands": round(inside_by, 3),
-            "covering_tolerance": tol,
+            "clubhead_inside_line": round(inside_by, 3),
+            "line_tolerance": tol,
             "takeaway_frame": f,
-            "units": "body lengths; + = clubhead on the golfer's side of the hands (inside), - = ball side (outside)",
+            "units": "body lengths, square to the address shaft line; + = golfer's side (inside), - = ball side (outside)",
         },
         rows=[
-            Row("Clubhead vs hands", offset_text, label.removeprefix("Clubhead ").removeprefix("Club "), status),
+            Row("Clubhead vs shaft line", offset_text, label.removeprefix("Clubhead ").removeprefix("Club "), status),
             Row("Takeaway frame", str(f), "marked by you", "ok"),
         ],
         overlays=overlays,
     )
-
-
-def _vertical_drop_to_line(p: np.ndarray, a: np.ndarray, b: np.ndarray) -> np.ndarray | None:
-    """Point straight below/above p on the infinite line through a and b (None if the line is vertical)."""
-    d = b - a
-    if abs(d[0]) < 1e-6:
-        return None
-    y = a[1] + (p[0] - a[0]) * d[1] / d[0]
-    return np.array([p[0], y])
