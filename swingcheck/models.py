@@ -71,7 +71,8 @@ REQUIRED_MARKS: dict[str, tuple[str, ...]] = {
 # Optional marks on later checkpoint frames (the pose model can't see the club),
 # keyed by checkpoint: the points clicked there.
 CHECKPOINT_MARKS: dict[str, dict[str, tuple[str, ...]]] = {
-    "dtl": {"takeaway": ("clubhead", "grip"), "halfway_back": ("clubhead", "grip"), "top": ("clubhead", "grip")},
+    "dtl": {"takeaway": ("clubhead", "grip"), "halfway_back": ("clubhead", "grip"), "top": ("clubhead", "grip"),
+            "downswing": ("clubhead", "grip")},
     "fo": {},
 }
 

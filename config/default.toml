@@ -191,6 +191,21 @@ arm_spine_watch_max = 110
 # this far outside either line (share of torso length) is yellow; beyond, red.
 plane_watch = 0.15
 
+[analyzers.downswing]
+# DTL checkpoint 6, on the frame you mark where the shaft is parallel to the
+# ground coming down (P6). Distances as a share of torso length.
+#
+# Clubhead vs the address shaft line, square to it: + = behind the line (under
+# the plane, the golfer's side), - = above it (over the top).
+under_min = 0.0         # green: on the line to 40% under
+under_max = 0.40
+under_watch_min = -0.15 # yellow: up to 15% above (steep) or 40-70% under (very
+under_watch_max = 0.70  # shallow); red beyond (over the top / stuck)
+# Shallowing: that distance minus the same one at your takeaway. + = the club
+# comes down flatter than it went back.
+shallow_min = 0.0         # green: as flat or flatter coming down
+shallow_watch_min = -0.20 # yellow: up to 20% steeper; red beyond (over the top loop)
+
 [analyzers.hands_at_impact]
 # Lead wrist x minus ball x along the target direction, body units.
 ahead_threshold = 0.10        # >= this -> "ahead" (good shaft lean)

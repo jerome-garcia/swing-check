@@ -13,6 +13,8 @@ const STEPS = {
       intro: "Scrub to where your lead arm is parallel to the ground (hands about level with your lead shoulder). Click the clubhead, then your hands. This frame is the halfway-back checkpoint." },
     { key: "top", title: "Top", points: ["clubhead", "grip"], optional: true,
       intro: "Scrub to the top of your backswing (the moment the club stops going back). Click the clubhead, then your hands. This frame is the top checkpoint." },
+    { key: "downswing", title: "Downswing", points: ["clubhead", "grip"], optional: true,
+      intro: "Scrub to where the shaft is parallel to the ground on the way down (hands about hip height). Click the clubhead, then your hands. This frame is the downswing checkpoint." },
   ],
   fo: [
     { key: "address", title: "Address", points: ["ball"], optional: false,
@@ -39,11 +41,17 @@ const STEP_POINT_INFO = {
     clubhead: { label: "Clubhead", hint: "Center of the clubhead, or the end of the shaft you can see if it's out of frame" },
     grip: { label: "Hands", hint: "Center of your hands" },
   },
+  downswing: {
+    clubhead: { label: "Clubhead", hint: "Center of the clubhead (it may be blurred: click the middle of the streak)" },
+    grip: { label: "Hands", hint: "Center of your hands" },
+  },
 };
 // Where to start a checkpoint step that has no detected phase of its own.
 const FRAME_GUESS = {
   // Lead arm parallel comes about 40% of the way from takeaway to the top.
   halfway_back: p => (p.takeaway !== undefined && p.top !== undefined ? p.takeaway + 0.4 * (p.top - p.takeaway) : undefined),
+  // Shaft parallel coming down is about halfway from the early downswing to impact.
+  downswing: p => (p.early_downswing !== undefined && p.impact !== undefined ? (p.early_downswing + p.impact) / 2 : undefined),
 };
 const pointInfo = (step, name) => ({ ...POINT_INFO[name], ...((STEP_POINT_INFO[step] || {})[name] || {}) });
 const LOUPE_SIZE = 150;

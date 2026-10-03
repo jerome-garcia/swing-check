@@ -29,7 +29,7 @@ of the swing.
 | 3 | **Takeaway** | When the club is parallel to the target line in the takeaway, the clubhead is still on the address shaft line (on plane) | ✅ Implemented |
 | 4 | **Backswing (halfway back)** | At lead arm parallel, the hands split the trail biceps and the shaft points back just inside the golf ball | ✅ Implemented |
 | 5 | **Top of backswing** | The lead (left) arm matches the shoulders, 90° to the spine, and the hands are on plane | ✅ Implemented |
-| 6 | **Downswing** | The club comes back down the plane; check shallowing | ⬜ Not yet |
+| 6 | **Downswing** | With the shaft parallel to the ground coming down, the club is back on plane and flatter than at the takeaway (shallowing) | ✅ Implemented |
 | 7 | **Impact** | (details to be defined) | ⬜ Not yet |
 | 8 | **Follow-through** | The club exits on the same line the golfer had in the backswing | ⬜ Not yet |
 
@@ -141,6 +141,27 @@ swing reads 66° (arm lifted, red) with the hands 10% above the upper line
 in its color, and a dashed green line square to the spine where the arm should
 be.
 
+**6. Downswing (implemented).** On the **Downswing** marking step, scrub to
+where the **shaft is parallel to the ground on the way down** (P6, hands about
+hip height; the mirror of the takeaway) and click the **clubhead** and your
+**hands**. Settings live in `[analyzers.downswing]`.
+
+| Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
+|---|---|---|---|---|
+| **Clubhead vs shaft line** | the clubhead's distance from the address shaft line, square to it (as at the takeaway), as % of torso length | on the line to 40% under (behind the hands): **Club down the plane** | up to 15% above (*slightly steep*) or 40–70% under (*well under*) | more than 15% above: **over the top**; more than 70% under: **stuck** (too flat) |
+| **Shallowing** | that distance minus the same one at your takeaway: + = the club comes down flatter than it went back | 0% or more flatter: **Shallowed** | up to 20% steeper | more than 20% steeper than going back: the over-the-top loop |
+
+Why compare with the takeaway and not shaft angles: at P6, like at the
+takeaway, the shaft points roughly at the camera, so its angle on screen is
+unreliable, but the clubhead's position against the address shaft line is
+not. Shallowing needs the takeaway marked; without it the card shows the
+plane check only. No reference photo for this one: the bands are from
+standard teaching, checked on McIlroy (13% under the line, 17% flatter than
+his takeaway: green) and an amateur swing (back inside at 50%, then about on
+the line coming down: 28% *steeper* than going back, the classic loop, red).
+In dim, low-frame-rate footage the clubhead can be a streak and the exact P6
+frame can be missing; pick the nearest frame.
+
 **Notes for the checkpoints still to build:**
 - **Follow-through (8)** judges where the **club** is. The pose model
   only tracks the body, so you mark the club on those frames in the marking
@@ -152,8 +173,7 @@ be.
   checkpoints can use them.
 - Drawing the hand path (wrist trail) on the video and key frames is switched
   off (`[output] show_hand_path = false`): no current check uses it, and wrist
-  tracking makes it jittery. The downswing checkpoint (6) may bring it back,
-  smoothed.
+  tracking makes it jittery.
 - The earlier down-the-line check (hands between a shaft line and a shoulder
   line at takeaway, top and early downswing) was removed when this list
   replaced it.
@@ -350,6 +370,10 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    **Top (optional).** Switch to the **Top** step (it starts on the detected
    top), scrub to where the club stops going back, and click the **clubhead**
    and then your **hands**.
+
+   **Downswing (optional).** Switch to the **Downswing** step, scrub to where
+   the shaft is parallel to the ground coming down, and click the
+   **clubhead** and then your **hands**.
 
    **Trim the clip** (below the points) cuts out practice swings or idle time:
    scrub to a frame, press **Start here** or **End here**, then **Apply trim**.

@@ -1,0 +1,130 @@
+"""Down-the-line checkpoint 6: downswing (shallowing).
+
+On the frame you mark where the shaft is parallel to the ground coming down
+(P6, the mirror of the takeaway), using the clubhead and hands you click:
+
+  down the plane  the clubhead's distance from the address shaft line, square
+                  to it (as at the takeaway). Coming down it should be on the
+                  line or a little under it (behind the hands). Above the line
+                  = over the top (steep); far under = stuck (too flat).
+  shallowing      that distance minus the same distance at your takeaway: the
+                  club should come down flatter than it went back (clubhead
+                  further behind the line). Steeper coming down than going back
+                  is the over-the-top loop. Needs the takeaway marked.
+
+Distances are shares of torso length; bands are in [analyzers.downswing].
+"""
+
+from __future__ import annotations
+
+import numpy as np
+
+from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
+                                  pct, register)
+from swingcheck.analyzers.dtl_takeaway import address_line
+
+PLANE_COLOR = (0, 140, 255)
+BAND_COLOR = (150, 150, 150)
+HOLD_MS = 400
+ORDER = {"ok": 0, "warn": 1, "flag": 2}
+
+
+@register("downswing", view="dtl", title="Downswing", phase="early_downswing")
+def downswing(ctx: SwingContext) -> Verdict:
+    mark = ctx.marks.checkpoint("downswing")
+    if mark is None:
+        raise MissingData("the downswing isn't marked yet: Edit marks → Downswing, then click the clubhead and hands")
+    cfg = ctx.cfg
+    f = mark.frame
+    clubhead = np.asarray(mark.points["clubhead"], float)
+    hands = np.asarray(mark.points["grip"], float)
+    line = address_line(ctx)
+    under = line.inside_by(ctx, clubhead)  # + = behind the line (under the plane), - = above it
+
+    # 1. Down the plane.
+    plane_status = grade(under, cfg["under_min"], cfg["under_max"], cfg["under_watch_min"], cfg["under_watch_max"])
+    soft = plane_status == "warn"
+    if plane_status == "ok":
+        plane_label, plane_meaning = "Club down the plane", "the club is on plane, clubhead just behind your hands"
+    elif under < cfg["under_min"]:
+        plane_label = "Clubhead slightly above the plane" if soft else "Clubhead above the plane"
+        plane_meaning = ("the clubhead is a little above your address shaft line (steep)" if soft else
+                         "the clubhead is well above your address shaft line: over the top")
+    else:
+        plane_label = "Clubhead well under the plane" if soft else "Clubhead stuck under the plane"
+        plane_meaning = ("the clubhead is well behind your address shaft line (very shallow)" if soft else
+                         "the clubhead is far behind your address shaft line: stuck, too flat")
+
+    # 2. Shallowing vs the takeaway (same measure, going back).
+    rows_extra: list[Row] = []
+    take = ctx.marks.checkpoint("takeaway")
+    shallowing = None
+    shallow_status = None
+    if take is not None:
+        shallowing = under - line.inside_by(ctx, take.points["clubhead"])
+        shallow_status = grade(shallowing, cfg["shallow_min"], np.inf, cfg["shallow_watch_min"], np.inf)
+        if shallow_status == "ok":
+            shallow_label, shallow_meaning = "Shallowed", "it comes down flatter than it went back"
+        elif shallow_status == "warn":
+            shallow_label, shallow_meaning = "Slightly steeper than the takeaway", "it comes down a little steeper than it went back"
+        else:
+            shallow_label, shallow_meaning = ("Steeper than the takeaway",
+                                              "it comes down much steeper than it went back: the over-the-top loop")
+        direction = "flatter" if shallowing >= 0 else "steeper"
+        rows_extra.append(Row(
+            "Shallowing", f"{ctx.distance_text(shallowing)} {direction}",
+            f"{pct(abs(shallowing))} of torso length vs your takeaway · {shallow_label.lower()} "
+            f"(green {pct(cfg['shallow_min'])} or more flatter, red past {pct(-cfg['shallow_watch_min'])} steeper)",
+            shallow_status))
+    else:
+        rows_extra.append(Row("Shallowing", "–", "mark the takeaway to compare coming down with going back", "error"))
+
+    statuses = [plane_status] + ([shallow_status] if shallow_status else [])
+    status = max(statuses, key=ORDER.__getitem__)
+    label = plane_label + (f", {shallow_label[0].lower() + shallow_label[1:]}" if shallow_status else "")
+    summary = f"Coming down, {plane_meaning}" + (f", and {shallow_meaning}." if shallow_status else ".")
+
+    # Drawing: the address shaft line with the on-plane band (under side), a square tick
+    # from the clubhead to the line, and the takeaway clubhead for comparison.
+    s = ctx.scale
+    show = (f, min(len(ctx.pose) - 1, f + int(round(HOLD_MS * ctx.fps / 1000))))
+    col = STATUS_COLORS[plane_status]
+    foot = clubhead - (under * s) * line.normal
+    overlays = [Overlay("line", [tuple(line.clubhead), tuple(line.grip)], PLANE_COLOR, "", show, 2)]
+    for edge in (cfg["under_min"], cfg["under_max"]):
+        if edge:
+            off = line.normal * edge * s
+            overlays.append(Overlay("line", [tuple(line.clubhead + off), tuple(line.grip + off)], BAND_COLOR, "", show, 1))
+    overlays += [
+        Overlay("segment", [tuple(clubhead), tuple(foot)], col, "", show, 2),
+        Overlay("point", [tuple(hands)], REFERENCE_COLOR, "", show, 1),
+        Overlay("point", [tuple(clubhead)], col, "", show, 2),
+        Overlay("text", [(float(clubhead[0]) - line.toward_golfer * 0.15 * s, float(clubhead[1]) + 0.25 * s)], col,
+                plane_label, show),
+    ]
+    if take is not None:
+        overlays.append(Overlay("point", [tuple(take.points["clubhead"])], BAND_COLOR, "clubhead at takeaway", show, 1))
+
+    side = "under" if under >= 0 else "above"
+    return Verdict(
+        status=status,
+        label=label,
+        summary=summary,
+        frame=f,
+        measurements={
+            "clubhead_under_line": round(under, 3),
+            "shallowing_vs_takeaway": round(shallowing, 3) if shallowing is not None else None,
+            "downswing_frame": f,
+            "units": "share of torso length, square to the address shaft line; under: + = behind the line "
+                     "(golfer's side), - = above it; shallowing: + = flatter coming down than at the takeaway",
+        },
+        rows=[
+            Row("Clubhead vs shaft line", f"{ctx.distance_text(under)} {side}",
+                f"{pct(abs(under))} of torso length · {plane_label.lower()} "
+                f"(green {pct(cfg['under_min'])}–{pct(cfg['under_max'])} under, "
+                f"red past {pct(-cfg['under_watch_min'])} above or {pct(cfg['under_watch_max'])} under)", plane_status),
+            *rows_extra,
+            Row("Downswing frame", str(f), "marked by you", "ok"),
+        ],
+        overlays=overlays,
+    )

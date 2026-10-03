@@ -22,6 +22,8 @@ reference.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 
 from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, pct,
@@ -30,6 +32,38 @@ from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, O
 PLANE_COLOR = (0, 140, 255)
 BAND_COLOR = (150, 150, 150)
 HOLD_MS = 400  # how long the takeaway overlays stay up in the annotated video
+
+
+@dataclass
+class AddressLine:
+    """The address shaft line (clicked clubhead -> grip) and its golfer-side normal."""
+
+    clubhead: np.ndarray
+    grip: np.ndarray
+    normal: np.ndarray  # unit, square to the line, pointing to the golfer's side
+    toward_golfer: float  # screen x direction pointing at the golfer (+1 or -1)
+
+    def inside_by(self, ctx: SwingContext, point) -> float:
+        """Distance of a point from the line, square to it, in torso lengths; + = golfer's side (inside)."""
+        return ctx.units(float(np.dot(np.asarray(point, float) - self.clubhead, self.normal)))
+
+
+def address_line(ctx: SwingContext) -> AddressLine:
+    pts = ctx.marks.points
+    ball = np.asarray(pts["ball"], float)
+    ch0, gr0 = np.asarray(pts["clubhead"], float), np.asarray(pts["grip"], float)
+    if np.linalg.norm(gr0 - ch0) < 1:
+        raise MissingData("the address clubhead and grip marks are on top of each other")
+    # "Toward the golfer" on screen: from the ball toward the hips at address.
+    hip = ctx.midpoint("left_hip", "right_hip")[ctx.marks.address_frame]
+    if not np.all(np.isfinite(hip)):
+        hip = ctx.value(ctx.track(ctx.side("hip", "trail")), ctx.marks.address_frame, "trail hip")
+    toward_golfer = -1.0 if hip[0] < ball[0] else 1.0
+    d = (gr0 - ch0) / np.linalg.norm(gr0 - ch0)
+    normal = np.array([-d[1], d[0]])
+    if normal[0] * toward_golfer < 0:
+        normal = -normal
+    return AddressLine(ch0, gr0, normal, toward_golfer)
 
 
 @register("takeaway", view="dtl", title="Takeaway", phase="takeaway")
@@ -41,26 +75,10 @@ def takeaway(ctx: SwingContext) -> Verdict:
     flag_at = ctx.cfg["flag_distance"]
     clubhead = np.asarray(mark.points["clubhead"], float)
     hands = np.asarray(mark.points["grip"], float)
-    pts = ctx.marks.points
-    ball = np.asarray(pts["ball"], float)
-    ch0, gr0 = np.asarray(pts["clubhead"], float), np.asarray(pts["grip"], float)
     f = mark.frame
-    if np.linalg.norm(gr0 - ch0) < 1:
-        raise MissingData("the address clubhead and grip marks are on top of each other")
-
-    # "Toward the golfer" on screen: from the ball toward the hips at address.
-    hip = ctx.midpoint("left_hip", "right_hip")[ctx.marks.address_frame]
-    if not np.all(np.isfinite(hip)):
-        hip = ctx.value(ctx.track(ctx.side("hip", "trail")), ctx.marks.address_frame, "trail hip")
-    toward_golfer = -1.0 if hip[0] < ball[0] else 1.0  # screen x direction pointing at the golfer
-
-    # Unit normal to the address shaft line, pointing to the golfer's side.
-    d = (gr0 - ch0) / np.linalg.norm(gr0 - ch0)
-    normal = np.array([-d[1], d[0]])
-    if normal[0] * toward_golfer < 0:
-        normal = -normal
-    # inside_by > 0: clubhead on the golfer's side of the line (inside).
-    inside_by = ctx.units(float(np.dot(clubhead - ch0, normal)))
+    line = address_line(ctx)
+    ch0, gr0, normal, toward_golfer = line.clubhead, line.grip, line.normal, line.toward_golfer
+    inside_by = line.inside_by(ctx, clubhead)
 
     if inside_by > flag_at:
         status, label = "flag", "Clubhead well inside the line"
