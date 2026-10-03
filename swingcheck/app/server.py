@@ -30,9 +30,15 @@ FACE_ON_ENABLED = False
 FACE_ON_DISABLED_MESSAGE = "Face-on analysis is coming in a future release."
 
 
+class CheckpointMarksIn(BaseModel):
+    frame: int
+    points: dict[str, tuple[float, float]] = {}
+
+
 class MarksIn(BaseModel):
     address_frame: int
     points: dict[str, tuple[float, float]]
+    checkpoints: dict[str, CheckpointMarksIn] = {}  # optional, e.g. {"takeaway": {...}}
 
 
 class ViewIn(BaseModel):
@@ -124,10 +130,12 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
             raise HTTPException(409, "The video hasn't been converted yet.")
         info = VideoInfo.load(folder / "video.json")
         try:
-            marks = save_marks(folder, meta.view, body.address_frame, body.points, info)
+            marks = save_marks(folder, meta.view, body.address_frame, body.points, info,
+                               checkpoints={k: v.model_dump() for k, v in body.checkpoints.items()})
         except PipelineError as e:
             raise HTTPException(400, str(e)) from None
-        return {"view": marks.view, "address_frame": marks.address_frame, "points": marks.points}
+        return {"view": marks.view, "address_frame": marks.address_frame, "points": marks.points,
+                "checkpoints": {k: {"frame": c.frame, "points": c.points} for k, c in marks.checkpoints.items()}}
 
     @app.post("/api/swings/{swing_id}/view")
     def set_view(swing_id: str, body: ViewIn) -> dict[str, Any]:

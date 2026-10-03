@@ -85,9 +85,12 @@ impact_offset_ms = 0
 # Top search starts where the hands were last at impact height before the
 # downswing, give or take this tolerance (body units).
 low_level_tolerance = 0.15
-# Takeaway / early downswing checkpoints: frames where the hands cross this
-# height, as a fraction of the way from address hand height to top hand height.
-checkpoint_fraction = 0.35
+# Takeaway / early downswing checkpoints: frames where the hands cross these
+# heights, as a fraction of the way from address hand height to top hand height.
+# Takeaway is when the shaft is about parallel to the target line (hands at
+# about hip height); a takeaway frame you mark replaces it.
+takeaway_fraction = 0.17
+downswing_fraction = 0.35
 
 [analyzers]
 # Names of analyzers to skip, e.g. ["head_drift"].

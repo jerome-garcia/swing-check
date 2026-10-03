@@ -19,7 +19,7 @@ from typing import Any
 from swingcheck.analyzers import SwingContext, Verdict, run_analyzers
 from swingcheck.body import body_scale, hands
 from swingcheck.ingest import VideoInfo, normalize
-from swingcheck.models import REQUIRED_MARKS, Marks, Point, PoseSeq
+from swingcheck.models import CHECKPOINT_MARKS, REQUIRED_MARKS, CheckpointMark, Marks, Point, PoseSeq
 from swingcheck.output.annotate import Annotator, write_outputs
 from swingcheck.output.report import build_report
 from swingcheck.phases import PhaseError, Phases, detect_phases, get_phases
@@ -71,15 +71,33 @@ def ingest(source: Path, run_dir: Path, config: dict[str, Any], start: float | N
     return info
 
 
-def save_marks(run_dir: Path, view: str, address_frame: int, points: dict[str, Point], info: VideoInfo) -> Marks:
+def save_marks(run_dir: Path, view: str, address_frame: int, points: dict[str, Point], info: VideoInfo,
+               checkpoints: dict[str, dict[str, Any]] | None = None) -> Marks:
+    """Save the address marks, plus optional checkpoint marks such as
+    {"takeaway": {"frame": 195, "points": {"clubhead": (x, y), "grip": (x, y)}}}."""
     missing = [name for name in REQUIRED_MARKS[view] if name not in points]
     if missing:
         raise PipelineError(f"Missing marks: {', '.join(missing)}")
-    if not 0 <= address_frame < max(1, info.frame_count):
+    frame_count = max(1, info.frame_count)
+    if not 0 <= address_frame < frame_count:
         raise PipelineError(f"Address frame {address_frame} is outside the clip")
+    kept: dict[str, CheckpointMark] = {}
+    for name, cp in (checkpoints or {}).items():
+        allowed = CHECKPOINT_MARKS[view].get(name)
+        if allowed is None:
+            raise PipelineError(f"Unknown checkpoint marks: {name}")
+        cp_points = {k: (float(x), float(y)) for k, (x, y) in (cp.get("points") or {}).items() if k in allowed}
+        if not cp_points:
+            continue  # nothing clicked for this checkpoint yet
+        frame = int(cp["frame"])
+        if not 0 <= frame < frame_count:
+            raise PipelineError(f"{name.capitalize()} frame {frame} is outside the clip")
+        if frame <= address_frame:
+            raise PipelineError(f"The {name} frame must come after the address frame")
+        kept[name] = CheckpointMark(frame=frame, points=cp_points)
     marks = Marks(view=view, address_frame=int(address_frame),
                   points={k: (float(x), float(y)) for k, (x, y) in points.items() if k in REQUIRED_MARKS[view]},
-                  video_signature=video_signature(info))
+                  video_signature=video_signature(info), checkpoints=kept)
     marks.save(run_dir / "marks.json")
     return marks
 
@@ -155,9 +173,13 @@ def analyze(
             run_dir, hand_track, pose.fps, scale, config, video_signature(info), overrides or {}, clear_overrides,
             marked_address=marks.address_frame if view == "dtl" else None,
             search=_downswing_search(pose),
+            marked_takeaway=marks.checkpoint("takeaway").frame if marks.checkpoint("takeaway") else None,
         )
     except (PhaseError, ValueError) as e:
         raise PipelineError(f"{e} Set the phase frames manually.") from e
+    takeaway_mark = marks.checkpoint("takeaway")
+    if takeaway_mark and phases.takeaway != takeaway_mark.frame:
+        warnings.append("The takeaway frame you marked isn't between address and the top, so it was ignored.")
     if detect_error:
         warnings.append(f"Automatic phase detection failed ({detect_error}); using the frames you set.")
     detected = pose.detected()

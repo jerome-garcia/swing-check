@@ -61,10 +61,12 @@ short irons and wedges 55–65°. The reference photo used to set these measured
 
 **Notes for the checkpoints still to build:**
 - **Takeaway, backswing, top and follow-through (3, 4, 5, 8)** judge where the
-  **club** is. The pose model only tracks the body, so these need the club's
-  position on those frames. The proposed approach is for you to click the shaft
-  on each checkpoint frame in the marking screen, the same way as the ball and
-  grip at address. Not decided yet.
+  **club** is. The pose model only tracks the body, so you mark the club on
+  those frames in the marking screen. Decided for takeaway: a **Takeaway** step
+  where you pick the frame (shaft parallel to the target line) and click the
+  clubhead and hands (built; stored in `marks.json` under `checkpoints`). The
+  takeaway check itself (does the clubhead cover the hands; within ~0.10 body
+  lengths either way, inside vs outside) is waiting on a reference photo.
 - The app already finds takeaway, top, early downswing and impact frames
   automatically from the hand path (adjustable on the results page), so new
   checkpoints can use them.
@@ -252,6 +254,11 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    the address checks are measured on it, so pick a frame where you're fully set
    up and still. If a swing was saved with the wrong camera view, switch it
    under **Camera view** at the top of this screen.
+
+   **Takeaway (optional).** Switch to the **Takeaway** step, scrub to where the
+   shaft is parallel to the target line (from behind it points at the camera),
+   and click the **clubhead** and then your **hands**. That frame becomes the
+   takeaway checkpoint. It starts near the automatically detected takeaway.
 
    **Trim the clip** (below the points) cuts out practice swings or idle time:
    scrub to a frame, press **Start here** or **End here**, then **Apply trim**.

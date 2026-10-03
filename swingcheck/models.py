@@ -68,6 +68,21 @@ REQUIRED_MARKS: dict[str, tuple[str, ...]] = {
     "fo": ("ball",),
 }
 
+# Optional marks on later checkpoint frames (the pose model can't see the club),
+# keyed by checkpoint: the points clicked there.
+CHECKPOINT_MARKS: dict[str, dict[str, tuple[str, ...]]] = {
+    "dtl": {"takeaway": ("clubhead", "grip")},
+    "fo": {},
+}
+
+
+@dataclass
+class CheckpointMark:
+    """Points clicked on one checkpoint's frame, e.g. the takeaway."""
+
+    frame: int
+    points: dict[str, Point]
+
 
 @dataclass
 class Marks:
@@ -77,6 +92,8 @@ class Marks:
     # Identifies the normalized video the marks were made on, so a re-trim or
     # re-encode invalidates them instead of silently misplacing points.
     video_signature: dict[str, float | int | None] = field(default_factory=dict)
+    # Optional marks on later frames, e.g. {"takeaway": CheckpointMark(...)}.
+    checkpoints: dict[str, CheckpointMark] = field(default_factory=dict)
 
     def save(self, path: Path) -> None:
         path.write_text(json.dumps(asdict(self), indent=2))
@@ -84,8 +101,22 @@ class Marks:
     @classmethod
     def load(cls, path: Path) -> "Marks":
         data = json.loads(path.read_text())
-        data["points"] = {k: (float(v[0]), float(v[1])) for k, v in data["points"].items()}
+        data["points"] = _points(data["points"])
+        data["checkpoints"] = {
+            name: CheckpointMark(frame=int(cp["frame"]), points=_points(cp["points"]))
+            for name, cp in (data.get("checkpoints") or {}).items()
+        }
         return cls(**data)
+
+    def checkpoint(self, name: str) -> CheckpointMark | None:
+        """A checkpoint's marks, if all of its points were clicked."""
+        cp = self.checkpoints.get(name)
+        needed = CHECKPOINT_MARKS.get(self.view, {}).get(name, ())
+        return cp if cp is not None and all(p in cp.points for p in needed) else None
 
     def is_complete(self) -> bool:
         return all(name in self.points for name in REQUIRED_MARKS[self.view])
+
+
+def _points(raw: dict) -> dict[str, Point]:
+    return {k: (float(v[0]), float(v[1])) for k, v in raw.items()}

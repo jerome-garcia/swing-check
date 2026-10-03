@@ -1,9 +1,19 @@
 import { api, el, features, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
 import { swingHeader } from "./swing.js";
 
-const POINTS = {
-  dtl: ["ball", "clubhead", "grip"],
-  fo: ["ball"],
+// Marking steps per view. Address is required; later checkpoints are optional and
+// each has its own frame (the pose model can't see the club, so you click it).
+const STEPS = {
+  dtl: [
+    { key: "address", title: "Address", points: ["ball", "clubhead", "grip"], optional: false,
+      intro: "Scrub to your address position (set up and still), then click the points. This frame is used for the address checks." },
+    { key: "takeaway", title: "Takeaway", points: ["clubhead", "grip"], optional: true,
+      intro: "Scrub to where the shaft is parallel to the target line (from behind, it points at the camera). Click the clubhead, then your hands. This frame is the takeaway checkpoint." },
+  ],
+  fo: [
+    { key: "address", title: "Address", points: ["ball"], optional: false,
+      intro: "Scrub to your address position, then click the ball." },
+  ],
 };
 // Label offsets (CSS px) keep the ball and clubhead labels apart; those points sit together.
 const POINT_INFO = {
@@ -11,6 +21,14 @@ const POINT_INFO = {
   clubhead: { label: "Clubhead", hint: "The hosel, where the shaft meets the head", color: "#ffc233", dx: -70, dy: -10 },
   grip: { label: "Grip", hint: "Center of your hands on the shaft", color: "#4fb3ff", dx: 11, dy: -9 },
 };
+// Wording for points on a later checkpoint frame.
+const STEP_POINT_INFO = {
+  takeaway: {
+    clubhead: { label: "Clubhead", hint: "Center of the clubhead" },
+    grip: { label: "Hands", hint: "Center of your hands" },
+  },
+};
+const pointInfo = (step, name) => ({ ...POINT_INFO[name], ...((STEP_POINT_INFO[step] || {})[name] || {}) });
 const LOUPE_SIZE = 150;
 const LOUPE_ZOOM = 4;
 
@@ -23,18 +41,36 @@ export async function renderMark(view, id, isCurrent) {
   }
 
   const v = s.video;
-  const required = POINTS[s.view];
+  const steps = STEPS[s.view];
   const marksValid = s.status === "marked" || s.status === "analyzed";
-  // Point positions survive a re-trim or a view change (the camera didn't move),
+  const clampFrame = f => Math.max(0, Math.min(v.frame_count - 1, Math.round(f)));
+  // Address point positions survive a re-trim or a view change (the camera didn't move),
   // so keep the ones this view uses as a starting point.
-  const kept = Object.fromEntries(Object.entries((s.marks && s.marks.points) || {}).filter(([n]) => required.includes(n)));
+  const addressFrame = s.marks ? clampFrame(s.marks.address_frame) : 0;
+  const stepState = {};
+  for (const st of steps) {
+    if (st.key === "address") {
+      stepState.address = { frame: addressFrame, points: pick((s.marks && s.marks.points) || {}, st.points) };
+      continue;
+    }
+    // Later checkpoints: saved marks (only if still valid for this trim), else the detected
+    // frame from the last analysis, else a guess just after address.
+    const saved = marksValid && s.marks && s.marks.checkpoints ? s.marks.checkpoints[st.key] : null;
+    const detected = marksValid && s.analysis && s.analysis.phases ? s.analysis.phases[st.key] : undefined;
+    stepState[st.key] = {
+      frame: clampFrame(saved ? saved.frame : detected !== undefined ? detected : addressFrame + 0.6 * v.fps),
+      points: saved ? pick(saved.points, st.points) : {},
+    };
+  }
   const state = {
-    frame: s.marks ? Math.min(s.marks.address_frame, v.frame_count - 1) : 0,
-    points: kept,
+    active: "address",
+    steps: stepState,
     cursor: null, // {x, y} in video pixels while hovering/aiming
     aiming: false,
     touch: false,
   };
+  const stepDef = () => steps.find(st => st.key === state.active);
+  const cur = () => state.steps[state.active];
 
   // --- Frame images ---------------------------------------------------------
   const canvas = el("canvas", { class: "mark-canvas", tabindex: "0", "aria-label": "Video frame: click to place the next point" });
@@ -110,24 +146,25 @@ export async function renderMark(view, id, isCurrent) {
     if (img) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     const dpr = window.devicePixelRatio || 1;
 
-    if (state.points.clubhead && state.points.grip) {
-      const [ax, ay] = toCanvas(...state.points.clubhead);
-      const [bx, by] = toCanvas(...state.points.grip);
+    const points = cur().points;
+    if (points.clubhead && points.grip) {
+      const [ax, ay] = toCanvas(...points.clubhead);
+      const [bx, by] = toCanvas(...points.grip);
       ctx.strokeStyle = POINT_INFO.clubhead.color;
       ctx.lineWidth = 2 * dpr;
       ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
     }
-    for (const name of required) {
-      const p = state.points[name];
+    for (const name of stepDef().points) {
+      const p = points[name];
       if (!p) continue;
       const [cx, cy] = toCanvas(...p);
+      const info = pointInfo(state.active, name);
       ctx.lineWidth = 3 * dpr;
       ctx.strokeStyle = "rgba(0,0,0,0.8)";
       ctx.beginPath(); ctx.arc(cx, cy, 7 * dpr, 0, Math.PI * 2); ctx.stroke();
       ctx.lineWidth = 2 * dpr;
-      ctx.strokeStyle = POINT_INFO[name].color;
+      ctx.strokeStyle = info.color;
       ctx.beginPath(); ctx.arc(cx, cy, 7 * dpr, 0, Math.PI * 2); ctx.stroke();
-      const info = POINT_INFO[name];
       label(ctx, info.label, cx + info.dx * dpr, cy + info.dy * dpr, info.color, dpr);
     }
     if (state.cursor && nextPoint()) drawLoupe(dpr);
@@ -170,18 +207,20 @@ export async function renderMark(view, id, isCurrent) {
   }
 
   // --- Points ---------------------------------------------------------------
-  const nextPoint = () => required.find(n => !state.points[n]) || null;
+  const nextPoint = () => stepDef().points.find(n => !cur().points[n]) || null;
+  const complete = key => steps.find(st => st.key === key).points.every(n => state.steps[key].points[n]);
+  const started = key => Object.keys(state.steps[key].points).length > 0;
 
   function placePoint(p) {
     const name = nextPoint();
     if (!name) return;
-    state.points[name] = [Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10];
+    cur().points[name] = [Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10];
     refresh();
   }
 
   function undo() {
-    const placed = required.filter(n => state.points[n]);
-    if (placed.length) delete state.points[placed[placed.length - 1]];
+    const placed = stepDef().points.filter(n => cur().points[n]);
+    if (placed.length) delete cur().points[placed[placed.length - 1]];
     refresh();
   }
 
@@ -209,43 +248,70 @@ export async function renderMark(view, id, isCurrent) {
   canvas.addEventListener("pointerleave", e => { if (e.pointerType === "mouse" && !state.aiming) { state.cursor = null; draw(); } });
 
   // --- Scrubber -------------------------------------------------------------
-  const slider = el("input", { type: "range", min: 0, max: v.frame_count - 1, value: state.frame, class: "scrub", "aria-label": "Frame" });
+  const slider = el("input", { type: "range", min: 0, max: v.frame_count - 1, value: cur().frame, class: "scrub", "aria-label": "Frame" });
   const frameLabel = el("span", { class: "frame-label" });
   slider.addEventListener("input", () => setFrame(Number(slider.value)));
 
   function setFrame(f) {
-    state.frame = Math.max(0, Math.min(v.frame_count - 1, f));
-    slider.value = state.frame;
-    frameLabel.textContent = `Frame ${state.frame} · ${(state.frame / v.fps).toFixed(3)}s`;
-    showFrame(state.frame);
+    cur().frame = clampFrame(f);
+    slider.value = cur().frame;
+    frameLabel.textContent = `Frame ${cur().frame} · ${(cur().frame / v.fps).toFixed(3)}s`;
+    showFrame(cur().frame);
   }
-  const step = n => el("button", { class: "btn small", type: "button", onclick: () => setFrame(state.frame + n),
+  const step = n => el("button", { class: "btn small", type: "button", onclick: () => setFrame(cur().frame + n),
     title: `${n > 0 ? "Forward" : "Back"} ${Math.abs(n)} frame${Math.abs(n) > 1 ? "s" : ""}` },
   n === -10 ? "«" : n === -1 ? "‹" : n === 1 ? "›" : "»");
 
   // --- Sidebar --------------------------------------------------------------
   const pointList = el("ol", { class: "point-list" });
+  const stepIntro = el("p", { class: "subtle small" });
+  const stepTabs = el("div", { class: "step-tabs", role: "tablist" });
   const saveBtn = el("button", { class: "btn primary block", type: "button", onclick: save }, "Save marks");
   const saveError = el("div", { class: "notice error", hidden: true });
 
+  function selectStep(key) {
+    state.active = key;
+    state.cursor = null;
+    setFrame(cur().frame);
+    refresh();
+  }
+
   function refresh() {
     const next = nextPoint();
-    pointList.replaceChildren(...required.map(name => {
-      const done = Boolean(state.points[name]);
+    stepTabs.replaceChildren(...steps.map(st => el("button", {
+      type: "button", role: "tab", class: `step-tab ${st.key === state.active ? "selected" : ""}`,
+      "aria-selected": String(st.key === state.active), onclick: () => selectStep(st.key),
+    },
+    el("span", {}, st.title),
+    el("span", { class: "step-tab-state" },
+      complete(st.key) ? "✓" : started(st.key) ? "…" : st.optional ? "optional" : ""))));
+    stepIntro.textContent = stepDef().intro;
+    pointList.replaceChildren(...stepDef().points.map(name => {
+      const done = Boolean(cur().points[name]);
+      const info = pointInfo(state.active, name);
       return el("li", { class: `${done ? "done" : ""} ${name === next ? "next" : ""}` },
-        el("span", { class: "swatch", style: { background: POINT_INFO[name].color } }),
-        el("div", {}, el("strong", {}, POINT_INFO[name].label), el("div", { class: "subtle small" }, POINT_INFO[name].hint)),
+        el("span", { class: "swatch", style: { background: info.color } }),
+        el("div", {}, el("strong", {}, info.label), el("div", { class: "subtle small" }, info.hint)),
         el("span", { class: "check" }, done ? "✓" : name === next ? "Click it" : ""));
     }));
-    saveBtn.disabled = Boolean(next);
+    saveBtn.disabled = !complete("address");
     draw();
   }
 
   async function save() {
     saveError.hidden = true;
+    const unfinished = steps.filter(st => st.optional && started(st.key) && !complete(st.key));
+    if (unfinished.length) {
+      saveError.textContent = `Finish or clear the ${unfinished.map(st => st.title.toLowerCase()).join(", ")} marks first.`;
+      saveError.hidden = false;
+      return;
+    }
+    const checkpoints = Object.fromEntries(steps.filter(st => st.optional && complete(st.key))
+      .map(st => [st.key, { frame: state.steps[st.key].frame, points: state.steps[st.key].points }]));
     saveBtn.disabled = true;
     try {
-      await postJSON(`/api/swings/${encodeURIComponent(id)}/marks`, { address_frame: state.frame, points: state.points });
+      await postJSON(`/api/swings/${encodeURIComponent(id)}/marks`,
+        { address_frame: state.steps.address.frame, points: state.steps.address.points, checkpoints });
       location.hash = swingUrl(id);
     } catch (err) {
       saveError.textContent = err.message;
@@ -278,8 +344,8 @@ export async function renderMark(view, id, isCurrent) {
   trimBody.append(
     trimStatus,
     el("div", { class: "actions" },
-      el("button", { class: "btn small", type: "button", onclick: () => { trim.start = offset + state.frame / v.fps; trimText(); } }, "Start here"),
-      el("button", { class: "btn small", type: "button", onclick: () => { trim.end = offset + (state.frame + 1) / v.fps; trimText(); } }, "End here")),
+      el("button", { class: "btn small", type: "button", onclick: () => { trim.start = offset + cur().frame / v.fps; trimText(); } }, "Start here"),
+      el("button", { class: "btn small", type: "button", onclick: () => { trim.end = offset + (cur().frame + 1) / v.fps; trimText(); } }, "End here")),
     el("div", { class: "actions" },
       el("button", { class: "btn small primary", type: "button", onclick: () => applyTrim(trim.start, trim.end) }, "Apply trim"),
       (v.trim_start !== null || v.trim_end !== null)
@@ -314,11 +380,11 @@ export async function renderMark(view, id, isCurrent) {
     if (e.target instanceof HTMLInputElement && e.target.type !== "range") return;
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
       e.preventDefault();
-      setFrame(state.frame + (e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 10 : 1));
+      setFrame(cur().frame + (e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 10 : 1));
     } else if (e.key === "Backspace" || e.key === "u") {
       e.preventDefault();
       undo();
-    } else if (e.key === "Enter" && !nextPoint()) {
+    } else if (e.key === "Enter" && complete("address")) {
       save();
     }
   }
@@ -327,9 +393,6 @@ export async function renderMark(view, id, isCurrent) {
   window.addEventListener("resize", onResize);
 
   // --- Render ---------------------------------------------------------------
-  const intro = s.view === "dtl"
-    ? "Scrub to your address position (set up and still), then click the points. This frame is used for the address checks."
-    : "Scrub to your address position, then click the ball.";
   view.replaceChildren(
     swingHeader(s),
     el("div", { class: "mark-layout" },
@@ -344,20 +407,25 @@ export async function renderMark(view, id, isCurrent) {
           !faceOn ? el("p", { class: "subtle small" }, faceOnMessage) : null,
           viewError),
         el("section", { class: "panel" },
-          el("h2", {}, "Mark your address"),
-          el("p", { class: "subtle small" }, intro),
+          el("h2", {}, steps.length > 1 ? "Mark your swing" : "Mark your address"),
+          steps.length > 1 ? stepTabs : null,
+          stepIntro,
           pointList,
           el("div", { class: "actions" },
             el("button", { class: "btn small", type: "button", onclick: undo }, "Undo"),
-            el("button", { class: "btn small", type: "button", onclick: () => { state.points = {}; refresh(); } }, "Clear")),
+            el("button", { class: "btn small", type: "button", onclick: () => { cur().points = {}; refresh(); } }, "Clear")),
           saveError, saveBtn),
         el("details", { class: "panel" },
           el("summary", {}, el("strong", {}, "Trim the clip")),
           el("p", { class: "subtle small" }, "Cut out practice swings or idle time. Scrub to a frame and set the start or end there."),
           trimBody))));
-  setFrame(state.frame);
+  setFrame(cur().frame);
   refresh();
   requestAnimationFrame(fitCanvas);
+}
+
+function pick(points, names) {
+  return Object.fromEntries(Object.entries(points).filter(([n]) => names.includes(n)));
 }
 
 function label(ctx, text, x, y, color, dpr) {

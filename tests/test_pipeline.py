@@ -39,3 +39,24 @@ def test_saved_marks_reused_only_when_video_matches(tmp_path):
     assert load_marks(path, "fo", info).points["ball"] == (5.0, 6.0)
     assert load_marks(path, "dtl", info) is None  # wrong view
     assert load_marks(path, "fo", make_info(trim_start=1.0)) is None  # re-trimmed video
+
+
+def test_takeaway_marks_saved_and_validated(tmp_path):
+    info = make_info()
+    address = {"ball": (1, 2), "clubhead": (3, 4), "grip": (5, 6)}
+    marks = save_marks(tmp_path, "dtl", 10, address, info,
+                       checkpoints={"takeaway": {"frame": 60, "points": {"clubhead": (7, 8), "grip": (9, 10), "x": (0, 0)}}})
+    loaded = load_marks(tmp_path / "marks.json", "dtl", info)
+    assert loaded.checkpoint("takeaway").frame == 60
+    assert loaded.checkpoint("takeaway").points == {"clubhead": (7.0, 8.0), "grip": (9.0, 10.0)}
+    # Partly marked: kept in the file, but doesn't count as a usable checkpoint.
+    save_marks(tmp_path, "dtl", 10, address, info, checkpoints={"takeaway": {"frame": 60, "points": {"clubhead": (7, 8)}}})
+    assert load_marks(tmp_path / "marks.json", "dtl", info).checkpoint("takeaway") is None
+    # Nothing clicked: dropped. Old marks files without checkpoints still load.
+    save_marks(tmp_path, "dtl", 10, address, info, checkpoints={"takeaway": {"frame": 60, "points": {}}})
+    assert load_marks(tmp_path / "marks.json", "dtl", info).checkpoints == {}
+    with pytest.raises(PipelineError, match="after the address"):
+        save_marks(tmp_path, "dtl", 10, address, info, checkpoints={"takeaway": {"frame": 5, "points": {"clubhead": (1, 1)}}})
+    with pytest.raises(PipelineError, match="Unknown"):
+        save_marks(tmp_path, "dtl", 10, address, info, checkpoints={"top": {"frame": 50, "points": {"clubhead": (1, 1)}}})
+    assert marks.view == "dtl"

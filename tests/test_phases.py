@@ -139,3 +139,18 @@ def test_bad_override_order_rejected():
     auto = detect_phases(track, fps, SCALE, CFG)
     with pytest.raises(PhaseError, match="order"):
         apply_overrides(auto, {"top": auto.impact + 5}, track, fps, CFG, len(track))
+
+
+def test_marked_takeaway_replaces_detected_one(tmp_path):
+    from swingcheck.phases import get_phases
+
+    fps = 240.0
+    track, truth = synthetic_swing(fps)
+    config = {"phases": CFG}
+    auto, _ = get_phases(tmp_path, track, fps, SCALE, config, {}, {})
+    mark = (auto.address + auto.top) // 2 + 7
+    phases, _ = get_phases(tmp_path, track, fps, SCALE, config, {}, {}, marked_takeaway=mark)
+    assert phases.takeaway == mark and "takeaway" in phases.manual
+    # A marked frame outside address..top is ignored.
+    phases, _ = get_phases(tmp_path, track, fps, SCALE, config, {}, {}, marked_takeaway=auto.impact)
+    assert phases.takeaway == auto.takeaway and "takeaway" not in phases.manual

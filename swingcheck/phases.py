@@ -59,12 +59,14 @@ def _last(mask: np.ndarray) -> int | None:
     return int(hits[-1]) if hits.size else None
 
 
-def checkpoints(y: np.ndarray, address: int, top: int, impact: int, fraction: float) -> tuple[int, int]:
-    """Takeaway and early-downswing frames: hands cross `fraction` of address->top height."""
-    level = y[address] - fraction * (y[address] - y[top])
+def checkpoints(y: np.ndarray, address: int, top: int, impact: int,
+                takeaway_fraction: float, downswing_fraction: float) -> tuple[int, int]:
+    """Takeaway and early-downswing frames: where the hands cross the given fraction of
+    the address->top height, on the way up and on the way down."""
+    rise = y[address] - y[top]
     with np.errstate(invalid="ignore"):
-        up = _first(y[address + 1 : top + 1] <= level)
-        down = _first(y[top : impact + 1] >= level)
+        up = _first(y[address + 1 : top + 1] <= y[address] - takeaway_fraction * rise)
+        down = _first(y[top : impact + 1] >= y[address] - downswing_fraction * rise)
     takeaway = address + 1 + up if up is not None else (address + top) // 2
     early = top + down if down is not None else (top + impact) // 2
     return takeaway, early
@@ -148,7 +150,7 @@ def detect_phases(hands: np.ndarray, fps: float, scale: float, cfg: dict[str, An
         address += 1
 
     # 5. Checkpoints.
-    takeaway, early = checkpoints(y, address, top, impact, cfg["checkpoint_fraction"])
+    takeaway, early = checkpoints(y, address, top, impact, cfg["takeaway_fraction"], cfg["downswing_fraction"])
     phases = Phases(address=address, takeaway=takeaway, top=top, early_downswing=early, impact=impact)
     validate(phases, n)
     return phases
@@ -174,7 +176,8 @@ def apply_overrides(
         assert auto is not None
         return auto
     y = clean_track(hands, fps, max_gap_ms=0, smoothing_ms=cfg["smoothing_ms"])[:, 1]
-    takeaway, early = checkpoints(y, key["address"], key["top"], key["impact"], cfg["checkpoint_fraction"])
+    takeaway, early = checkpoints(y, key["address"], key["top"], key["impact"],
+                                  cfg["takeaway_fraction"], cfg["downswing_fraction"])
     phases = Phases(
         address=key["address"], takeaway=takeaway, top=key["top"], early_downswing=early,
         impact=key["impact"], manual=[k for k in KEY_PHASES if k in overrides],
@@ -218,11 +221,14 @@ def get_phases(
     clear_overrides: bool = False,
     marked_address: int | None = None,
     search: tuple[int, int] | None = None,
+    marked_takeaway: int | None = None,
 ) -> tuple[Phases, str | None]:
     """Detect phases, merge saved + new manual overrides, save phases.json.
 
     `marked_address` (the frame the user marked on) is used as address unless
     an explicit address override exists; it isn't saved as an override.
+    `marked_takeaway` (the frame the user marked the takeaway on) replaces the
+    detected takeaway checkpoint when it falls between address and top.
     Returns (phases, detection_error) where detection_error explains a failed
     automatic detection that overrides papered over.
     """
@@ -239,5 +245,8 @@ def get_phases(
     if marked_address is not None and "address" not in effective:
         effective["address"] = marked_address
     phases = apply_overrides(auto, effective, hands, fps, cfg, len(hands))
+    if marked_takeaway is not None and phases.address < marked_takeaway <= phases.top:
+        phases.takeaway = marked_takeaway
+        phases.manual = [*phases.manual, "takeaway"]
     save_phases(path, phases, auto, overrides, signature)
     return phases, error
