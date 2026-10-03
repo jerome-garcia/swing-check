@@ -14,6 +14,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from swingcheck.ingest import VideoInfo
+from swingcheck.pipeline import load_marks
+
 META = "swing.json"
 ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,120}$")
 
@@ -96,18 +99,18 @@ class Store:
     # --- status --------------------------------------------------------------
     def status(self, swing_id: str) -> str:
         folder = self.path(swing_id)
+        if not ((folder / "video.json").exists() and (folder / "normalized.mp4").exists()):
+            return "uploaded"
         meta = self.meta(swing_id)
-        analysis = _read_json(folder / "analysis.json")
-        marks = _read_json(folder / "marks.json")
-        if analysis and analysis.get("view") == meta.view and (folder / "analysis.json").stat().st_mtime >= (
-            (folder / "marks.json").stat().st_mtime if (folder / "marks.json").exists() else 0
-        ):
-            return "analyzed"
-        if marks and marks.get("view") == meta.view:
-            return "marked"
-        if (folder / "video.json").exists() and (folder / "normalized.mp4").exists():
+        info = VideoInfo.load(folder / "video.json")
+        # Marks only count if they were made on this exact conversion (same trim).
+        if meta.view is None or load_marks(folder / "marks.json", meta.view, info) is None:
             return "converted"
-        return "uploaded"
+        analysis = _read_json(folder / "analysis.json")
+        if (analysis and analysis.get("view") == meta.view
+                and (folder / "analysis.json").stat().st_mtime >= (folder / "marks.json").stat().st_mtime):
+            return "analyzed"
+        return "marked"
 
     # --- listing ------------------------------------------------------------
     def list(self) -> list[dict[str, Any]]:

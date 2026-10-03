@@ -8,21 +8,35 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
+from swingcheck.app.frames import FrameReader
 from swingcheck.app.jobs import JobManager
 from swingcheck.app.store import Store, SwingNotFound
 from swingcheck.config import PROJECT_ROOT, load_config
-from swingcheck.pipeline import ingest
+from swingcheck.ingest import VideoInfo
+from swingcheck.pipeline import PipelineError, ingest, save_marks
 
 STATIC = Path(__file__).parent / "static"
 VIDEO_EXTENSIONS = {".mov", ".mp4", ".m4v", ".avi", ".mkv", ".webm", ".3gp"}
 
 
+class MarksIn(BaseModel):
+    address_frame: int
+    points: dict[str, tuple[float, float]]
+
+
+class TrimIn(BaseModel):
+    start: float | None = None  # seconds into the original video
+    end: float | None = None
+
+
 def create_app(runs_dir: Path | None = None) -> FastAPI:
     store = Store(runs_dir or PROJECT_ROOT / "runs")
     jobs = JobManager()
+    frames = FrameReader()
     config = load_config()
     app = FastAPI(title="swing-check", docs_url=None, redoc_url=None)
     app.state.store = store
@@ -53,6 +67,52 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
         store.save_meta(meta)
         job = start_convert(meta.id)
         return {"id": meta.id, "job": job.to_json()}
+
+    @app.get("/api/swings/{swing_id}/frames/{index}.jpg")
+    def frame_image(swing_id: str, index: int, w: int | None = None) -> Response:
+        folder = swing_or_404(swing_id)
+        video = folder / "normalized.mp4"
+        if not video.exists():
+            raise HTTPException(404, "Video not converted yet")
+        active = jobs.active_for(swing_id)
+        if active and active.kind == "convert":  # don't hold the file open while it's being rewritten
+            raise HTTPException(409, "The video is being converted")
+        try:
+            data = frames.jpeg(video, index, width=w if w and w >= 64 else None)
+        except (IndexError, FileNotFoundError):
+            raise HTTPException(404, "Frame not found") from None
+        return Response(data, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
+
+    @app.post("/api/swings/{swing_id}/marks")
+    def save_swing_marks(swing_id: str, body: MarksIn) -> dict[str, Any]:
+        folder = swing_or_404(swing_id)
+        meta = store.meta(swing_id)
+        if jobs.active_for(swing_id):
+            raise HTTPException(409, "This swing is still being processed.")
+        if not (folder / "video.json").exists():
+            raise HTTPException(409, "The video hasn't been converted yet.")
+        info = VideoInfo.load(folder / "video.json")
+        try:
+            marks = save_marks(folder, meta.view, body.address_frame, body.points, info)
+        except PipelineError as e:
+            raise HTTPException(400, str(e)) from None
+        return {"view": marks.view, "address_frame": marks.address_frame, "points": marks.points}
+
+    @app.post("/api/swings/{swing_id}/trim")
+    def trim_swing(swing_id: str, body: TrimIn) -> dict[str, Any]:
+        folder = swing_or_404(swing_id)
+        meta = store.meta(swing_id)
+        if jobs.active_for(swing_id):
+            raise HTTPException(409, "This swing is still being processed.")
+        if not meta.source_file or not (folder / meta.source_file).exists():
+            raise HTTPException(409, "The original video for this swing isn't available to re-trim.")
+        if body.start is not None and body.end is not None and body.end <= body.start:
+            raise HTTPException(400, "The end must be after the start.")
+        meta.trim_start, meta.trim_end = body.start, body.end
+        store.save_meta(meta)
+        frames.forget(folder / "normalized.mp4")
+        job = start_convert(swing_id, body.start, body.end)
+        return {"job": job.to_json()}
 
     @app.get("/api/jobs/{job_id}")
     def get_job(job_id: str) -> dict[str, Any]:
@@ -90,6 +150,7 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
         swing_or_404(swing_id)
         if jobs.active_for(swing_id):
             raise HTTPException(409, "This swing is still being processed; wait for it to finish.")
+        frames.forget(store.path(swing_id) / "normalized.mp4")  # Windows can't delete open files
         store.delete(swing_id)
         return {"deleted": swing_id}
 
@@ -101,6 +162,14 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
             raise HTTPException(404, "File not found") from None
         # No caching: files are regenerated when a swing is re-analyzed.
         return FileResponse(path, headers={"Cache-Control": "no-store"})
+
+    @app.middleware("http")
+    async def revalidate_static(request, call_next):
+        # Always revalidate the app's own JS/CSS so an update is picked up on reload.
+        response = await call_next(request)
+        if not request.url.path.startswith(("/api/", "/files/")):
+            response.headers["Cache-Control"] = "no-cache"
+        return response
 
     app.mount("/", StaticFiles(directory=STATIC, html=True), name="static")
     return app
