@@ -70,6 +70,12 @@ def draw_line_overlay(img, kind: str, points, color, thickness: int, label: str,
             draw_text(img, label, (x, y), 0.5 * s, color)
     elif kind == "segment":
         cv2.line(img, _pt(points[0]), _pt(points[1]), color, thickness, cv2.LINE_AA)
+    elif kind == "polyline":
+        pts = [p for p in points if np.all(np.isfinite(p))]
+        if len(pts) >= 2:
+            arr = np.array([_pt(p) for p in pts], np.int32).reshape(-1, 1, 2)
+            cv2.polylines(img, [arr], False, (0, 0, 0), thickness + 2, cv2.LINE_AA)
+            cv2.polylines(img, [arr], False, color, thickness, cv2.LINE_AA)
     elif kind == "vline":
         # One point: full-height line at its x. Two points: vertical span from
         # points[0].y to points[1].y at points[0].x, labeled at its top.

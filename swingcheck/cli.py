@@ -86,8 +86,10 @@ def main(argv: list[str] | None = None) -> int:
     hand_track = hands(pose, config)
     try:
         scale = body_scale(pose, marks.address_frame, config)
+        # DTL posture checks are judged on the frame you marked, so it is the address.
         phases, detect_error = get_phases(
-            run_dir, hand_track, pose.fps, scale, config, video_signature(info), overrides, args.auto_phases
+            run_dir, hand_track, pose.fps, scale, config, video_signature(info), overrides, args.auto_phases,
+            marked_address=marks.address_frame if args.view == "dtl" else None,
         )
     except (PhaseError, ValueError) as e:
         print(f"error: {e}", file=sys.stderr)
@@ -105,6 +107,7 @@ def main(argv: list[str] | None = None) -> int:
     ctx = SwingContext(
         view=args.view, pose=pose, marks=marks, phases=phases,
         scale=body_scale(pose, phases.address, config), config=config,
+        video_path=run_dir / "normalized.mp4",
     )
     verdicts = run_analyzers(ctx)
     (run_dir / "analysis.json").write_text(json.dumps(

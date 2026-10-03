@@ -4,11 +4,14 @@ A local command-line golf swing analyzer. Give it one video of one swing, say
 whether it was filmed **down-the-line** (`dtl`) or **face-on** (`fo`), and it
 produces an annotated video, freeze frames and a short text report.
 
-v1 focuses on fat shots, scooping, and wedges/hybrids flying high instead of far:
+v1 focuses on fat shots, scooping, and wedges/hybrids flying high instead of far.
+The down-the-line checks are being rebuilt as a series of checkpoints (address,
+swing plane, takeaway, halfway back, top, downswing, impact, follow-through);
+address is done so far.
 
 | View | Check | What it tells you |
 |---|---|---|
-| DTL | **Swing plane** | Hands at takeaway, top and early downswing: on plane, steep/over the top, or shallow/under |
+| DTL | **Address posture** | Arms hanging straight down, spine forward bend, knee flex, and whether the back is rounded |
 | Face-on | **Hands at impact** | Hands ahead of, level with, or behind the ball (scoop / shaft lean) |
 | Face-on | **Weight shift** | How far the hips moved toward the target by impact (low point / fat shots) |
 | Face-on | **Head drift** | Whether the head moved away from the target by impact |
@@ -71,7 +74,7 @@ during the clip. A tripod is the single most important thing.
   Photos app import, or a USB copy from the iPhone's DCIM folder. The tool warns
   if a clip is 60 fps or slower.
 - **Use the same camera spot every session** (mark the tripod feet with tape).
-  Plane lines and distances are measured in 2D, so moving the camera changes the
+  Angles and distances are measured in 2D, so moving the camera changes the
   numbers even when your swing doesn't.
 
 ### Down-the-line (`--view dtl`)
@@ -92,8 +95,8 @@ during the clip. A tripod is the single most important thing.
 - Put the camera **on the line through your hands at address**, parallel to the
   target line (not on the ball-to-target line, which hides the hands behind the
   body).
-- Height: about **hand/hip height** (roughly 1 m). Higher or lower changes how
-  steep the plane lines look.
+- Height: about **hand/hip height** (roughly 1 m). Higher or lower changes the
+  measured angles (spine bend, plane lines).
 - Distance: far enough that your full swing, including the club at the top, stays
   in frame (often 3 to 4 m).
 - Aim the camera straight down the target line, not angled toward you.
@@ -137,8 +140,9 @@ What happens:
    - **grip**, the center of your hands (DTL)
 
    Press **Enter** to save. A magnifier in the corner helps you click
-   precisely. The ball click matters most: being off by a few pixels shifts
-   the plane lines.
+   precisely. In DTL, **the frame you mark on is your address frame**: the
+   address posture checks are measured on it, so pick a frame where you're
+   fully set up and still.
 
    | Key | Action |
    |---|---|
@@ -210,13 +214,21 @@ numbers behind it. Distances are in **body lengths**: your torso length
 (shoulders to hips) measured at address. So `0.10` means a tenth of your torso,
 roughly 5 cm for most adults, regardless of how far away the camera was.
 
-**Swing plane (DTL).** Two lines from the ball: the **shaft plane** (along the
-shaft at address) and the **shoulder plane** (ball through your trail shoulder).
-Hands between them are on plane. Above the shoulder line is **steep**; in the
-early downswing that's the over-the-top move. Below the shaft line is
-**shallow**; in the early downswing that's stuck/under. A steep or shallow early
-downswing is a FLAG; takeaway or top off plane is a WATCH. The margins show how
-far inside (+) or past (-) each line your hands were.
+**Address posture (DTL).** Measured on the frame you marked, using the body
+points on the camera side (your trail side):
+
+- **Arms:** the shoulder-to-wrist line should hang straight down. Reported in
+  degrees from vertical; + means the hands reach out toward the ball, - means
+  they're tucked in toward the body.
+- **Spine:** forward bend of the hip-to-shoulder line from vertical.
+- **Knees:** knee flex, 0 = straight leg.
+- **Back:** how far the outline of your back bulges beyond a straight line
+  between hip and shoulder level (in body lengths), measured from the body
+  silhouette. A rounded upper back (hump) reads higher. Wear reasonably fitted
+  clothing; a loose shirt can add to it.
+
+The address freeze frame draws each line with its value, green when in range and
+red when not.
 
 **Hands at impact (face-on).** Hands relative to the ball, toward the target.
 Ahead = forward shaft lean (good for irons/wedges). Behind = the shaft is leaning
@@ -249,8 +261,8 @@ behind_threshold = -0.03
 [analyzers.weight_shift]
 min_shift = 0.12
 
-[analyzers.swing_plane]
-tolerance = 0.07
+[analyzers.address]
+knee_flex_max = 35
 
 [analyzers]
 disabled = ["head_drift"]     # skip a check entirely
@@ -274,10 +286,6 @@ Other useful settings:
 - `[marking] screen_fraction`: the marking window's starting size.
 - `[output] freeze_frames`: add `"takeaway"` or `"early_downswing"` for DTL.
 - `[output] max_playback_fps`: how slowed-down slo-mo videos play.
-- `[analyzers.swing_plane] calibrate_hands_to_shaft_line`: the pose model's
-  "hands" point is the wrists, which sit a little off the shaft. By default the
-  hand path is shifted so it starts on the shaft line at address. Set `false` to
-  see raw wrist positions.
 
 ---
 
@@ -287,7 +295,8 @@ Other useful settings:
 |---|---|
 | `ffmpeg not found on PATH` | Install it (Setup step 2) and open a new terminal. |
 | Warning that the clip is 30 or 60 fps when you filmed slo-mo | The file was re-exported on the way off the phone. Copy the original (see Filming). |
-| Plane lines don't start at the ball | Re-click with `--remark`. Use the magnifier. |
+| Address checks measured on the wrong frame | Re-mark with `--remark` and scrub to your set-up position before clicking. |
+| Back reads rounded but isn't | Loose clothing changes the silhouette; check the outline on `address.png`. |
 | Wrong address/top/impact | Override with `--address/--top/--impact`. |
 | Checks say "no data" | A body point wasn't tracked at that phase. Run `--pose-debug` and check the skeleton; usually lighting, a partly out-of-frame body, or baggy clothing. |
 | Marking window too big | Lower `[marking] screen_fraction` in `config/local.toml`, or drag the window edges. |

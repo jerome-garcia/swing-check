@@ -178,6 +178,32 @@ def _extract_pose(
     return data
 
 
+def segment_frame(frame: np.ndarray, config: dict[str, Any]) -> np.ndarray:
+    """Person silhouette for one BGR frame: (H, W) float mask, ~1 on the body, ~0 elsewhere."""
+    with _native_stderr_captured():
+        import mediapipe as mp
+        from mediapipe.tasks.python import BaseOptions, vision
+
+        pose_cfg = config["pose"]
+        options = vision.PoseLandmarkerOptions(
+            base_options=BaseOptions(model_asset_path=str(ensure_model(pose_cfg["model"]))),
+            running_mode=vision.RunningMode.IMAGE,
+            num_poses=1,
+            min_pose_detection_confidence=pose_cfg["min_detection_confidence"],
+            output_segmentation_masks=True,
+        )
+        h, w = frame.shape[:2]
+        max_h = config["ingest"]["pose_max_height"]
+        scale = min(1.0, max_h / h) if max_h else 1.0
+        small = cv2.resize(frame, (round(w * scale), round(h * scale)), interpolation=cv2.INTER_AREA) if scale < 1 else frame
+        with vision.PoseLandmarker.create_from_options(options) as landmarker:
+            result = landmarker.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(small, cv2.COLOR_BGR2RGB)))
+    if not result.segmentation_masks:
+        raise RuntimeError("no person found for segmentation")
+    mask = np.asarray(result.segmentation_masks[0].numpy_view(), dtype=np.float32).squeeze()
+    return cv2.resize(mask, (w, h), interpolation=cv2.INTER_LINEAR) if mask.shape != (h, w) else mask
+
+
 def get_pose(
     run_dir: Path,
     info: VideoInfo,

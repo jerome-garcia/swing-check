@@ -24,8 +24,10 @@ import pkgutil
 import traceback
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Any
 
+import cv2
 import numpy as np
 
 from swingcheck import body
@@ -49,7 +51,7 @@ class Overlay:
 
     kind: "line" (infinite line through points[0] along points[1]-points[0]),
           "ray" (from points[0] through points[1], to the frame edge),
-          "segment", "point",
+          "segment", "polyline" (through all points), "point",
           "vline" (vertical line at points[0].x: full height, or from
           points[0].y to points[1].y when two points are given),
           "text" (label at points[0]),
@@ -92,7 +94,29 @@ class SwingContext:
     scale: float  # body length in px at address (see [scale])
     config: dict[str, Any]
     cfg: dict[str, Any] = field(default_factory=dict)  # current analyzer's own config section
+    video_path: Path | None = None  # normalized video, for analyzers that need pixels
     _cache: dict[str, np.ndarray] = field(default_factory=dict, repr=False)
+
+    def image(self, frame: int) -> np.ndarray:
+        """The BGR video frame at `frame`."""
+        if self.video_path is None:
+            raise MissingData("no video available to this analyzer")
+        cap = cv2.VideoCapture(str(self.video_path))
+        try:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame)
+            ok, img = cap.read()
+        finally:
+            cap.release()
+        if not ok:
+            raise MissingData(f"could not read video frame {frame}")
+        return img
+
+    def value(self, track: np.ndarray, frame: int, what: str) -> np.ndarray:
+        """track[frame], raising MissingData (with `what` in the message) if it wasn't tracked."""
+        v = track[frame]
+        if not np.all(np.isfinite(v)):
+            raise MissingData(f"{what} not tracked at frame {frame}")
+        return v
 
     @property
     def fps(self) -> float:

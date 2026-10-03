@@ -204,9 +204,12 @@ def get_phases(
     signature: dict[str, Any],
     new_overrides: dict[str, int],
     clear_overrides: bool = False,
+    marked_address: int | None = None,
 ) -> tuple[Phases, str | None]:
     """Detect phases, merge saved + new manual overrides, save phases.json.
 
+    `marked_address` (the frame the user marked on) is used as address unless
+    an explicit address override exists; it isn't saved as an override.
     Returns (phases, detection_error) where detection_error explains a failed
     automatic detection that overrides papered over.
     """
@@ -219,6 +222,9 @@ def get_phases(
         error = None
     except PhaseError as e:
         auto, error = None, str(e)
-    phases = apply_overrides(auto, overrides, hands, fps, cfg, len(hands))
+    effective = dict(overrides)
+    if marked_address is not None and "address" not in effective:
+        effective["address"] = marked_address
+    phases = apply_overrides(auto, effective, hands, fps, cfg, len(hands))
     save_phases(path, phases, auto, overrides, signature)
     return phases, error

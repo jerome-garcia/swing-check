@@ -6,7 +6,7 @@ from swingcheck.config import load_config
 def test_defaults_load():
     config = load_config()
     assert config["golfer"]["handedness"] in ("right", "left")
-    assert "swing_plane" in config["analyzers"]
+    assert "address" in config["analyzers"]
 
 
 def test_override_merges(tmp_path):

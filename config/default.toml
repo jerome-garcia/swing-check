@@ -103,14 +103,23 @@ checkpoint_fraction = 0.35
 # Names of analyzers to skip, e.g. ["head_drift"].
 disabled = []
 
-[analyzers.swing_plane]
-# Tolerance band around each plane line, body units. Hands within the band
-# count as "on" that line, not over/under it.
-tolerance = 0.05
-# The pose "hands" point is the wrists, which sit above/inside the grip. At
-# address the hands are on the shaft plane by definition, so shift the hand
-# path sideways by the wrists' address offset from the shaft line.
-calibrate_hands_to_shaft_line = true
+[analyzers.address]
+# DTL address posture, measured on the frame you mark on, using the
+# camera-side (trail side) body points. Angles in degrees.
+#
+# Arms hang straight down: shoulder->wrist line within this many degrees of
+# vertical (either way).
+arm_max_from_vertical = 10
+# Spine forward bend: hip-center->shoulder-center line, degrees from vertical.
+spine_bend_min = 30
+spine_bend_max = 45
+# Knee flex: 180 minus the hip-knee-ankle angle (0 = straight leg).
+knee_flex_min = 15
+knee_flex_max = 30
+# Back rounding: how far the outline of your back bulges out from a straight
+# line between hip and shoulder level, in body lengths (from the body
+# silhouette; loose clothing can add to it).
+back_bulge_max = 0.06
 
 [analyzers.hands_at_impact]
 # Lead wrist x minus ball x along the target direction, body units.

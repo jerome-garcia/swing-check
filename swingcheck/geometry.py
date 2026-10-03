@@ -138,6 +138,63 @@ def ray_in_frame(origin, direction, width: int, height: int) -> tuple[tuple[int,
     return start, far
 
 
+def angle_between_deg(a, b) -> float:
+    """Unsigned angle between two vectors, 0-180 degrees."""
+    ua, ub = unit(a), unit(b)
+    return float(np.degrees(np.arccos(np.clip(np.dot(ua, ub), -1.0, 1.0))))
+
+
+def tilt_from_vertical_deg(vec, forward_sign: int, up: bool = False) -> float:
+    """Angle of `vec` from straight down (or straight up if `up`), signed:
+    positive when it leans toward `forward_sign` (+1 = screen-right, -1 = screen-left)."""
+    v = as_vec(vec)
+    vertical = -v[1] if up else v[1]
+    return float(np.degrees(np.arctan2(forward_sign * v[0], vertical)))
+
+
+def silhouette_edge(mask: np.ndarray, start, end, outward, fractions, max_reach_px: float,
+                    threshold: float = 0.5) -> np.ndarray:
+    """Points on the silhouette edge found by marching outward from points along start->end.
+
+    For each fraction f, start at start + f*(end-start) (should be inside the
+    body) and step along `outward` until the mask drops below threshold; the
+    last inside pixel is the edge. Returns (n, 2) with NaN rows where the start
+    point isn't on the body or no edge is found within max_reach_px.
+    """
+    s, e, n = as_vec(start), as_vec(end), unit(outward)
+    h, w = mask.shape[:2]
+    out = np.full((len(fractions), 2), np.nan)
+    steps = np.arange(0, int(max_reach_px) + 1, dtype=float)
+    for k, f in enumerate(fractions):
+        p = s + f * (e - s)
+        xs = np.round(p[0] + steps * n[0]).astype(int)
+        ys = np.round(p[1] + steps * n[1]).astype(int)
+        valid = (xs >= 0) & (xs < w) & (ys >= 0) & (ys < h)
+        inside = np.zeros(len(steps), bool)
+        inside[valid] = mask[ys[valid], xs[valid]] >= threshold
+        if not inside[0]:
+            continue
+        leaving = np.flatnonzero(~inside)
+        if leaving.size == 0:
+            continue
+        last = leaving[0] - 1
+        out[k] = (xs[last], ys[last])
+    return out
+
+
+def max_bulge(points: np.ndarray, outward) -> float:
+    """How far the curve bulges outward beyond the straight line joining its first
+    and last points (pixels; 0 if it's straight or bows inward)."""
+    pts = points[np.all(np.isfinite(points), axis=1)]
+    if len(pts) < 3:
+        return float("nan")
+    a, b = pts[0], pts[-1]
+    n = normal(b - a)
+    if np.dot(n, unit(outward)) < 0:
+        n = -n
+    return float(max(0.0, np.max((pts - a) @ n)))
+
+
 def target_sign(view: str, handedness: str, fo_override: str = "auto") -> int:
     """+1 if the target is toward screen-right in a face-on view, -1 if screen-left.
 
