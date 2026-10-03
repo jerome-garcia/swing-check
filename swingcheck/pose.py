@@ -185,6 +185,9 @@ def _extract_pose(
     return data
 
 
+SEGMENT_ALIGN = 16  # see segment_frame
+
+
 def segment_frame(frame: np.ndarray, config: dict[str, Any]) -> np.ndarray:
     """Person silhouette for one BGR frame: (H, W) float mask, ~1 on the body, ~0 elsewhere."""
     with _native_stderr_captured():
@@ -203,11 +206,16 @@ def segment_frame(frame: np.ndarray, config: dict[str, Any]) -> np.ndarray:
         max_h = config["ingest"]["pose_max_height"]
         scale = min(1.0, max_h / h) if max_h else 1.0
         small = cv2.resize(frame, (round(w * scale), round(h * scale)), interpolation=cv2.INTER_AREA) if scale < 1 else frame
+        # MediaPipe's segmentation hard-crashes the whole process (0xC0000409) on some
+        # frame sizes, e.g. 640x1138. Padding to a multiple of 16 avoids it; the padding
+        # is cropped off the mask again.
+        sh, sw = small.shape[:2]
+        padded = cv2.copyMakeBorder(small, 0, -sh % SEGMENT_ALIGN, 0, -sw % SEGMENT_ALIGN, cv2.BORDER_REPLICATE)
         with vision.PoseLandmarker.create_from_options(options) as landmarker:
-            result = landmarker.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(small, cv2.COLOR_BGR2RGB)))
+            result = landmarker.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(padded, cv2.COLOR_BGR2RGB)))
     if not result.segmentation_masks:
         raise RuntimeError("no person found for segmentation")
-    mask = np.asarray(result.segmentation_masks[0].numpy_view(), dtype=np.float32).squeeze()
+    mask = np.asarray(result.segmentation_masks[0].numpy_view(), dtype=np.float32).squeeze()[:sh, :sw]
     return cv2.resize(mask, (w, h), interpolation=cv2.INTER_LINEAR) if mask.shape != (h, w) else mask
 
 
