@@ -348,12 +348,9 @@ details.panel[open] summary { margin-bottom: 8px; }
 .rows .dot { grid-area: dot; }
 .rows .row-label { grid-area: label; color: var(--muted); }
 .rows .row-value { grid-area: value; text-align: right; font-weight: 650; font-variant-numeric: tabular-nums; }
-.rows .row-note { grid-area: note; font-size: 13px; }
+/* The note (what it means, plus the green/red limits) gets its own full-width line. */
+.rows .row-note { grid-area: note; font-size: 13px; color: var(--muted); margin-top: 2px; }
 .rows .row-note:empty { display: none; }
-@media (min-width: 1100px) {
-  .rows li { grid-template-columns: 10px auto 1fr auto; grid-template-areas: "dot label note value"; }
-  .rows .row-note { text-align: right; color: var(--muted); }
-}
 .phases-panel summary { cursor: pointer; }
 .phases-panel[open] summary { margin-bottom: 10px; }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
