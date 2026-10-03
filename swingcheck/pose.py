@@ -12,7 +12,6 @@ import json
 import os
 import sys
 import tempfile
-import time
 import urllib.request
 from collections.abc import Callable, Iterator
 from pathlib import Path
@@ -96,14 +95,23 @@ def extract_pose(
     select: Callable[[int], bool] | None = None,
     data: np.ndarray | None = None,
     label: str = "pose",
+    progress: FrameProgress | None = None,
 ) -> np.ndarray:
     """Run PoseLandmarker on the frames `select` accepts (all by default), filling rows of `data`.
 
     Frames are downscaled for speed; coordinates come back in full-res pixels.
     Returns the (frames, 33, 4) array, NaN for frames not run or with no person.
+    `progress(done, todo, label)` is called as frames complete (default: print).
     """
     with _native_stderr_captured():
-        return _extract_pose(video_path, info, config, select, data, label)
+        return _extract_pose(video_path, info, config, select, data, label, progress or _print_progress)
+
+
+FrameProgress = Callable[[int, int, str], None]
+
+
+def _print_progress(done: int, todo: int, label: str) -> None:
+    print(f"\r  {label}: {done}/{todo} frames", end="\n" if done == todo else "", flush=True)
 
 
 @contextlib.contextmanager
@@ -132,6 +140,7 @@ def _extract_pose(
     select: Callable[[int], bool] | None,
     data: np.ndarray | None,
     label: str,
+    progress: FrameProgress,
 ) -> np.ndarray:
     # Imported here so the rest of the package (and tests) don't pay MediaPipe's import time.
     import mediapipe as mp
@@ -155,7 +164,7 @@ def _extract_pose(
         data = np.full((total_frames, len(LANDMARKS), 4), np.nan)
     todo = sum(1 for i in range(total_frames) if select is None or select(i))
     done = 0
-    started = time.perf_counter()
+    progress(0, todo, label)
     with vision.PoseLandmarker.create_from_options(options) as landmarker:
         for i, frame in enumerate(iter_frames(video_path)):
             if i >= len(data):
@@ -171,10 +180,8 @@ def _extract_pose(
                 for j, lm in enumerate(result.pose_landmarks[0]):
                     data[i, j] = (lm.x * info.width, lm.y * info.height, lm.z, lm.visibility)
             done += 1
-            if done % 50 == 0 or done == todo:
-                rate = done / (time.perf_counter() - started)
-                print(f"\r  {label}: {done}/{todo} frames ({rate:.1f} fps)", end="", flush=True)
-    print()
+            if done % 25 == 0 or done == todo:
+                progress(done, todo, label)
     return data
 
 
@@ -210,6 +217,8 @@ def get_pose(
     config: dict[str, Any],
     locate_swing: Callable[[PoseSeq], tuple[int, int] | None] | None = None,
     force: bool = False,
+    progress: FrameProgress | None = None,
+    extra_ranges: list[tuple[int, int]] | None = None,
 ) -> tuple[PoseSeq, bool]:
     """Cached pose if it matches the current video and pose settings, else extract and cache.
 
@@ -217,10 +226,15 @@ def get_pose(
     a quick pass at ~`trim.coarse_fps` over the whole clip, `locate_swing` finds
     the swing in it (returns a first/last frame range or None), then a full-rate
     pass fills in every frame of that range. Outside it, only the quick-pass
-    frames have keypoints. Returns (pose, reused).
+    frames have keypoints. `extra_ranges` (first, last) are always processed
+    at full rate too, e.g. around the marked address frame. Returns (pose, reused).
     """
     path = run_dir / "pose.json"
-    params = _cache_params(info, config)
+    extra = [(int(a), int(b)) for a, b in (extra_ranges or [])]
+    params = {**_cache_params(info, config), "extra_ranges": [list(r) for r in extra]}
+
+    def in_extra(i: int) -> bool:
+        return any(a <= i <= b for a, b in extra)
     if not force and path.exists():
         try:
             pose, cached_params = load_pose(path)
@@ -233,21 +247,23 @@ def get_pose(
     trim_cfg = config["trim"]
     stride = max(1, round(info.fps / trim_cfg["coarse_fps"]))
     if trim_cfg["enabled"] and stride > 1 and locate_swing is not None:
-        coarse = extract_pose(video, info, config, select=lambda i: i % stride == 0, label="pose (quick pass)")
+        coarse = extract_pose(video, info, config, select=lambda i: i % stride == 0,
+                              label="Quick pass to find the swing", progress=progress)
         found = locate_swing(PoseSeq(info.fps, info.width, info.height, coarse))
         if found is None:
-            print("  couldn't locate the swing in the quick pass; running every frame")
-            data = extract_pose(video, info, config, data=coarse)
+            data = extract_pose(video, info, config, data=coarse,
+                                label="Swing not located; processing every frame", progress=progress)
             dense = (0, len(data) - 1)
         else:
             pad_before = round(trim_cfg["pad_before_s"] * info.fps)
             pad_after = round(trim_cfg["pad_after_s"] * info.fps)
             dense = (max(0, found[0] - pad_before), min(len(coarse) - 1, found[1] + pad_after))
             data = extract_pose(
-                video, info, config, select=lambda i: dense[0] <= i <= dense[1], data=coarse, label="pose (swing)"
+                video, info, config, select=lambda i: dense[0] <= i <= dense[1] or in_extra(i), data=coarse,
+                label="Tracking the swing", progress=progress,
             )
     else:
-        data = extract_pose(video, info, config)
+        data = extract_pose(video, info, config, label="Tracking the swing", progress=progress)
         dense = (0, len(data) - 1)
 
     pose = PoseSeq(fps=info.fps, width=info.width, height=info.height, data=data, dense=dense)

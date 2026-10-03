@@ -25,6 +25,7 @@ import numpy as np
 
 from swingcheck.ingest import VideoInfo
 from swingcheck.models import REQUIRED_MARKS, Marks, Point
+from swingcheck.pipeline import load_marks, video_signature
 
 WINDOW = "swingcheck: mark points"
 
@@ -47,30 +48,6 @@ CLICK_HINTS = {"clubhead": " (hosel)", "grip": " (center of hands)"}
 
 class MarkingCancelled(RuntimeError):
     pass
-
-
-def video_signature(info: VideoInfo) -> dict[str, float | int | None]:
-    return {
-        "width": info.width,
-        "height": info.height,
-        "fps": info.fps,
-        "frame_count": info.frame_count,
-        "trim_start": info.trim_start,
-        "trim_end": info.trim_end,
-    }
-
-
-def load_marks(path: Path, view: str, info: VideoInfo) -> Marks | None:
-    """Saved marks if they exist and still match this view and normalized video, else None."""
-    if not path.exists():
-        return None
-    try:
-        marks = Marks.load(path)
-    except (KeyError, TypeError, ValueError):
-        return None
-    if marks.view != view or marks.video_signature != video_signature(info) or not marks.is_complete():
-        return None
-    return marks
 
 
 def screen_work_area() -> tuple[int, int] | None:

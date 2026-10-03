@@ -2,7 +2,8 @@ import numpy as np
 
 from swingcheck.config import load_config
 from swingcheck.ingest import VideoInfo
-from swingcheck.marking import MarkSession, _render, display_limits, display_scale, load_marks, video_signature
+from swingcheck.marking import MarkSession, _render, display_limits, display_scale
+from swingcheck.pipeline import load_marks, video_signature
 from swingcheck.models import Marks
 
 

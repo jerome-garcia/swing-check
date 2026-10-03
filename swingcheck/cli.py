@@ -1,22 +1,26 @@
-"""Command-line entry point. Pipeline stages are wired in as they're built."""
+"""Command-line entry point: a thin wrapper over swingcheck.pipeline.
+
+(Being replaced by the web app.)
+"""
 
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 
-from swingcheck.analyzers import SwingContext, run_analyzers
 from swingcheck.config import PROJECT_ROOT, load_config
-from swingcheck.ingest import IngestError, normalize
-from swingcheck.body import body_scale, hands
-from swingcheck.marking import MarkingCancelled, get_marks, video_signature
-from swingcheck.models import PoseSeq
-from swingcheck.output.annotate import Annotator, write_outputs
-from swingcheck.output.report import STATUS_TAGS, build_report
-from swingcheck.phases import PhaseError, detect_phases, get_phases
-from swingcheck.pose import get_pose, write_debug_video
+from swingcheck.ingest import IngestError
+from swingcheck.marking import MarkingCancelled, get_marks
+from swingcheck.output.report import STATUS_TAGS
+from swingcheck.pipeline import PipelineError, analyze, ingest
+
+
+def _print_progress(stage: str, fraction: float | None, message: str) -> None:
+    if stage == "pose":
+        print(f"\r  {message}", end="\n" if fraction == 1.0 else "", flush=True)
+    elif stage != "done":
+        print(f"{message}...")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -46,92 +50,35 @@ def main(argv: list[str] | None = None) -> int:
     run_dir = args.runs_dir / args.video.stem
 
     try:
-        info = normalize(args.video, run_dir, config, start=args.start, end=args.end, force=args.force)
-    except IngestError as e:
-        print(f"error: {e}", file=sys.stderr)
-        return 1
-
-    print(
-        f"Normalized: {info.width}x{info.height} @ {info.fps:g} fps, "
-        f"{info.frame_count} frames ({info.duration:.2f}s), rotation applied: {info.rotation} deg"
-    )
-    for warning in info.warnings:
-        print(f"warning: {warning}")
-
-    try:
-        marks, reused = get_marks(run_dir / "normalized.mp4", run_dir, args.view, info, config, remark=args.remark)
+        info = ingest(args.video, run_dir, config, start=args.start, end=args.end, force=args.force)
+        for warning in info.warnings:
+            print(f"warning: {warning}")
+        get_marks(run_dir / "normalized.mp4", run_dir, args.view, info, config, remark=args.remark)
+        overrides = {k: v for k, v in (("address", args.address), ("top", args.top), ("impact", args.impact))
+                     if v is not None}
+        result = analyze(run_dir, args.view, config, overrides=overrides, clear_overrides=args.auto_phases,
+                         force=args.force, video=not args.no_video, pose_debug=args.pose_debug,
+                         progress=_print_progress)
     except MarkingCancelled:
         print("Marking cancelled; nothing saved.", file=sys.stderr)
         return 1
-    source = "reused saved marks" if reused else "saved marks"
-    points = ", ".join(f"{name}=({x:.0f},{y:.0f})" for name, (x, y) in marks.points.items())
-    print(f"Marks ({source}): address frame {marks.address_frame}, {points}")
-
-    def locate_swing(coarse: PoseSeq) -> tuple[int, int] | None:
-        try:
-            scale = body_scale(coarse, marks.address_frame, config)
-            found = detect_phases(hands(coarse, config), coarse.fps, scale, config["phases"])
-        except (PhaseError, ValueError):
-            return None
-        return found.address, found.impact
-
-    pose, reused = get_pose(run_dir, info, config, locate_swing=locate_swing, force=args.force)
-    if pose.dense and pose.dense != (0, len(pose) - 1):
-        span = f", full-rate frames {pose.dense[0]}-{pose.dense[1]}"
-    else:
-        span = ""
-    print(f"Pose ({'reused cache' if reused else 'extracted'}){span}")
-
-    overrides = {k: v for k, v in (("address", args.address), ("top", args.top), ("impact", args.impact)) if v is not None}
-    hand_track = hands(pose, config)
-    try:
-        scale = body_scale(pose, marks.address_frame, config)
-        # DTL posture checks are judged on the frame you marked, so it is the address.
-        phases, detect_error = get_phases(
-            run_dir, hand_track, pose.fps, scale, config, video_signature(info), overrides, args.auto_phases,
-            marked_address=marks.address_frame if args.view == "dtl" else None,
-        )
-    except (PhaseError, ValueError) as e:
+    except (IngestError, PipelineError) as e:
         print(f"error: {e}", file=sys.stderr)
-        print("Set phase frames manually with --address N --top N --impact N (frame numbers).", file=sys.stderr)
         return 1
-    if detect_error:
-        print(f"warning: automatic phase detection failed ({detect_error}); using manual frames")
-    print("Phases:")
-    for name, frame in phases.as_dict().items():
-        tag = "  (manual)" if name in phases.manual else ""
-        print(f"  {name:<16} frame {frame:>5}  {frame / pose.fps:6.2f}s{tag}")
-    if pose.dense and not all(pose.dense[0] <= f <= pose.dense[1] for f in phases.as_dict().values()):
-        print("warning: a phase lies outside the full-rate pose range; rerun with --force to re-extract around it")
 
-    ctx = SwingContext(
-        view=args.view, pose=pose, marks=marks, phases=phases,
-        scale=body_scale(pose, phases.address, config), config=config,
-        video_path=run_dir / "normalized.mp4",
-    )
-    verdicts = run_analyzers(ctx)
-    (run_dir / "analysis.json").write_text(json.dumps(
-        {"view": args.view, "phases": phases.as_dict(), "body_scale_px": round(ctx.scale, 2),
-         "verdicts": [v.to_json() for v in verdicts]},
-        indent=2,
-    ))
-    report = build_report(args.video, args.view, info, phases, verdicts, ctx.scale, config["scale"]["method"])
-    (run_dir / "report.txt").write_text(report, encoding="utf-8")
+    for warning in result.warnings:
+        if warning not in info.warnings:
+            print(f"warning: {warning}")
+    print("Phases:")
+    for name, frame in result.phases.as_dict().items():
+        tag = "  (manual)" if name in result.phases.manual else ""
+        print(f"  {name:<16} frame {frame:>5}  {frame / result.pose.fps:6.2f}s{tag}")
     print("Results:")
-    for v in verdicts:
+    for v in result.verdicts:
         print(f"  [{STATUS_TAGS[v.status]:<5}] {v.title}: {v.label}")
         print(f"          {v.summary}")
-
-    annotator = Annotator(verdicts, phases, hand_track, pose.fps, info.width, info.height, config)
-    frame_range = pose.dense if pose.dense else (0, len(pose) - 1)
-    print("Writing outputs...")
-    written = write_outputs(run_dir, annotator, frame_range, config, video=not args.no_video)
-    written["report"] = run_dir / "report.txt"
-    for name, path in written.items():
+    for name, path in result.written.items():
         print(f"  {name:<8} {path}")
-
-    if args.pose_debug:
-        print(f"  {'debug':<8} {write_debug_video(run_dir, pose, config)}")
     return 0
 
 
