@@ -72,7 +72,7 @@ REQUIRED_MARKS: dict[str, tuple[str, ...]] = {
 # keyed by checkpoint: the points clicked there.
 CHECKPOINT_MARKS: dict[str, dict[str, tuple[str, ...]]] = {
     "dtl": {"takeaway": ("clubhead", "grip"), "halfway_back": ("clubhead", "grip"), "top": ("clubhead", "grip"),
-            "downswing": ("clubhead", "grip")},
+            "downswing": ("clubhead", "grip"), "follow_through": ("clubhead", "grip")},
     "fo": {},
 }
 

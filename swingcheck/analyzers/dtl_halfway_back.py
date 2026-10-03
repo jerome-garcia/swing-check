@@ -28,6 +28,26 @@ HOLD_MS = 400  # how long the overlays stay up in the annotated video
 ORDER = {"ok": 0, "warn": 1, "flag": 2}
 
 
+def shaft_landing(ctx: SwingContext, clubhead, hands, where: str) -> tuple[np.ndarray, float, float]:
+    """Where the shaft line (clubhead through hands, carried on down) reaches the ball's level.
+
+    Returns (landing point, inside_by, toward_golfer): inside_by is in torso lengths,
+    + = between the ball and your feet; toward_golfer is the screen x direction to the golfer.
+    """
+    clubhead, hands = np.asarray(clubhead, float), np.asarray(hands, float)
+    ball = np.asarray(ctx.marks.points["ball"], float)
+    if hands[1] - clubhead[1] < 1:
+        raise MissingData(f"the clubhead should be above the hands at {where}; check the {where} marks")
+    # Screen x direction from the ball toward the golfer (hips at address).
+    hip = ctx.midpoint("left_hip", "right_hip")[ctx.marks.address_frame]
+    if not np.all(np.isfinite(hip)):
+        hip = ctx.value(ctx.track(ctx.side("hip", "trail")), ctx.marks.address_frame, "trail hip")
+    toward_golfer = -1.0 if hip[0] < ball[0] else 1.0
+    slope = (hands[0] - clubhead[0]) / (hands[1] - clubhead[1])  # screen x per screen y
+    landing = np.array([hands[0] + (ball[1] - hands[1]) * slope, ball[1]])
+    return landing, ctx.units((landing[0] - ball[0]) * toward_golfer), toward_golfer
+
+
 @register("halfway_back", view="dtl", title="Halfway back")
 def halfway_back(ctx: SwingContext) -> Verdict:
     mark = ctx.marks.checkpoint("halfway_back")
@@ -38,19 +58,7 @@ def halfway_back(ctx: SwingContext) -> Verdict:
     clubhead = np.asarray(mark.points["clubhead"], float)  # or any point high up the shaft
     hands = np.asarray(mark.points["grip"], float)
     ball = np.asarray(ctx.marks.points["ball"], float)
-    if hands[1] - clubhead[1] < 1:
-        raise MissingData("the clubhead should be above the hands at halfway back; check the halfway-back marks")
-
-    # Screen x direction from the ball toward the golfer (hips at address).
-    hip = ctx.midpoint("left_hip", "right_hip")[ctx.marks.address_frame]
-    if not np.all(np.isfinite(hip)):
-        hip = ctx.value(ctx.track(ctx.side("hip", "trail")), ctx.marks.address_frame, "trail hip")
-    toward_golfer = -1.0 if hip[0] < ball[0] else 1.0
-
-    # 1. Where the shaft line, carried on down through the hands, reaches the ball's level.
-    slope = (hands[0] - clubhead[0]) / (hands[1] - clubhead[1])  # screen x per screen y
-    landing = np.array([hands[0] + (ball[1] - hands[1]) * slope, ball[1]])
-    inside_by = ctx.units((landing[0] - ball[0]) * toward_golfer)  # + = between the ball and your feet
+    landing, inside_by, toward_golfer = shaft_landing(ctx, clubhead, hands, "halfway back")
     shaft_status = grade(inside_by, cfg["inside_min"], cfg["inside_max"], cfg["inside_watch_min"], cfg["inside_watch_max"])
     if shaft_status == "ok":
         shaft_label, shaft_meaning = "Points just inside the ball", "the shaft points just inside the ball, on plane"

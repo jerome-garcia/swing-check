@@ -15,6 +15,8 @@ const STEPS = {
       intro: "Scrub to the top of your backswing (the moment the club stops going back). Click the clubhead, then your hands. This frame is the top checkpoint." },
     { key: "downswing", title: "Downswing", points: ["clubhead", "grip"], optional: true,
       intro: "Scrub to where the shaft is parallel to the ground on the way down (hands about hip height). Click the clubhead, then your hands. This frame is the downswing checkpoint." },
+    { key: "follow_through", title: "Follow-through", points: ["clubhead", "grip"], optional: true,
+      intro: "Scrub to where your trail arm is parallel to the ground after impact (hands about shoulder height, the mirror of halfway back; if your arms are hidden, pick where the shaft looks about as steep as at halfway back). Click the clubhead, then your hands. This frame is the follow-through checkpoint." },
   ],
   fo: [
     { key: "address", title: "Address", points: ["ball"], optional: false,
@@ -45,6 +47,10 @@ const STEP_POINT_INFO = {
     clubhead: { label: "Clubhead", hint: "Center of the clubhead (it may be blurred: click the middle of the streak)" },
     grip: { label: "Hands", hint: "Center of your hands" },
   },
+  follow_through: {
+    clubhead: { label: "Clubhead", hint: "Center of the clubhead, or the highest point of the shaft you can see if it's out of frame" },
+    grip: { label: "Hands", hint: "Center of your hands, or the lowest point of the shaft you can see if they're hidden behind you" },
+  },
 };
 // Where to start a checkpoint step that has no detected phase of its own.
 const FRAME_GUESS = {
@@ -52,6 +58,8 @@ const FRAME_GUESS = {
   halfway_back: p => (p.takeaway !== undefined && p.top !== undefined ? p.takeaway + 0.4 * (p.top - p.takeaway) : undefined),
   // Shaft parallel coming down is about halfway from the early downswing to impact.
   downswing: p => (p.early_downswing !== undefined && p.impact !== undefined ? (p.early_downswing + p.impact) / 2 : undefined),
+  // Trail arm parallel after impact: about as long after impact as the downswing took from the top.
+  follow_through: p => (p.top !== undefined && p.impact !== undefined ? p.impact + 0.6 * (p.impact - p.top) : undefined),
 };
 const pointInfo = (step, name) => ({ ...POINT_INFO[name], ...((STEP_POINT_INFO[step] || {})[name] || {}) });
 const LOUPE_SIZE = 150;

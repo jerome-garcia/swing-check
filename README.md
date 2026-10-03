@@ -31,7 +31,7 @@ of the swing.
 | 5 | **Top of backswing** | The lead (left) arm matches the shoulders, 90° to the spine, and the hands are on plane | ✅ Implemented |
 | 6 | **Downswing** | With the shaft parallel to the ground coming down, the club is back on plane and flatter than at the takeaway (shallowing) | ✅ Implemented |
 | 7 | **Impact** | The hips stay back on the "tush line" (no early extension) and the spine bend is kept | ✅ Implemented |
-| 8 | **Follow-through** | The club exits on the same line the golfer had in the backswing | ⬜ Not yet |
+| 8 | **Follow-through** | With the trail arm parallel after impact, the club exits on plane, on the same line as at halfway back | ✅ Implemented |
 
 **Colors and units.** Every measurement is graded 🟢 green (good), 🟡 yellow
 (watch: just outside good) or 🔴 red (flag), and a checkpoint takes the worst
@@ -180,15 +180,33 @@ ball: early extension, red. The key frame shows the address tush line (white),
 where the rear of the hips is at impact, and the spine now (colored) vs at
 address (dashed).
 
-**Notes for the checkpoints still to build:**
-- **Follow-through (8)** judges where the **club** is. The pose model
-  only tracks the body, so you mark the club on those frames in the marking
-  screen, as for takeaway and halfway back (a step per checkpoint where you
-  pick the frame and click the clubhead and hands, stored in `marks.json` under
-  `checkpoints`).
-- The app already finds takeaway, top, early downswing and impact frames
-  automatically from the hand path (adjustable on the results page), so new
-  checkpoints can use them.
+**8. Follow-through (implemented).** On the **Follow-through** marking step,
+scrub to where your **trail arm is parallel to the ground after impact** (hands
+about shoulder height: the mirror of halfway back) and click the **clubhead**
+and your **hands**. From behind, the hands are often hidden behind your body
+here: click the lowest point of the shaft you can see instead (any two points
+on the shaft define its line), and if the arms are hidden, pick the frame
+where the shaft looks about as steep as at halfway back. Settings live in
+`[analyzers.follow_through]`.
+
+| Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
+|---|---|---|---|---|
+| **Shaft points** | the shaft line carried down to the ball's level, as at halfway back | 15% past the ball to 60% inside: **Exits on plane** | to 30% past (*slightly flat*) or 60–85% inside (*slightly steep*) | beyond: **Exits flat** / **Exits steep** |
+| **Same line as backswing** | this landing vs the halfway-back landing, as % of torso length | within ±30%: **Same line as the backswing** | 30–55% apart (*slightly steeper / flatter*) | more than 55% apart |
+
+Set from the same reference golfer (follow-through on the ball, halfway back
+16–26% inside: about 20% apart, green). McIlroy exits 48% inside, 18% steeper
+than his halfway back (green); an amateur swing exits on the ball but its
+halfway back was laid off 117% past the ball, so the exit is 117% steeper than
+the way back (red). Same-line needs halfway back marked; otherwise only the
+shaft row. The key frame shows the shaft line carried to the ball's level and
+where the halfway-back line landed (grey), joined by a tick.
+
+**Notes:**
+- Each club-based checkpoint (3, 4, 5, 6, 8) has a marking step where you
+  pick the frame and click the clubhead and hands (stored in `marks.json`
+  under `checkpoints`), because the pose model only tracks the body. Address
+  and impact use the detected frames (adjustable on the results page).
 - Drawing the hand path (wrist trail) on the video and key frames is switched
   off (`[output] show_hand_path = false`): no current check uses it, and wrist
   tracking makes it jittery.
@@ -392,6 +410,11 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    **Downswing (optional).** Switch to the **Downswing** step, scrub to where
    the shaft is parallel to the ground coming down, and click the
    **clubhead** and then your **hands**.
+
+   **Follow-through (optional).** Switch to the **Follow-through** step, scrub
+   to where your trail arm is parallel to the ground after impact, and click
+   the **clubhead** and then your **hands** (or the lowest point of the shaft
+   you can see, if your hands are hidden).
 
    **Trim the clip** (below the points) cuts out practice swings or idle time:
    scrub to a frame, press **Start here** or **End here**, then **Apply trim**.

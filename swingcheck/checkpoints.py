@@ -35,7 +35,7 @@ DTL_CHECKPOINTS: tuple[Checkpoint, ...] = (
     Checkpoint(7, "Impact", "impact", "impact",
                "The hips stay back on the tush line (no early extension) and the spine bend is kept."),
     Checkpoint(8, "Follow-through", "follow_through", None,
-               "The club exits on the same line as the backswing."),
+               "Trail arm parallel after impact: the shaft exits on plane, on the same line as at halfway back."),
 )
 
 
