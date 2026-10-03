@@ -108,6 +108,18 @@ def test_scale_invariant():
     assert a.as_dict() == b.as_dict()
 
 
+def test_tracking_wobble_mid_downswing_doesnt_stop_impact_search():
+    # Blurry footage: fast drop, the hands bounce back up a little for a frame,
+    # then keep coming down more slowly to impact (seen on a real 60 fps clip).
+    fps = 60.0
+    keys = [(0, 800), (40, 800), (80, 380), (85, 380), (93, 700), (96, 685), (110, 790), (140, 300), (160, 300)]
+    frames = np.arange(161)
+    y = np.interp(frames, [k for k, _ in keys], [v for _, v in keys])
+    track = np.stack([np.full_like(y, 300.0), y], axis=1)
+    phases = detect_phases(track, fps, SCALE, CFG)
+    assert abs(phases.impact - 110) <= 1
+
+
 def test_flat_track_raises():
     track = np.full((200, 2), 500.0)
     with pytest.raises(PhaseError):

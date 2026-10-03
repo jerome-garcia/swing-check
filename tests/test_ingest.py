@@ -22,6 +22,15 @@ def test_choose_fps_prefers_average_for_vfr():
     assert warnings == []
 
 
+def test_choose_fps_keeps_timeline_rate_when_frames_are_missing():
+    # Shared iPhone slo-mo: a 59.94 fps timeline with gaps, averaging 41.7.
+    fps, warnings = choose_fps({"avg_frame_rate": "750000/17969", "r_frame_rate": "60000/1001"})
+    assert fps == 60
+    assert "missing" in warnings[0]
+    # A real 29.97 clip averaging a hair under its timeline rate is not gappy.
+    assert choose_fps({"avg_frame_rate": "2997/101", "r_frame_rate": "30000/1001"}) == (30, [])
+
+
 def test_choose_fps_falls_back_when_missing():
     fps, warnings = choose_fps({"avg_frame_rate": "0/0", "r_frame_rate": "0/0"})
     assert fps == FALLBACK_FPS

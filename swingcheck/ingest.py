@@ -19,6 +19,7 @@ from typing import Any
 STANDARD_FPS = (24, 25, 30, 48, 50, 60, 100, 120, 240)
 SNAP_TOLERANCE = 0.03  # snap to a standard rate within 3%
 FALLBACK_FPS = 30.0
+GAPPY_FRACTION = 0.9  # average below this share of a standard timeline rate = frames missing
 HDR_TRANSFERS = {"arib-std-b67", "smpte2084"}  # HLG, PQ
 
 
@@ -85,6 +86,10 @@ def choose_fps(stream: dict[str, Any]) -> tuple[float, list[str]]:
 
     avg_frame_rate reflects the real capture rate for variable-rate phone video;
     r_frame_rate is the fallback (it can be a timebase-ish value like 90000 on VFR files).
+    Exception: when r_frame_rate is a standard rate and the average is well below it,
+    the file is on that timeline with frames missing (e.g. a shared iPhone slo-mo:
+    60 fps with gaps averages 42). Converting at the average would throw away real
+    frames, so the timeline rate is kept and the gaps repeat the previous frame.
     """
     warnings: list[str] = []
     avg = parse_rate(stream.get("avg_frame_rate"))
@@ -93,6 +98,12 @@ def choose_fps(stream: dict[str, Any]) -> tuple[float, list[str]]:
     if not candidates:
         warnings.append(f"No usable frame rate in file; assuming {FALLBACK_FPS:g} fps.")
         return FALLBACK_FPS, warnings
+    if avg is not None and real is not None and snap_fps(real) in STANDARD_FPS and avg < GAPPY_FRACTION * real:
+        warnings.append(
+            f"Frames are missing in this file (it averages {avg:.0f} fps on a {snap_fps(real):g} fps "
+            "timeline); the gaps repeat the previous frame."
+        )
+        return snap_fps(real), warnings
     return snap_fps(candidates[0]), warnings
 
 
@@ -173,7 +184,9 @@ def normalize(
     ingest_cfg = config["ingest"]
     if fps <= ingest_cfg["low_fps_warning"]:
         warnings.append(
-            f"Clip is {fps:g} fps. Impact detection works best at 120+ fps (iPhone slo-mo)."
+            f"Clip is {fps:g} fps. If you filmed slo-mo, this is the phone's shared copy, slowed down "
+            "for playback, not the original: copy the original file off the phone to get 120-240 fps "
+            "(see Filming in the README)."
         )
     if hdr:
         warnings.append("HDR clip: converted to SDR without tone mapping, colors may look flat (pose is unaffected).")

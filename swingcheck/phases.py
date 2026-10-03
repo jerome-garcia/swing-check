@@ -98,9 +98,13 @@ def detect_phases(hands: np.ndarray, fps: float, scale: float, cfg: dict[str, An
             vy_search = windowed
     d = int(np.nanargmax(vy_search))
 
-    # 2. Impact: hands bottom out after D (first frame they stop dropping).
-    stop = _first(vy[d + 1 :] <= 0)
-    end = d + 1 + stop if stop is not None else n - 1
+    # 2. Impact: hands bottom out after D. The search ends once they have clearly
+    # come back up (risen this far above their lowest point so far), so a
+    # one-frame tracking wobble mid-downswing doesn't end it early.
+    with np.errstate(invalid="ignore"):
+        risen = np.fmax.accumulate(np.nan_to_num(y[d:], nan=-np.inf)) - y[d:] > cfg["bottom_rise_tolerance"] * scale
+    stop = _first(risen)
+    end = d + stop if stop is not None else n - 1
     lowest = d + int(np.nanargmax(y[d : end + 1]))
     # Hands linger near the bottom for a few frames; which one is lowest is
     # mostly noise, so take the middle of that near-flat stretch.
@@ -125,7 +129,7 @@ def detect_phases(hands: np.ndarray, fps: float, scale: float, cfg: dict[str, An
     before = _last(is_low[:t])
     low_start = before if before is not None else 0
     top = low_start + int(np.nanargmin(y[low_start : d + 1]))
-    if top >= impact:
+    if top >= impact or y[impact] - y[top] < cfg["low_level_tolerance"] * scale:
         raise PhaseError("Could not separate top of backswing from impact.")
 
     # 4. Address: last still stretch at or before the low point preceding the backswing.

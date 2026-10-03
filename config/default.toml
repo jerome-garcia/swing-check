@@ -75,6 +75,10 @@ still_min_ms = 150
 address_move_tolerance = 0.03
 # Extra smoothing applied to the hand path for phase detection only.
 smoothing_ms = 40
+# The downswing's lowest hand point is searched until the hands have risen
+# this far (body units) back up from it, so small tracking wobbles don't
+# stop the search early.
+bottom_rise_tolerance = 0.08
 # Impact is the middle of the frames where the hands are within this distance
 # (body units) of their lowest point in the downswing.
 impact_plateau_tolerance = 0.01

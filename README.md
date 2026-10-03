@@ -196,7 +196,10 @@ during the clip. A tripod is the single most important thing.
 - **Use the original file.** Sharing or messaging an iPhone slo-mo clip often
   re-exports it at 30 fps. On the PC, use iCloud.com "download original", the
   Windows Photos app import, or a USB copy from the iPhone's DCIM folder. The app
-  warns if a clip is 60 fps or slower.
+  warns if a clip is 60 fps or slower. A shared copy is easy to spot: a
+  2-second swing comes through as a 10+ second video, because the slow-motion
+  part was baked in for playback. Such copies also often have frames missing;
+  the app keeps every frame that's there and repeats the previous one over a gap.
 - **Same camera spot every session** (mark the tripod feet with tape). Angles
   and distances are measured in 2D, so moving the camera changes the numbers even
   when your swing doesn't.
