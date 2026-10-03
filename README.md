@@ -51,7 +51,7 @@ up to where it meets your body. Settings live in `[analyzers.swing_plane]`.
 
 | Measurement | How | Good range (default) | If outside |
 |---|---|---|---|
-| **Points at** (key check) | where the extended shaft line crosses your torso, as a fraction of the way from hip center (0) to shoulder center (1) | 0–0.45, the belt-buckle area | **Flag**. Above: shaft too upright (standing too close / hands too high). Below: shaft too flat (too far from the ball / hands too low) |
+| **Alignment** (key check) | where the extended shaft line crosses your torso ("Crosses torso at": 0 = hip center, 1 = shoulder center) | 0–0.45: **Points at belt buckle** | **Flag**. **Points above belt**: shaft too upright (standing too close / hands too high). **Points below belt**: shaft too flat (too far from the ball / hands too low) |
 | **Shaft angle** | angle of the line above horizontal | 45–65° | **Watch** only: it depends on the club and camera height |
 
 Typical shaft angles by club, for reference: driver 45–50°, mid-irons 50–55°,
@@ -306,9 +306,11 @@ red when not.
 
 **Swing plane.** The orange line on the address key frame runs along your shaft,
 from the clubhead up through your hands to where it meets your body; the green
-band on the torso is the belt-buckle zone it should hit. "Crosses torso at" is that
-crossing as a fraction from hip (0) to shoulder (1). The shaft angle is shown
-too, but only warns, since it changes with the club and camera height.
+band on the torso is the belt-buckle zone it should hit. **Alignment** says
+whether it points at the belt buckle, above or below the belt, and what that
+means. "Crosses torso at" is that crossing as a fraction from hip (0) to
+shoulder (1). The shaft angle is shown too, but only warns, since it changes
+with the club and camera height.
 
 Face-on checks are described in the [Roadmap](#roadmap) (future release).
 

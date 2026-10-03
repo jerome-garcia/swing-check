@@ -57,20 +57,21 @@ def swing_plane(ctx: SwingContext) -> Verdict:
     angle = shaft_angle_deg(clubhead, grip)
     u = torso_crossing(clubhead, grip, hip, shoulder)
 
+    # aim: short result (headline and frame label); aim_note: what it means.
     if u < cfg["belt_min"]:
-        aim_status, aim = "flag", "below the belt"
+        aim_status, aim = "flag", "Points below belt"
         aim_note = "Shaft too flat: likely standing too far from the ball or hands too low."
     elif u > cfg["belt_max"]:
-        aim_status, aim = "flag", "above the belt"
+        aim_status, aim = "flag", "Points above belt"
         aim_note = "Shaft too upright: likely standing too close to the ball or hands too high."
     else:
-        aim_status, aim, aim_note = "ok", "at the belt buckle", "Shaft line points at the belt buckle."
+        aim_status, aim, aim_note = "ok", "Points at belt buckle", "Shaft is well aligned with your body."
 
     angle_ok = cfg["angle_min"] <= angle <= cfg["angle_max"]
     angle_text = "in range" if angle_ok else ("flat" if angle < cfg["angle_min"] else "steep")
 
     status = aim_status if aim_status == "flag" else ("ok" if angle_ok else "warn")
-    label = f"points {aim}" + ("" if angle_ok else f", angle {angle:.0f}° ({angle_text})")
+    label = aim + ("" if angle_ok else f", angle {angle:.0f}° ({angle_text})")
     summary = aim_note
     if not angle_ok:
         summary += (f" Shaft angle {angle:.0f}° is outside {cfg['angle_min']}-{cfg['angle_max']}°"
@@ -94,7 +95,7 @@ def swing_plane(ctx: SwingContext) -> Verdict:
         Overlay("segment", [tuple(clubhead), tuple(tip)], PLANE_COLOR, "", show, 3),
         Overlay("segment", [tuple(clubhead), (clubhead[0] - toward_golfer * 0.35 * s, clubhead[1])], REFERENCE_COLOR, "", show, 1),
         Overlay("point", [tuple(cross)], color, "", show, 2),
-        Overlay("text", [(float(cross[0]) + 0.12 * s, float(cross[1]))], color, f"points {aim}", show),
+        Overlay("text", [(float(cross[0]) + 0.12 * s, float(cross[1]))], color, aim, show),
         Overlay("text", [tuple((clubhead + grip) / 2 - np.array([toward_golfer * 0.1 * s, 0.0]))],
                 PLANE_COLOR, f"plane {angle:.0f} deg", show),
     ]
@@ -105,7 +106,7 @@ def swing_plane(ctx: SwingContext) -> Verdict:
         measurements={
             "shaft_angle_deg": round(angle, 1),
             "angle": angle_text,
-            "points_at": aim.removeprefix("at "),
+            "alignment": f"{aim}. {aim_note}",
             "crosses_torso_at": round(u, 2),
             "units": "crosses torso at: 0 = hip, 1 = shoulder; the belt buckle is "
                      f"{cfg['belt_min']:g}-{cfg['belt_max']:g}",

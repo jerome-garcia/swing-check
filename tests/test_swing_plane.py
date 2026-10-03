@@ -56,20 +56,21 @@ def test_geometry_helpers():
 
 def test_points_at_belt_buckle():
     v = run(grip_for(0.3))
-    assert v.status == "ok" and v.label == "points at the belt buckle"
+    assert v.status == "ok" and v.label == "Points at belt buckle"
+    assert v.measurements["alignment"].startswith("Points at belt buckle.")
     assert v.measurements["crosses_torso_at"] == pytest.approx(0.3, abs=0.02)  # body center is 4 px off the trail side
     assert 45 <= v.measurements["shaft_angle_deg"] <= 65
 
 
 def test_points_above_belt_is_flagged():
     v = run(grip_for(0.8))
-    assert v.status == "flag" and "above the belt" in v.label
-    assert "too close" in v.summary
+    assert v.status == "flag" and "Points above belt" in v.label
+    assert "too close" in v.summary and "too close" in v.measurements["alignment"]
 
 
 def test_points_below_belt_is_flagged():
     v = run(grip_for(-0.3))
-    assert v.status == "flag" and "below the belt" in v.label
+    assert v.status == "flag" and "Points below belt" in v.label
     assert "too far" in v.summary
 
 
@@ -81,7 +82,7 @@ def test_angle_outside_range_is_only_a_watch():
     v = run(grip, clubhead=far_clubhead)
     assert v.measurements["shaft_angle_deg"] < 45
     assert v.status == "warn" and v.measurements["angle"] == "flat"
-    assert "points at the belt buckle" in v.label
+    assert "Points at belt buckle" in v.label
 
 
 def test_ranges_come_from_config():
