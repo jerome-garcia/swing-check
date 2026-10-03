@@ -11,16 +11,22 @@ dependencies = [
     "numpy>=1.24",
     "opencv-python>=4.8",
     "mediapipe>=0.10.14",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7"]
+dev = ["pytest>=7", "httpx>=0.27"]
 
 [project.scripts]
 swingcheck = "swingcheck.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["swingcheck*"]
+
+[tool.setuptools.package-data]
+"swingcheck.app" = ["static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

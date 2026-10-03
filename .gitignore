@@ -12,3 +12,6 @@ models/
 
 # Personal config overrides
 config/local.toml
+
+# Local tool settings
+.claude/
