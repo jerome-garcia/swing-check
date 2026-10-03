@@ -58,5 +58,5 @@ def test_takeaway_marks_saved_and_validated(tmp_path):
     with pytest.raises(PipelineError, match="after the address"):
         save_marks(tmp_path, "dtl", 10, address, info, checkpoints={"takeaway": {"frame": 5, "points": {"clubhead": (1, 1)}}})
     with pytest.raises(PipelineError, match="Unknown"):
-        save_marks(tmp_path, "dtl", 10, address, info, checkpoints={"top": {"frame": 50, "points": {"clubhead": (1, 1)}}})
+        save_marks(tmp_path, "dtl", 10, address, info, checkpoints={"finish": {"frame": 50, "points": {"clubhead": (1, 1)}}})
     assert marks.view == "dtl"

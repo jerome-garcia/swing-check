@@ -11,6 +11,8 @@ const STEPS = {
       intro: "Scrub to where the shaft is parallel to the target line (from behind, it points at the camera). Click the clubhead, then your hands. This frame is the takeaway checkpoint." },
     { key: "halfway_back", title: "Halfway back", points: ["clubhead", "grip"], optional: true,
       intro: "Scrub to where your lead arm is parallel to the ground (hands about level with your lead shoulder). Click the clubhead, then your hands. This frame is the halfway-back checkpoint." },
+    { key: "top", title: "Top", points: ["clubhead", "grip"], optional: true,
+      intro: "Scrub to the top of your backswing (the moment the club stops going back). Click the clubhead, then your hands. This frame is the top checkpoint." },
   ],
   fo: [
     { key: "address", title: "Address", points: ["ball"], optional: false,
@@ -31,6 +33,10 @@ const STEP_POINT_INFO = {
   },
   halfway_back: {
     clubhead: { label: "Clubhead", hint: "Center of the clubhead, or the highest point of the shaft you can see if it's out of frame" },
+    grip: { label: "Hands", hint: "Center of your hands" },
+  },
+  top: {
+    clubhead: { label: "Clubhead", hint: "Center of the clubhead, or the end of the shaft you can see if it's out of frame" },
     grip: { label: "Hands", hint: "Center of your hands" },
   },
 };

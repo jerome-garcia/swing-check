@@ -28,7 +28,7 @@ of the swing.
 | 2 | **Swing plane** | At address, a line through the clubhead and shaft points you click is the swing plane; check that its angle is correct and that it points roughly at the belt buckle | ✅ Implemented |
 | 3 | **Takeaway** | When the club is parallel to the target line in the takeaway, the clubhead is still on the address shaft line (on plane) | ✅ Implemented |
 | 4 | **Backswing (halfway back)** | At lead arm parallel, the hands split the trail biceps and the shaft points back just inside the golf ball | ✅ Implemented |
-| 5 | **Top of backswing** | The lead (left) arm matches the shoulders, 90° to the spine, and the club is on plane | ⬜ Not yet |
+| 5 | **Top of backswing** | The lead (left) arm matches the shoulders, 90° to the spine, and the hands are on plane | ✅ Implemented |
 | 6 | **Downswing** | The club comes back down the plane; check shallowing | ⬜ Not yet |
 | 7 | **Impact** | (details to be defined) | ⬜ Not yet |
 | 8 | **Follow-through** | The club exits on the same line the golfer had in the backswing | ⬜ Not yet |
@@ -124,8 +124,25 @@ card asks you to pick a later one instead of guessing. The key frame shows the
 shaft line (green) carried down to the ball's level, a tick from where it lands
 to the ball, and the trail upper arm (white) with the hands.
 
+**5. Top (implemented).** On the **Top** marking step, scrub to the top of your
+backswing (the moment the club stops going back) and click the **clubhead** and
+your **hands**. Body points come from tracking. Settings live in
+`[analyzers.top]`.
+
+| Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
+|---|---|---|---|---|
+| **Lead arm vs spine** | angle between the lead arm (lead shoulder → hands) and the spine (hip center → shoulder center) on the top frame; 90° = the arm matches the shoulders | 80–100°: **Lead arm matches the shoulders** | 70–80° (*slightly above*) or 100–110° (*slightly below*) | under 70°: arm lifted **above the shoulders** (upright); over 110°: **below the shoulders** (flat, around the body) |
+| **Hands vs plane** | the hands vs two lines from the ball: the address shaft line (lower, orange) and the line to your trail shoulder at address (upper, blue); across, at the hands' height, as % of torso length | between the lines: **Hands on plane** | up to 15% outside either line (*slightly above / below the plane*) | more than 15% above the upper line (too steep) or below the lower line (too flat) |
+
+Set from a reference photo of a scratch golfer: lead arm at 87–91° to the
+spine. McIlroy reads 84° with his hands between the lines (green); an amateur
+swing reads 66° (arm lifted, red) with the hands 10% above the upper line
+(yellow). The key frame shows both plane lines, the spine (white), the lead arm
+in its color, and a dashed green line square to the spine where the arm should
+be.
+
 **Notes for the checkpoints still to build:**
-- **Top and follow-through (5, 8)** judge where the **club** is. The pose model
+- **Follow-through (8)** judges where the **club** is. The pose model
   only tracks the body, so you mark the club on those frames in the marking
   screen, as for takeaway and halfway back (a step per checkpoint where you
   pick the frame and click the clubhead and hands, stored in `marks.json` under
@@ -329,6 +346,10 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    **Halfway back (optional).** Switch to the **Halfway back** step, scrub to
    where your lead arm is parallel to the ground, and click the **clubhead**
    (or the highest point of the shaft you can see) and then your **hands**.
+
+   **Top (optional).** Switch to the **Top** step (it starts on the detected
+   top), scrub to where the club stops going back, and click the **clubhead**
+   and then your **hands**.
 
    **Trim the clip** (below the points) cuts out practice swings or idle time:
    scrub to a frame, press **Start here** or **End here**, then **Apply trim**.

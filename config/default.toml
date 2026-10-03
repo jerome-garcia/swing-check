@@ -176,6 +176,21 @@ hands_watch = 0.30        # yellow to ±30%; red beyond
 # more than this far below the trail elbow mean the marked frame is too early.
 hands_below_elbow_max = 0.15
 
+[analyzers.top]
+# DTL checkpoint 5, on the top frame you mark.
+#
+# Lead arm (lead shoulder -> hands) vs spine (hip center -> shoulder center),
+# degrees. 90 = the arm matches the shoulders. Under = arm lifted above the
+# shoulder plane (upright); over = below it (flat, around the body).
+arm_spine_min = 80
+arm_spine_max = 100
+arm_spine_watch_min = 70
+arm_spine_watch_max = 110
+# Hands vs the plane: they should sit between the address shaft line (lower)
+# and the line from the ball to your trail shoulder at address (upper). Up to
+# this far outside either line (share of torso length) is yellow; beyond, red.
+plane_watch = 0.15
+
 [analyzers.hands_at_impact]
 # Lead wrist x minus ball x along the target direction, body units.
 ahead_threshold = 0.10        # >= this -> "ahead" (good shaft lean)
