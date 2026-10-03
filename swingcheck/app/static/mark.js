@@ -9,6 +9,8 @@ const STEPS = {
       intro: "Scrub to your address position (set up and still), then click the points. This frame is used for the address checks." },
     { key: "takeaway", title: "Takeaway", points: ["clubhead", "grip"], optional: true,
       intro: "Scrub to where the shaft is parallel to the target line (from behind, it points at the camera). Click the clubhead, then your hands. This frame is the takeaway checkpoint." },
+    { key: "halfway_back", title: "Halfway back", points: ["clubhead", "grip"], optional: true,
+      intro: "Scrub to where your lead arm is parallel to the ground (hands about chest height). Click the clubhead, then your hands. This frame is the halfway-back checkpoint." },
   ],
   fo: [
     { key: "address", title: "Address", points: ["ball"], optional: false,
@@ -27,6 +29,15 @@ const STEP_POINT_INFO = {
     clubhead: { label: "Clubhead", hint: "Center of the clubhead" },
     grip: { label: "Hands", hint: "Center of your hands" },
   },
+  halfway_back: {
+    clubhead: { label: "Clubhead", hint: "Center of the clubhead, or the highest point of the shaft you can see if it's out of frame" },
+    grip: { label: "Hands", hint: "Center of your hands" },
+  },
+};
+// Where to start a checkpoint step that has no detected phase of its own.
+const FRAME_GUESS = {
+  // Lead arm parallel comes about 40% of the way from takeaway to the top.
+  halfway_back: p => (p.takeaway !== undefined && p.top !== undefined ? p.takeaway + 0.4 * (p.top - p.takeaway) : undefined),
 };
 const pointInfo = (step, name) => ({ ...POINT_INFO[name], ...((STEP_POINT_INFO[step] || {})[name] || {}) });
 const LOUPE_SIZE = 150;
@@ -56,7 +67,8 @@ export async function renderMark(view, id, isCurrent) {
     // Later checkpoints: saved marks (only if still valid for this trim), else the detected
     // frame from the last analysis, else a guess just after address.
     const saved = marksValid && s.marks && s.marks.checkpoints ? s.marks.checkpoints[st.key] : null;
-    const detected = marksValid && s.analysis && s.analysis.phases ? s.analysis.phases[st.key] : undefined;
+    const phases = marksValid && s.analysis && s.analysis.phases ? s.analysis.phases : null;
+    const detected = phases ? (phases[st.key] ?? (FRAME_GUESS[st.key] || (() => undefined))(phases)) : undefined;
     stepState[st.key] = {
       frame: clampFrame(saved ? saved.frame : detected !== undefined ? detected : addressFrame + 0.6 * v.fps),
       points: saved ? pick(saved.points, st.points) : {},

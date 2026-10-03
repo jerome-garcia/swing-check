@@ -105,6 +105,7 @@ class Verdict:
     view: str = ""
     title: str = ""
     phase: str | None = None  # swing phase the check is judged on (its key frame)
+    frame: int | None = None  # key frame when it isn't a detected phase, e.g. a frame you marked
 
     def to_json(self) -> dict[str, Any]:
         d = asdict(self)

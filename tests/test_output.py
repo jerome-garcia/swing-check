@@ -102,6 +102,21 @@ def test_each_check_gets_its_own_key_frame(tmp_path):
 
 
 @pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg not on PATH")
+def test_key_frame_on_a_marked_frame(tmp_path):
+    # A check judged on a frame you marked (no detected phase) gets its key frame there.
+    with VideoWriter(tmp_path / "normalized.mp4", 108, 192, 240.0) as w:
+        for i in range(100):
+            w.write(np.full((192, 108, 3), i * 2, np.uint8))
+    v = Verdict(status="ok", label="a", summary="", phase=None, frame=77, name="halfway", title="Halfway")
+    ann = Annotator([v], PHASES, np.zeros((100, 2)), 240.0, 108, 192, CONFIG)
+    written = write_outputs(tmp_path, ann, (5, 50), CONFIG, video=False)
+    import cv2
+
+    img = cv2.imread(str(written["check_halfway"]))
+    assert abs(int(img[96, 54].mean()) - 154) < 12  # frame 77's gray level, not another frame
+
+
+@pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg not on PATH")
 def test_write_outputs_end_to_end(tmp_path):
     with VideoWriter(tmp_path / "normalized.mp4", 108, 192, 240.0) as w:
         for i in range(100):

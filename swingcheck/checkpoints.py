@@ -27,7 +27,7 @@ DTL_CHECKPOINTS: tuple[Checkpoint, ...] = (
     Checkpoint(3, "Takeaway", "takeaway", "takeaway",
                "When the club is parallel to the target line, the clubhead is still on the address shaft line."),
     Checkpoint(4, "Halfway back", "halfway_back", None,
-               "The hands split the biceps and the club points back inside the ball."),
+               "Lead arm parallel to the ground: the hands split the trail biceps and the shaft points just inside the ball."),
     Checkpoint(5, "Top", "top", "top",
                "The lead arm matches the shoulders, 90° to the spine, and the club is on plane."),
     Checkpoint(6, "Downswing", "downswing", "early_downswing",

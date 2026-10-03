@@ -143,7 +143,7 @@ def test_checkpoint_list_marks_built_ones(client):
     cps = client.get("/api/features").json()["checkpoints"]["dtl"]
     assert [c["number"] for c in cps] == list(range(1, 9))
     built = {c["analyzer"] for c in cps if c["built"]}
-    assert built == {"address", "swing_plane", "takeaway"}  # update as checkpoints land
+    assert built == {"address", "swing_plane", "takeaway", "halfway_back"}  # update as checkpoints land
     assert cps[0]["title"] == "Address" and cps[0]["phase"] == "address"
 
 

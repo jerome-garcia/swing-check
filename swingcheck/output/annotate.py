@@ -144,7 +144,11 @@ def write_outputs(run_dir: Path, annotator: Annotator, frame_range: tuple[int, i
         stills.setdefault(getattr(annotator.phases, n), []).append((n, annotator, n.upper(), n))
     # Each check's own key frame, drawn with only its lines (shown in the app's checkpoint stepper).
     for v in annotator.verdicts:
-        if v.phase in PHASE_NAMES and v.status != "error":
+        if v.status == "error":
+            continue
+        if v.frame is not None:
+            stills.setdefault(v.frame, []).append((f"check_{v.name}", annotator.only(v), v.title.upper(), v.name))
+        elif v.phase in PHASE_NAMES:
             stills.setdefault(getattr(annotator.phases, v.phase), []).append(
                 (f"check_{v.name}", annotator.only(v), v.title.upper(), v.phase))
     last_still = max(stills, default=0)

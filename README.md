@@ -27,7 +27,7 @@ of the swing.
 | 1 | **Address / alignment** | Arms perpendicular to the ground, spine tilt at the right angle, knee bend correct (plus back rounding) | ✅ Implemented |
 | 2 | **Swing plane** | At address, a line through the clubhead and shaft points you click is the swing plane; check that its angle is correct and that it points roughly at the belt buckle | ✅ Implemented |
 | 3 | **Takeaway** | When the club is parallel to the target line in the takeaway, the clubhead is still on the address shaft line (on plane) | ✅ Implemented |
-| 4 | **Backswing (halfway back)** | The hands should split the biceps, and the club should point back inside the golf ball | ⬜ Not yet |
+| 4 | **Backswing (halfway back)** | At lead arm parallel, the hands split the trail biceps and the shaft points back just inside the golf ball | ✅ Implemented |
 | 5 | **Top of backswing** | The lead (left) arm matches the shoulders, 90° to the spine, and the club is on plane | ⬜ Not yet |
 | 6 | **Downswing** | The club comes back down the plane; check shallowing | ⬜ Not yet |
 | 7 | **Impact** | (details to be defined) | ⬜ Not yet |
@@ -103,13 +103,33 @@ either side (grey), a tick from the clubhead square to the line, and the hands
 for reference. If the takeaway isn't marked, this checkpoint says so instead of
 guessing.
 
+**4. Halfway back (implemented).** On the **Halfway back** step of the marking
+screen, scrub to where your **lead arm is parallel to the ground** (hands about
+level with your lead shoulder) and click the **clubhead** (or the highest point
+of the shaft you can see, if the clubhead is out of frame) and your **hands**.
+Settings live in `[analyzers.halfway_back]`.
+
+| Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
+|---|---|---|---|---|
+| **Shaft points** | the line from the clubhead through the hands, carried down to the ball's level: where it lands vs the ball, as % of torso length | 0–40% inside the ball (between the ball and your feet): **Points just inside the ball** | 40–70% inside (*a little steep*) or up to 15% past the ball (*a little flat*) | past 70% inside: **Points at your feet** (too steep / upright); more than 15% past the ball: **Points outside the ball** (too flat / laid off) |
+| **Hands vs biceps** | across, at the hands' height: hands vs the line of your trail upper arm (shoulder → elbow, from body tracking) | within ±15%: **Hands split the biceps** | 15–30%: *slightly behind / in front of the arm* | past 30%: hands *deep behind* the arm or *far out in front* of it |
+
+Set from a reference photo (a scratch golfer: shaft 26% inside the ball, hands
+10% behind the biceps line, both green). McIlroy at lead arm parallel reads 30%
+inside and 4% behind (green); an amateur swing that went back inside at the
+takeaway reads 117% past the ball (laid off, red), with the hands 30% out in
+front. If the hands are still well below the trail elbow
+(`hands_below_elbow_max`), the frame is earlier than lead arm parallel and the
+card asks you to pick a later one instead of guessing. The key frame shows the
+shaft line (green) carried down to the ball's level, a tick from where it lands
+to the ball, and the trail upper arm (white) with the hands.
+
 **Notes for the checkpoints still to build:**
-- **Takeaway, backswing, top and follow-through (3, 4, 5, 8)** judge where the
-  **club** is. The pose model only tracks the body, so you mark the club on
-  those frames in the marking screen. Decided for takeaway: a **Takeaway** step
-  where you pick the frame (shaft parallel to the target line) and click the
-  clubhead and hands (stored in `marks.json` under `checkpoints`). Halfway back,
-  top and follow-through can follow the same pattern.
+- **Top and follow-through (5, 8)** judge where the **club** is. The pose model
+  only tracks the body, so you mark the club on those frames in the marking
+  screen, as for takeaway and halfway back (a step per checkpoint where you
+  pick the frame and click the clubhead and hands, stored in `marks.json` under
+  `checkpoints`).
 - The app already finds takeaway, top, early downswing and impact frames
   automatically from the hand path (adjustable on the results page), so new
   checkpoints can use them.
@@ -305,6 +325,10 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    shaft is parallel to the target line (from behind it points at the camera),
    and click the **clubhead** and then your **hands**. That frame becomes the
    takeaway checkpoint. It starts near the automatically detected takeaway.
+
+   **Halfway back (optional).** Switch to the **Halfway back** step, scrub to
+   where your lead arm is parallel to the ground, and click the **clubhead**
+   (or the highest point of the shaft you can see) and then your **hands**.
 
    **Trim the clip** (below the points) cuts out practice swings or idle time:
    scrub to a frame, press **Start here** or **End here**, then **Apply trim**.

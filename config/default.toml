@@ -158,6 +158,24 @@ line_tolerance = 0.20   # green: on plane
 flag_distance = 0.50    # yellow up to this (slightly inside/outside, which many
                         # good players do); red beyond (well inside/outside)
 
+[analyzers.halfway_back]
+# DTL checkpoint 4, on the frame you mark where the lead arm is parallel to the
+# ground. Distances as a share of torso length (0.10 = 10%, about 5 cm).
+#
+# Shaft points: the clubhead->hands line carried down to the ball's level.
+# + = lands inside the ball (between the ball and your feet), - = past it.
+inside_min = 0.0          # green: 0-40% inside
+inside_max = 0.40
+inside_watch_min = -0.15  # yellow: up to 15% past the ball (a little flat)...
+inside_watch_max = 0.70   # ...or 40-70% inside (toward your feet, a little steep); red beyond
+# Hands vs the trail upper arm (shoulder->elbow line), across, at the hands'
+# height: "hands split the biceps".
+hands_tolerance = 0.15    # green within ±15%
+hands_watch = 0.30        # yellow to ±30%; red beyond
+# At lead arm parallel the hands are about level with the trail biceps. Hands
+# more than this far below the trail elbow mean the marked frame is too early.
+hands_below_elbow_max = 0.15
+
 [analyzers.hands_at_impact]
 # Lead wrist x minus ball x along the target direction, body units.
 ahead_threshold = 0.10        # >= this -> "ahead" (good shaft lean)
