@@ -30,7 +30,7 @@ of the swing.
 | 4 | **Backswing (halfway back)** | At lead arm parallel, the hands split the trail biceps and the shaft points back just inside the golf ball | ✅ Implemented |
 | 5 | **Top of backswing** | The lead (left) arm matches the shoulders, 90° to the spine, and the hands are on plane | ✅ Implemented |
 | 6 | **Downswing** | With the shaft parallel to the ground coming down, the club is back on plane and flatter than at the takeaway (shallowing) | ✅ Implemented |
-| 7 | **Impact** | (details to be defined) | ⬜ Not yet |
+| 7 | **Impact** | The hips stay back on the "tush line" (no early extension) and the spine bend is kept | ✅ Implemented |
 | 8 | **Follow-through** | The club exits on the same line the golfer had in the backswing | ⬜ Not yet |
 
 **Colors and units.** Every measurement is graded 🟢 green (good), 🟡 yellow
@@ -161,6 +161,24 @@ his takeaway: green) and an amateur swing (back inside at 50%, then about on
 the line coming down: 28% *steeper* than going back, the classic loop, red).
 In dim, low-frame-rate footage the clubhead can be a streak and the exact P6
 frame can be missing; pick the nearest frame.
+
+**7. Impact (implemented).** Automatic, on the detected impact frame (adjust it
+under **Phases** on the results page if it's off); no extra marks. Settings live
+in `[analyzers.impact]`. No reference photo: defined from the two classic
+down-the-line impact checks.
+
+| Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
+|---|---|---|---|---|
+| **Hips vs tush line** | the rear edge of your body outline at hip height (from segmentation), at impact vs address, as % of torso length | moved back, or up to 10% (≈5 cm) toward the ball: **Hips on the tush line** | 10–15% toward the ball | more than 15% (≈7.5 cm, about 3 in): **Early extension** (hips thrust toward the ball) |
+| **Spine bend kept** | forward bend of the hip-center → shoulder-center line at impact vs address | up to 10° more upright or 6° more bent: **Posture kept** | 10–15° more upright (*slightly standing up*) or 6–12° more bent (*slightly dipping*) | more than that: **Standing up** / **Dipping** |
+
+Good players lose a few degrees of bend as the hips open (McIlroy about 7°)
+and often move the hips a few cm toward the ball, so the bands leave room for
+that. Readings: McIlroy 8% toward the ball and 7° more upright; Tiger 4–15%
+*back* and 2–3° more bent (all green); an amateur swing 18% (≈9 cm) toward the
+ball: early extension, red. The key frame shows the address tush line (white),
+where the rear of the hips is at impact, and the spine now (colored) vs at
+address (dashed).
 
 **Notes for the checkpoints still to build:**
 - **Follow-through (8)** judges where the **club** is. The pose model

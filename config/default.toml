@@ -206,6 +206,24 @@ under_watch_max = 0.70  # shallow); red beyond (over the top / stuck)
 shallow_min = 0.0         # green: as flat or flatter coming down
 shallow_watch_min = -0.20 # yellow: up to 20% steeper; red beyond (over the top loop)
 
+[analyzers.impact]
+# DTL checkpoint 7, automatic on the detected impact frame.
+#
+# Tush line: the rear edge of the hips (body outline at hip height) at impact
+# vs address, as a share of torso length; + = moved toward the ball (early
+# extension).
+# Good players often move a few cm toward the ball as the hips turn through;
+# around 3 inches (7-8 cm) is where early extension is usually called.
+hips_forward_max = 0.10    # green up to 10% (about 5 cm) toward the ball, or any amount back
+hips_forward_watch = 0.15  # yellow to 15% (about 7.5 cm); red beyond
+# Spine bend kept from address, degrees. Lost = more upright at impact. Good
+# players lose a few degrees as the hips open (McIlroy about 7°), so only a big
+# loss counts as standing up.
+posture_loss_max = 10      # green up to 10° more upright...
+posture_loss_watch = 15    # ...yellow to 15°; red beyond (standing up)
+posture_gain_max = 6       # green up to 6° more bent...
+posture_gain_watch = 12    # ...yellow to 12°; red beyond (dipping)
+
 [analyzers.hands_at_impact]
 # Lead wrist x minus ball x along the target direction, body units.
 ahead_threshold = 0.10        # >= this -> "ahead" (good shaft lean)

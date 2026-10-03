@@ -32,7 +32,8 @@ DTL_CHECKPOINTS: tuple[Checkpoint, ...] = (
                "The lead arm matches the shoulders, 90° to the spine, and the hands are on plane."),
     Checkpoint(6, "Downswing", "downswing", "early_downswing",
                "Shaft parallel coming down: the club is back on plane, flatter than at the takeaway (shallowing)."),
-    Checkpoint(7, "Impact", "impact", "impact", "Details to be defined."),
+    Checkpoint(7, "Impact", "impact", "impact",
+               "The hips stay back on the tush line (no early extension) and the spine bend is kept."),
     Checkpoint(8, "Follow-through", "follow_through", None,
                "The club exits on the same line as the backswing."),
 )
