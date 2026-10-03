@@ -32,6 +32,13 @@ export function el(tag, attrs = {}, ...children) {
 
 export const VIEW_NAMES = { dtl: "Down-the-line", fo: "Face-on" };
 
+// Which features the server has switched on (e.g. face-on is held for a future release).
+let featuresPromise = null;
+export function features() {
+  featuresPromise = featuresPromise || api("/api/features");
+  return featuresPromise;
+}
+
 export const STATUS_TEXT = {
   uploaded: "Converting",
   converted: "Needs marking",

@@ -1,4 +1,4 @@
-import { el, progressBlock, swingUrl } from "./util.js";
+import { el, features, progressBlock, swingUrl } from "./util.js";
 
 // Upload with XMLHttpRequest: fetch() can't report upload progress.
 function uploadWithProgress(file, viewChoice, onProgress) {
@@ -20,9 +20,12 @@ function uploadWithProgress(file, viewChoice, onProgress) {
   });
 }
 
-export function renderUpload(view) {
+export async function renderUpload(view, isCurrent) {
+  const { face_on: faceOn } = await features();
+  if (!isCurrent()) return;
   let file = null;
-  let viewChoice = null;
+  // With face-on held back, down-the-line is the only choice, so preselect it.
+  let viewChoice = faceOn ? null : "dtl";
 
   const fileName = el("div", { class: "subtle" }, "No video chosen");
   const input = el("input", {
@@ -41,12 +44,16 @@ export function renderUpload(view) {
     if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
   });
 
-  const viewButtons = ["dtl", "fo"].map(v => el("button", {
-    type: "button", class: "choice", "data-view": v,
-    onclick: () => { viewChoice = v; refresh(); },
-  },
-  el("strong", {}, v === "dtl" ? "Down-the-line" : "Face-on"),
-  el("span", { class: "subtle" }, v === "dtl" ? "Camera behind you, looking at the target" : "Camera facing you, square to the target line")));
+  const viewButtons = ["dtl", "fo"].map(v => {
+    const unavailable = v === "fo" && !faceOn;
+    return el("button", {
+      type: "button", class: "choice", "data-view": v, disabled: unavailable,
+      onclick: () => { viewChoice = v; refresh(); },
+    },
+    el("strong", {}, v === "dtl" ? "Down-the-line" : "Face-on"),
+    el("span", { class: "subtle" }, v === "dtl" ? "Camera behind you, looking at the target" : "Camera facing you, square to the target line"),
+    unavailable ? el("span", { class: "badge soon" }, "Coming in a future release") : null);
+  });
 
   const error = el("div", { class: "notice error", hidden: true });
   const submit = el("button", { class: "btn primary", type: "submit", disabled: true }, "Upload and convert");
@@ -90,4 +97,5 @@ export function renderUpload(view) {
     el("div", { class: "page-head" }, el("div", {}, el("h1", {}, "New swing"),
       el("div", { class: "subtle" }, "Use the original file from your phone so slo-mo keeps its frame rate."))),
     form);
+  refresh();
 }

@@ -1,4 +1,4 @@
-import { api, el, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
+import { api, el, features, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
 import { swingHeader } from "./swing.js";
 
 const POINTS = {
@@ -289,8 +289,12 @@ export async function renderMark(view, id, isCurrent) {
 
   // --- Camera view ----------------------------------------------------------
   const viewError = el("div", { class: "notice error", hidden: true });
+  const { face_on: faceOn, face_on_message: faceOnMessage } = await features();
+  if (!isCurrent()) return;
   const viewButtons = ["dtl", "fo"].map(choice => el("button", {
     type: "button", class: `btn small ${choice === s.view ? "selected" : ""}`, "aria-pressed": String(choice === s.view),
+    disabled: choice === "fo" && !faceOn && s.view !== "fo",
+    title: choice === "fo" && !faceOn ? faceOnMessage : null,
     onclick: async () => {
       if (choice === s.view) return;
       if (marksValid && !confirm("Switching the view means marking this swing again for that view. Continue?")) return;
@@ -337,6 +341,7 @@ export async function renderMark(view, id, isCurrent) {
         el("section", { class: "panel" },
           el("h2", {}, "Camera view"),
           el("div", { class: "actions" }, viewButtons),
+          !faceOn ? el("p", { class: "subtle small" }, faceOnMessage) : null,
           viewError),
         el("section", { class: "panel" },
           el("h2", {}, "Mark your address"),

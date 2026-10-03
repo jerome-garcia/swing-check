@@ -1,24 +1,84 @@
 # swing-check
 
-A golf swing analyzer that runs on your own computer. Upload a video of one
-swing, say whether it was filmed **down-the-line** or **face-on**, click the
-ball (and club), and it gives you an annotated video, key frames and a verdict
-for each check. Open it in your browser on the PC, or on your phone over Wi-Fi.
+A golf swing analyzer that runs on your own computer. Upload a **down-the-line**
+video of one swing, click the ball and club, and it gives you an annotated
+video, key frames and a verdict for each check. Open it in your browser on the
+PC, or on your phone over Wi-Fi.
 
-v1 focuses on fat shots, scooping, and wedges/hybrids flying high instead of far.
-The down-the-line checks are being rebuilt as a series of checkpoints (address,
-swing plane, takeaway, halfway back, top, downswing, impact, follow-through);
-address is done so far.
-
-| View | Check | What it tells you |
-|---|---|---|
-| Down-the-line | **Address posture** | Arms hanging straight down, spine forward bend, knee flex, and whether the back is rounded |
-| Face-on | **Hands at impact** | Hands ahead of, level with, or behind the ball (scoop / shaft lean) |
-| Face-on | **Weight shift** | How far the hips moved toward the target by impact (low point / fat shots) |
-| Face-on | **Head drift** | Whether the head moved away from the target by impact |
+The goal is to fix fat shots, scooping, and wedges/hybrids flying high instead
+of far. The down-the-line analysis is being built as **eight checkpoints**
+through the swing; see [Roadmap](#roadmap) for what each one checks and which
+are done. **Face-on** analysis is held back for a future release.
 
 Everything runs locally with Python, OpenCV, MediaPipe Pose and ffmpeg. Nothing
 is uploaded anywhere.
+
+---
+
+## Roadmap
+
+### Down-the-line checkpoints
+
+Built one at a time, in this order. Each checkpoint is checked on its own frame
+of the swing.
+
+| # | Checkpoint | What it checks | Status |
+|---|---|---|---|
+| 1 | **Address / alignment** | Arms perpendicular to the ground, spine tilt at the right angle, knee bend correct (plus back rounding) | ✅ Implemented |
+| 2 | **Swing plane** | At address, a line through the clubhead and shaft points you click is the swing plane; check that its angle is correct | ⬜ Not yet |
+| 3 | **Takeaway** | When the club is parallel to the target line in the takeaway, the club should cover the hands | ⬜ Not yet |
+| 4 | **Backswing (halfway back)** | The hands should split the biceps, and the club should point back inside the golf ball | ⬜ Not yet |
+| 5 | **Top of backswing** | The lead (left) arm matches the shoulders, 90° to the spine, and the club is on plane | ⬜ Not yet |
+| 6 | **Downswing** | The club comes back down the plane; check shallowing | ⬜ Not yet |
+| 7 | **Impact** | (details to be defined) | ⬜ Not yet |
+| 8 | **Follow-through** | The club exits on the same line the golfer had in the backswing | ⬜ Not yet |
+
+**1. Address / alignment (implemented).** Measured on the frame you mark on,
+which is the address frame for down-the-line, using the body points on the
+camera side (your trail side). Settings live in `[analyzers.address]` in
+`config/default.toml`.
+
+| Measurement | How | Good range (default) |
+|---|---|---|
+| Arms hang straight down | shoulder → wrist line, degrees from vertical (+ reaching out, − tucked in) | within ±10° |
+| Spine tilt | forward bend of the hip-center → shoulder-center line from vertical | 30–45° |
+| Knee bend | knee flex = 180° − the hip-knee-ankle angle (0 = straight leg) | 15–35° |
+| Back rounding (hump) | how far the outline of your back bulges beyond a straight line from hip to shoulder level, from the body silhouette (MediaPipe segmentation), in body lengths | ≤ 0.06 |
+
+**Notes for the checkpoints still to build:**
+
+- **Swing plane (2)** uses the clubhead (hosel) and grip points you already
+  click at address. The correct angle range still needs to be decided (from a
+  reference photo or a range you choose).
+- **Takeaway, backswing, top and follow-through (3, 4, 5, 8)** judge where the
+  **club** is. The pose model only tracks the body, so these need the club's
+  position on those frames. The proposed approach is for you to click the shaft
+  on each checkpoint frame in the marking screen, the same way as the ball and
+  grip at address. Not decided yet.
+- The app already finds takeaway, top, early downswing and impact frames
+  automatically from the hand path (adjustable on the results page), so new
+  checkpoints can use them.
+- The earlier down-the-line check (hands between a shaft line and a shoulder
+  line at takeaway, top and early downswing) was removed when this list
+  replaced it.
+
+### Face-on (future release)
+
+Built and unit-tested on made-up data, but not yet validated on real clips, so
+it's switched off in the app (`FACE_ON_ENABLED` in `swingcheck/app/server.py`).
+Swings already saved as face-on can still be opened, and switched to
+down-the-line from the marking screen.
+
+| Check | What it tells you |
+|---|---|
+| **Hands at impact** | Hands ahead of, level with, or behind the ball (scoop / shaft lean) |
+| **Weight shift** | How far the hips moved toward the target by impact (low point / fat shots) |
+| **Head drift** | Whether the head moved away from the target by impact |
+
+### Other ideas, not planned yet
+
+Backswing sway, vertical head movement, early extension, automatic club
+detection, and trends across sessions.
 
 ---
 
@@ -136,7 +196,9 @@ during the clip. A tripod is the single most important thing.
   in frame (often 3 to 4 m).
 - Aim the camera straight down the target line, not angled toward you.
 
-### Face-on
+### Face-on (for a future release)
+
+Face-on analysis isn't available in the app yet; this is how to film it when it is.
 
 ```
        target <-- (for a left-hander)        (for a right-hander) --> target
@@ -160,20 +222,22 @@ during the clip. A tripod is the single most important thing.
 
 ## Using the app
 
-1. **New swing.** Choose a video (or drop it on the page) and pick
-   down-the-line or face-on. It uploads and converts with a progress bar; the
-   conversion straightens rotated phone video and keeps the slo-mo frame rate.
+1. **New swing.** Choose a down-the-line video (or drop it on the page). It
+   uploads and converts with a progress bar; the conversion straightens rotated
+   phone video and keeps the slo-mo frame rate. (Face-on is shown but disabled
+   until a future release.)
 2. **Mark your address.** Scrub to your address position with the slider, the
    ‹ › buttons or the arrow keys (Shift = 10 frames). Then click:
-   - the **ball** (both views)
-   - the **clubhead at the hosel**, where the shaft meets the head (down-the-line)
-   - the **grip**, the center of your hands (down-the-line)
+   - the **ball**
+   - the **clubhead at the hosel**, where the shaft meets the head
+   - the **grip**, the center of your hands
 
    A magnifier follows the cursor; on a phone, touch and hold, slide to aim with
    the magnifier above your finger, and let go to place the point. **Undo**
-   removes the last point. In down-the-line, **the frame you mark on is your
-   address frame**: the address checks are measured on it, so pick a frame where
-   you're fully set up and still.
+   removes the last point. **The frame you mark on is your address frame**:
+   the address checks are measured on it, so pick a frame where you're fully set
+   up and still. If a swing was saved with the wrong camera view, switch it
+   under **Camera view** at the top of this screen.
 
    **Trim the clip** (below the points) cuts out practice swings or idle time:
    scrub to a frame, press **Start here** or **End here**, then **Apply trim**.
@@ -191,11 +255,10 @@ settings, or **Delete** to remove it and its files.
 
 ### When a phase is wrong
 
-In **Phases** on the results page, press **Adjust** next to top or impact (and
-address, for face-on), scrub to the right frame, and press **Set as …**. The
-swing is re-analyzed with your frame, which is remembered. **Reset to
-automatic** goes back to detection. In down-the-line, address is the frame you
-marked on; change it with **Edit marks**.
+In **Phases** on the results page, press **Adjust** next to top or impact,
+scrub to the right frame, and press **Set as …**. The swing is re-analyzed with
+your frame, which is remembered. **Reset to automatic** goes back to detection.
+Address is the frame you marked on; change it with **Edit marks**.
 
 ### Where your swings are stored
 
@@ -212,8 +275,8 @@ numbers behind it. Distances are in **body lengths**: your torso length
 (shoulders to hips) measured at address. So `0.10` means a tenth of your torso,
 roughly 5 cm for most adults, regardless of how far away the camera was.
 
-**Address posture (down-the-line).** Measured on the frame you marked, using
-the body points on the camera side (your trail side):
+**Address posture.** Measured on the frame you marked, using the body points on
+the camera side (your trail side). Default ranges are in the [Roadmap](#roadmap).
 
 - **Arms:** the shoulder-to-wrist line should hang straight down. Reported in
   degrees from vertical; + means the hands reach out toward the ball, - means
@@ -227,17 +290,7 @@ the body points on the camera side (your trail side):
 The address key frame draws each line with its value, green when in range and
 red when not.
 
-**Hands at impact (face-on).** Hands relative to the ball, toward the target.
-Ahead = forward shaft lean (good for irons/wedges). Behind = the shaft is leaning
-back (scooping), which adds loft and moves the low point back. Also reports the
-same number at address and the change between them.
-
-**Weight shift (face-on).** How far your hip center moved toward the target from
-address to impact. Too little means the low point is likely behind the ball (fat
-shots). Also reports the movement at the top.
-
-**Head drift (face-on).** How far your head center (nose and ears) moved along
-the target line from address to impact. Moving away from the target is flagged.
+Face-on checks are described in the [Roadmap](#roadmap) (future release).
 
 ---
 
@@ -251,18 +304,12 @@ with only what you want to change:
 [golfer]
 handedness = "right"          # or "left"
 
-[analyzers.hands_at_impact]
-ahead_threshold = 0.08
-behind_threshold = -0.03
-
-[analyzers.weight_shift]
-min_shift = 0.12
-
 [analyzers.address]
 knee_flex_max = 38
+back_bulge_max = 0.08
 
 [analyzers]
-disabled = ["head_drift"]     # skip a check entirely
+disabled = []                 # names of checks to skip, e.g. ["address"]
 ```
 
 **Restart the app** (Ctrl+C, then `swingcheck`) after changing the config, then
@@ -359,9 +406,3 @@ swingcheck/
 config/default.toml   every threshold, commented
 tests/                unit tests (pytest)
 ```
-
-## Not in v1
-
-Backswing sway, vertical head movement, early extension, automatic club
-detection, and session trends. Each of these can be added as a new check
-(see above).

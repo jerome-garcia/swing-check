@@ -1,8 +1,9 @@
 import { api, el, fileUrl, formatDate, STATUS_TEXT, swingUrl, verdictChips, VIEW_NAMES } from "./util.js";
 
-export async function renderHistory(view) {
+export async function renderHistory(view, isCurrent) {
   view.replaceChildren(el("p", { class: "subtle" }, "Loading swings…"));
   const swings = await api("/api/swings");
+  if (!isCurrent()) return; // the user navigated away while this loaded
   const head = el("div", { class: "page-head" },
     el("div", {}, el("h1", {}, "Your swings"),
       el("div", { class: "subtle" }, swings.length ? `${swings.length} saved` : "")));

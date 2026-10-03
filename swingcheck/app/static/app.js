@@ -18,8 +18,8 @@ async function route() {
   const hash = location.hash.replace(/^#/, "") || "/";
   const parts = hash.split("/").filter(Boolean).map(decodeURIComponent);
   try {
-    if (parts.length === 0) await renderHistory(view);
-    else if (parts[0] === "new") renderUpload(view);
+    if (parts.length === 0) await renderHistory(view, isCurrent);
+    else if (parts[0] === "new") await renderUpload(view, isCurrent);
     else if (parts[0] === "swing" && parts[1] && parts[2] === "mark") {
       const { renderMark } = await import("./mark.js");
       await renderMark(view, parts[1], isCurrent);

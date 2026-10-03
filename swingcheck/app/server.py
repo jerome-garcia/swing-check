@@ -22,6 +22,11 @@ from swingcheck.pipeline import PipelineError, analyze, ingest, save_marks
 STATIC = Path(__file__).parent / "static"
 VIDEO_EXTENSIONS = {".mov", ".mp4", ".m4v", ".avi", ".mkv", ".webm", ".3gp"}
 
+# Face-on is held back for a future release: its checks haven't been validated on
+# real clips yet. Existing face-on swings can still be opened. Flip this to enable it.
+FACE_ON_ENABLED = False
+FACE_ON_DISABLED_MESSAGE = "Face-on analysis is coming in a future release."
+
 
 class MarksIn(BaseModel):
     address_frame: int
@@ -62,10 +67,19 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
 
         return jobs.submit(swing_id, "convert", run)
 
-    @app.post("/api/swings")
-    def upload_swing(file: UploadFile = File(...), view: str = Form(...)) -> dict[str, Any]:
+    def check_view(view: str) -> None:
         if view not in ("dtl", "fo"):
             raise HTTPException(400, "Choose down-the-line or face-on")
+        if view == "fo" and not FACE_ON_ENABLED:
+            raise HTTPException(400, FACE_ON_DISABLED_MESSAGE)
+
+    @app.get("/api/features")
+    def features() -> dict[str, Any]:
+        return {"face_on": FACE_ON_ENABLED, "face_on_message": FACE_ON_DISABLED_MESSAGE}
+
+    @app.post("/api/swings")
+    def upload_swing(file: UploadFile = File(...), view: str = Form(...)) -> dict[str, Any]:
+        check_view(view)
         ext = Path(file.filename or "").suffix.lower()
         if ext not in VIDEO_EXTENSIONS:
             raise HTTPException(400, f"That doesn't look like a video ({ext or 'no extension'}). Use .mov or .mp4.")
@@ -110,8 +124,7 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
     @app.post("/api/swings/{swing_id}/view")
     def set_view(swing_id: str, body: ViewIn) -> dict[str, Any]:
         swing_or_404(swing_id)
-        if body.view not in ("dtl", "fo"):
-            raise HTTPException(400, "Choose down-the-line or face-on")
+        check_view(body.view)
         if jobs.active_for(swing_id):
             raise HTTPException(409, "This swing is still being processed.")
         meta = store.meta(swing_id)
@@ -143,6 +156,8 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
             raise HTTPException(409, "This swing is already being processed.")
         if store.status(swing_id) not in ("marked", "analyzed"):
             raise HTTPException(409, "Mark the ball (and club, for down-the-line) first.")
+        if meta.view == "fo" and not FACE_ON_ENABLED:
+            raise HTTPException(409, f"{FACE_ON_DISABLED_MESSAGE} Switch this swing to down-the-line to analyze it.")
         overrides = {k: v for k, v in body.phases.items() if k in ("address", "top", "impact")}
 
         def run(progress):

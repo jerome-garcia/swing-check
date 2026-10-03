@@ -5,11 +5,15 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
+from swingcheck.app import server
 from swingcheck.app.server import create_app
 from swingcheck.app.store import Store, SwingNotFound
 from swingcheck.output.video import VideoWriter
 from swingcheck.pipeline import save_marks
 from tests.helpers import make_info
+
+
+DTL_POINTS = {"ball": [30, 80], "clubhead": [28, 82], "grip": [20, 50]}
 
 
 @pytest.fixture
@@ -82,20 +86,20 @@ def test_upload_converts_in_background(client, tmp_path):
         for i in range(30):
             w.write(np.full((96, 64, 3), i * 8, np.uint8))
     with open(clip, "rb") as f:
-        r = client.post("/api/swings", files={"file": ("My Swing.mp4", f, "video/mp4")}, data={"view": "fo"})
+        r = client.post("/api/swings", files={"file": ("My Swing.mp4", f, "video/mp4")}, data={"view": "dtl"})
     assert r.status_code == 200
     swing_id, job_id = r.json()["id"], r.json()["job"]["id"]
     job = client.app.state.jobs.wait(job_id, timeout=60)
     assert job.state == "done", job.error
     d = client.get(f"/api/swings/{swing_id}").json()
-    assert d["status"] == "converted" and d["view"] == "fo" and d["name"] == "My Swing"
+    assert d["status"] == "converted" and d["view"] == "dtl" and d["name"] == "My Swing"
     assert d["video"]["frame_count"] == 30
     assert d["job"]["state"] == "done"
 
 
 @pytest.fixture
 def converted(client, tmp_path):
-    """A 1-second 30fps face-on clip, uploaded and converted. Returns its swing id."""
+    """A 1-second 30fps down-the-line clip, uploaded and converted. Returns its swing id."""
     if shutil.which("ffmpeg") is None:
         pytest.skip("ffmpeg not on PATH")
     clip = tmp_path / "clip.mp4"
@@ -103,7 +107,7 @@ def converted(client, tmp_path):
         for i in range(30):
             w.write(np.full((96, 64, 3), i * 8, np.uint8))
     with open(clip, "rb") as f:
-        r = client.post("/api/swings", files={"file": ("clip.mp4", f)}, data={"view": "fo"})
+        r = client.post("/api/swings", files={"file": ("clip.mp4", f)}, data={"view": "dtl"})
     assert client.app.state.jobs.wait(r.json()["job"]["id"], timeout=60).state == "done"
     return r.json()["id"]
 
@@ -116,16 +120,16 @@ def test_frame_images(client, converted):
 
 
 def test_save_marks_moves_swing_to_marked(client, converted):
-    r = client.post(f"/api/swings/{converted}/marks", json={"address_frame": 3, "points": {}})
-    assert r.status_code == 400 and "ball" in r.json()["detail"]
     r = client.post(f"/api/swings/{converted}/marks", json={"address_frame": 3, "points": {"ball": [30, 80]}})
+    assert r.status_code == 400 and "clubhead" in r.json()["detail"]
+    r = client.post(f"/api/swings/{converted}/marks", json={"address_frame": 3, "points": DTL_POINTS})
     assert r.status_code == 200
     d = client.get(f"/api/swings/{converted}").json()
     assert d["status"] == "marked" and d["marks"]["address_frame"] == 3
 
 
 def test_trim_reconverts_and_invalidates_marks(client, converted):
-    client.post(f"/api/swings/{converted}/marks", json={"address_frame": 3, "points": {"ball": [30, 80]}})
+    client.post(f"/api/swings/{converted}/marks", json={"address_frame": 3, "points": DTL_POINTS})
     assert client.post(f"/api/swings/{converted}/trim", json={"start": 0.5, "end": 0.2}).status_code == 400
     r = client.post(f"/api/swings/{converted}/trim", json={"start": 0.5, "end": None})
     assert r.status_code == 200
@@ -135,7 +139,16 @@ def test_trim_reconverts_and_invalidates_marks(client, converted):
     assert d["status"] == "converted"  # old marks were for the untrimmed clip
 
 
-def test_change_view_requires_marking_again(client, runs):
+def test_face_on_held_back_for_future_release(client, runs):
+    assert client.get("/api/features").json()["face_on"] is False
+    r = client.post("/api/swings", files={"file": ("a.mov", b"x")}, data={"view": "fo"})
+    assert r.status_code == 400 and "future release" in r.json()["detail"]
+    assert client.post("/api/swings/old_swing/view", json={"view": "fo"}).status_code == 400
+    assert not list(runs.glob("*-a"))  # nothing was created
+
+
+def test_change_view_requires_marking_again(client, runs, monkeypatch):
+    monkeypatch.setattr(server, "FACE_ON_ENABLED", True)
     assert client.get("/api/swings/old_swing").json()["status"] == "analyzed"
     assert client.post("/api/swings/old_swing/view", json={"view": "side"}).status_code == 400
     r = client.post("/api/swings/old_swing/view", json={"view": "fo"})
