@@ -74,20 +74,39 @@ def test_points_below_belt_is_flagged():
     assert "too far" in v.summary
 
 
-def test_angle_outside_range_is_only_a_watch():
+def test_points_just_off_the_belt_is_yellow():
+    v = run(grip_for(0.5))
+    assert v.status == "warn" and "Points just above belt" in v.label
+    assert "slightly upright" in v.summary
+    v = run(grip_for(-0.05))
+    assert v.status == "warn" and "Points just below belt" in v.label
+
+
+def test_alignment_row_has_units():
+    row = run(grip_for(0.3)).rows[0]
+    assert row.value in ("29% up the torso", "30% up the torso")  # 0.3 of the torso, give or take rounding
+    assert "cm above hip center · Points at belt buckle (green 0%–45%, red below -10% or above 60%)" in row.note
+
+
+def test_angle_has_its_own_bands():
     # A long, flat shaft that still points at the belt.
     far_clubhead = np.array([1050.0, 1000.0])
     target = HIP + 0.25 * (SHOULDER - HIP)
     grip = far_clubhead + 0.5 * (target - far_clubhead)
     v = run(grip, clubhead=far_clubhead)
-    assert v.measurements["shaft_angle_deg"] < 45
-    assert v.status == "warn" and v.measurements["angle"] == "flat"
+    angle = v.measurements["shaft_angle_deg"]
+    assert angle < 45
+    expected = "warn" if angle >= 40 else "flag"
+    assert {r.label: r.status for r in v.rows}["Shaft angle"] == expected
+    assert v.status == expected
     assert "Points at belt buckle" in v.label
 
 
 def test_ranges_come_from_config():
     config = copy.deepcopy(CONFIG)
     config["analyzers"]["swing_plane"]["belt_max"] = 0.2
+    assert run(grip_for(0.3), config=config).status == "warn"
+    config["analyzers"]["swing_plane"]["belt_watch_max"] = 0.25
     assert run(grip_for(0.3), config=config).status == "flag"
 
 

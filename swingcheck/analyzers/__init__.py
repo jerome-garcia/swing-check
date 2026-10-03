@@ -45,6 +45,20 @@ REFERENCE_COLOR: Color = (255, 255, 255)  # address-position reference lines
 BALL_COLOR: Color = (255, 255, 0)
 
 
+def grade(value: float, ok_lo: float, ok_hi: float, watch_lo: float, watch_hi: float) -> str:
+    """Green / yellow / red: "ok" inside [ok_lo, ok_hi], "warn" inside [watch_lo, watch_hi], else "flag"."""
+    if ok_lo <= value <= ok_hi:
+        return "ok"
+    if watch_lo <= value <= watch_hi:
+        return "warn"
+    return "flag"
+
+
+def pct(body_units: float) -> str:
+    """A distance in torso lengths as a percent of torso length, e.g. 0.21 -> '21%'."""
+    return f"{body_units * 100:.0f}%"
+
+
 @dataclass
 class Overlay:
     """Something an analyzer wants drawn on the annotated video.
@@ -178,6 +192,14 @@ class SwingContext:
 
     def units(self, px: float) -> float:
         return to_body_units(px, self.scale)
+
+    def cm(self, body_units: float) -> float:
+        """Rough centimetres for a distance in torso lengths ([golfer] torso_cm)."""
+        return body_units * self.config["golfer"]["torso_cm"]
+
+    def distance_text(self, body_units: float) -> str:
+        """'≈10 cm' for a distance in torso lengths (magnitude only)."""
+        return f"≈{abs(self.cm(body_units)):.0f} cm"
 
     def vspan(self, xy, half_height: float = 0.3) -> list[tuple[float, float]]:
         """Points for a short "vline" overlay centered on xy, +/- half_height body lengths."""

@@ -66,8 +66,9 @@ def test_clubhead_on_the_line_is_on_plane():
 
 
 @pytest.mark.parametrize("inside_by, status, label", [
+    (0.15, "ok", "Club on plane"),
     (0.3, "warn", "Clubhead slightly inside the line"),
-    (-0.3, "warn", "Clubhead slightly outside the line"),
+    (-0.45, "warn", "Clubhead slightly outside the line"),
     (0.6, "flag", "Clubhead well inside the line"),
     (-0.6, "flag", "Clubhead well outside the line"),
 ])
@@ -77,9 +78,11 @@ def test_inside_and_outside_tiers(inside_by, status, label):
     assert v.measurements["clubhead_inside_line"] == pytest.approx(inside_by, abs=1e-3)
 
 
-def test_row_shows_offset_and_direction():
-    assert run(inside_by=0.3).rows[0].value == "0.30 inside"
-    assert run(inside_by=-0.6).rows[0].value == "0.60 outside"
+def test_row_shows_offset_with_units():
+    row = run(inside_by=0.3).rows[0]
+    assert row.value == "≈15 cm inside"  # 30% of the default 50 cm torso
+    assert row.note == "30% of torso length · slightly inside the line (green within ±20%, red past 50%)"
+    assert run(inside_by=-0.6).rows[0].value == "≈30 cm outside"
 
 
 def test_hands_position_doesnt_matter():
@@ -93,6 +96,8 @@ def test_tolerance_from_config():
     config["analyzers"]["takeaway"]["flag_distance"] = 0.2
     assert run(inside_by=0.04, config=config).status == "warn"
     assert run(inside_by=0.3, config=config).status == "flag"
+    config["golfer"]["torso_cm"] = 60
+    assert run(inside_by=0.3, config=config).rows[0].value == "≈18 cm inside"
 
 
 def test_left_handed_mirror_matches():

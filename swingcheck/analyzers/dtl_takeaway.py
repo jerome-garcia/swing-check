@@ -3,7 +3,7 @@
 On the takeaway frame you mark (shaft parallel to the target line, so from
 behind it points at the camera), the clubhead should still be on the shaft
 line you set at address: the club is on plane. Measured as the clubhead's
-distance from that line (square to it), in body lengths:
+distance from that line (square to it), as a share of torso length:
 
   on the line        within line_tolerance either way (OK)
   slightly in / out  up to flag_distance: a style many good players have (Watch)
@@ -24,7 +24,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from swingcheck.analyzers import REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, register
+from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, pct,
+                                  register)
 
 PLANE_COLOR = (0, 140, 255)
 BAND_COLOR = (150, 150, 150)
@@ -77,7 +78,7 @@ def takeaway(ctx: SwingContext) -> Verdict:
         status, label = "ok", "Club on plane"
         meaning = "The clubhead is still on your address shaft line."
     side = "inside" if inside_by > 0 else "outside"
-    offset_text = f"{abs(inside_by):.2f} {side}" if abs(inside_by) >= 0.005 else "0.00"
+    offset_text = f"{ctx.distance_text(inside_by)} {side}" if abs(inside_by) >= 0.005 else "on the line"
 
     # Drawing on the takeaway frame: the address shaft line (as in checkpoint 2) with
     # the tolerance band either side, a square-on tick from the clubhead to the line,
@@ -107,21 +108,19 @@ def takeaway(ctx: SwingContext) -> Verdict:
             "line_tolerance": tol,
             "flag_distance": flag_at,
             "takeaway_frame": f,
-            "units": "body lengths, square to the address shaft line; + = golfer's side (inside), - = ball side (outside)",
+            "units": "share of torso length, square to the address shaft line; + = golfer's side (inside), "
+                     "- = ball side (outside)",
         },
         rows=[
-            Row("Clubhead vs shaft line", offset_text, _note(label, status, tol, flag_at), status),
+            Row("Clubhead vs shaft line", offset_text,
+                f"{pct(abs(inside_by))} of torso length · {_note(label, tol, flag_at)}", status),
             Row("Takeaway frame", str(f), "marked by you", "ok"),
         ],
         overlays=overlays,
     )
 
 
-def _note(label: str, status: str, tol: float, flag_at: float) -> str:
-    """Card note with the band that applies, e.g. 'slightly inside the line (flag past 0.45)'."""
+def _note(label: str, tol: float, flag_at: float) -> str:
+    """Card note with the bands, e.g. 'slightly inside the line (green within ±20%, red past 50%)'."""
     short = label.removeprefix("Clubhead ").removeprefix("Club ")
-    if status == "ok":
-        return f"{short} (within ±{tol:g})"
-    if status == "warn":
-        return f"{short} (flag past {flag_at:g})"
-    return f"{short} (on plane within ±{tol:g})"
+    return f"{short} (green within ±{pct(tol)}, red past {pct(flag_at)})"

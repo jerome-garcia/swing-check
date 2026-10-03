@@ -33,61 +33,70 @@ of the swing.
 | 7 | **Impact** | (details to be defined) | ⬜ Not yet |
 | 8 | **Follow-through** | The club exits on the same line the golfer had in the backswing | ⬜ Not yet |
 
+**Colors and units.** Every measurement is graded 🟢 green (good), 🟡 yellow
+(watch: just outside good) or 🔴 red (flag), and a checkpoint takes the worst
+color of its measurements. Angles are in degrees. Distances are measured as a
+**percent of your torso length** (hip center to shoulder center at address),
+so they don't depend on how far the camera is; the card also shows rough
+centimetres using `[golfer] torso_cm` (50 cm by default; set your own for
+accurate cm).
+
 **1. Address / alignment (implemented).** Measured on the frame you mark on,
 which is the address frame for down-the-line, using the body points on the
 camera side (your trail side). Settings live in `[analyzers.address]` in
 `config/default.toml`.
 
-| Measurement | How | Good range (default) |
-|---|---|---|
-| Arms hang straight down | shoulder → wrist line, degrees from vertical (+ reaching out, − tucked in) | within ±10° |
-| Spine tilt | forward bend of the hip-center → shoulder-center line from vertical | 30–45° |
-| Knee bend | knee flex = 180° − the hip-knee-ankle angle (0 = straight leg) | 15–35° |
-| Back rounding (hump) | how far the outline of your back bulges beyond a straight line from hip to shoulder level, from the body silhouette (MediaPipe segmentation), in body lengths | ≤ 0.06 |
+| Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
+|---|---|---|---|---|
+| Arms hang straight down | shoulder → wrist line, degrees from vertical (+ reaching out, − tucked in) | within ±10° | 10–15° | past 15° |
+| Spine tilt | forward bend of the hip-center → shoulder-center line from vertical | 30–45° | 25–30° or 45–50° | below 25° or above 50° |
+| Knee bend | knee flex = 180° − the hip-knee-ankle angle (0° = straight leg) | 15–35° | 10–15° or 35–40° | below 10° or above 40° |
+| Back rounding (hump) | how far the outline of your back bulges beyond a straight line from hip to shoulder level, from the body silhouette (MediaPipe segmentation), as % of torso length | up to 6% (≈3 cm) | 6–9% | past 9% (≈4.5 cm) |
 
 When something is out of range, the card says how far and which way to move,
-rounded up so following it lands you in range (e.g. *Spine bend 28.8° — bend
-2° more (30–45°)*), and the summary gives a plain fix, leading with the hips:
+rounded up so following it lands you in green (e.g. *Spine bend 28.8° — bend
+2° more (green 30–45°, red outside 25–50°)*), and the summary gives a plain
+fix, leading with the hips:
 standing tall with straight knees and reaching arms usually comes from too
 little hip hinge. The key frame adds a dashed green **aim** line for each
-flagged part at the middle of its range: the spine at 37.5°, the arm straight
+yellow or red part at the middle of its green range: the spine at 37.5°, the arm straight
 down, and the thigh at 25° of knee flex (shin kept where it is).
 
 **2. Swing plane (implemented).** The line through the clubhead (hosel) and
 grip you click at address. Drawn in orange on the address key frame, extended
 up to where it meets your body. Settings live in `[analyzers.swing_plane]`.
 
-| Measurement | How | Good range (default) | If outside |
-|---|---|---|---|
-| **Alignment** (key check) | where the extended shaft line crosses your torso ("Crosses torso at": 0 = hip center, 1 = shoulder center) | 0–0.45: **Points at belt buckle** | **Flag**. **Points above belt**: shaft too upright (standing too close / hands too high). **Points below belt**: shaft too flat (too far from the ball / hands too low) |
-| **Shaft angle** | angle of the line above horizontal | 45–65° | **Watch** only: it depends on the club and camera height |
+| Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
+|---|---|---|---|---|
+| **Alignment** (key check) | where the extended shaft line crosses your torso, as % of the way from hip center (0%) to shoulder center (100%) | 0–45%: **Points at belt buckle** | −10–0%: *just below belt*; 45–60%: *just above belt* | below −10%: **Points below belt** (shaft too flat: too far from the ball / hands too low); above 60%: **Points above belt** (too upright: too close / hands too high) |
+| **Shaft angle** | angle of the line above horizontal | 45–65° | 40–45° or 65–70° | below 40° or above 70° (check the club and camera height) |
 
 Typical shaft angles by club, for reference: driver 45–50°, mid-irons 50–55°,
 short irons and wedges 55–65°. The reference photo used to set these measured
-53°, pointing at 0.30 of the way up the torso; Tiger and McIlroy measure 55° and
-58° at 0.25.
+53°, pointing 30% of the way up the torso; Tiger and McIlroy measure 55° and
+58° at 25%.
 
 **3. Takeaway (implemented).** On the **Takeaway** step of the marking screen,
 you scrub to where the shaft is parallel to the target line (from behind it
 points at the camera) and click the clubhead and your hands; that frame is the
 takeaway checkpoint. Settings live in `[analyzers.takeaway]`.
 
-| Measurement | How | Good (default) | If not |
-|---|---|---|---|
-| **Clubhead vs shaft line** | distance of the clubhead from the address shaft line (checkpoint 2's line), square to it, in body lengths | within ±0.15: **Club on plane** | 0.15–0.45: **Watch**, *slightly inside / outside the line*. Past 0.45: **Flag**, *well inside* (your side: pulled inside or rolled open) or *well outside* (ball side: picked up outside) |
+| Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
+|---|---|---|---|---|
+| **Clubhead vs shaft line** | distance of the clubhead from the address shaft line (checkpoint 2's line), square to it, as % of torso length | within ±20% (≈10 cm): **Club on plane** | 20–50%: *slightly inside / outside the line* | past 50% (≈25 cm): *well inside* (your side: pulled inside or rolled open) or *well outside* (ball side: picked up outside) |
 
 Where your hands are doesn't matter for this check. The rule started as "the
 club covers the hands", but that depends on where the hands went, and the
 clubhead staying on the address shaft line is the cleaner on-plane test.
 
-Good players vary here, which is why there's a Watch band: McIlroy reads 0.04
-outside (on plane), Tiger 0.38 inside (slightly inside), Morikawa by eye goes
-back with the clubhead outside his hands; an amateur swing taken away low and
-inside reads 0.50 (well inside). Camera aim also matters: the clubhead is about
-a metre closer to the camera than at address, so a camera pointed 5° off the
-target line moves it sideways by about 0.18. The thresholds (`line_tolerance`,
-`flag_distance`) are a first guess from these few swings; tune them as more
-clips come in.
+Good players vary here, which is why the yellow band is wide: McIlroy reads 4%
+outside (on plane); Tiger 38% inside on one clip and 21% outside on another;
+Morikawa by eye goes back with the clubhead outside his hands; an amateur swing
+taken away low and inside reads 50%, right at the red line. Camera aim also
+matters: the clubhead is about a metre closer to the camera than at address,
+so a camera pointed 5° off the target line moves it sideways by about 18% of
+torso length. The thresholds (`line_tolerance`, `flag_distance`) are a first
+guess from these few swings; tune them as more clips come in.
 
 The key frame shows the address shaft line (orange) with the on-plane band
 either side (grey), a tick from the clubhead square to the line, and the hands
@@ -332,10 +341,12 @@ images and `report.txt`. Back up or delete that folder like any other files.
 
 ## Reading the results
 
-Each check reports **OK**, **Watch** (worth a look) or **Flag**, plus the
-numbers behind it. Distances are in **body lengths**: your torso length
-(shoulders to hips) measured at address. So `0.10` means a tenth of your torso,
-roughly 5 cm for most adults, regardless of how far away the camera was.
+Every measurement is 🟢 **OK**, 🟡 **Watch** (just outside good, worth a look)
+or 🔴 **Flag**, and each card row says the green and red limits it was judged
+against. Angles are in degrees. Distances are a **percent of your torso
+length** (hip center to shoulder center, measured at address), so `10%` means a
+tenth of your torso whatever the camera distance; the card adds rough cm
+(`≈5 cm`) from `[golfer] torso_cm` in the config (50 cm unless you set yours).
 
 **Address posture.** Measured on the frame you marked, using the body points on
 the camera side (your trail side). Default ranges are in the [Roadmap](#roadmap).
@@ -346,19 +357,19 @@ the camera side (your trail side). Default ranges are in the [Roadmap](#roadmap)
 - **Spine:** forward bend of the hip-to-shoulder line from vertical.
 - **Knees:** knee flex, 0 = straight leg.
 - **Back:** how far the outline of your back bulges beyond a straight line
-  between hip and shoulder level (in body lengths), measured from the body
+  between hip and shoulder level (% of torso length), measured from the body
   silhouette. A rounded upper back (hump) reads higher.
 
-The address key frame draws each line with its value, green when in range and
-red when not.
+The address key frame draws each line with its value in its color (green,
+yellow or red), plus dashed green aim lines for anything not green.
 
 **Swing plane.** The orange line on the address key frame runs along your shaft,
 from the clubhead up through your hands to where it meets your body; the green
 band on the torso is the belt-buckle zone it should hit. **Alignment** says
 whether it points at the belt buckle, above or below the belt, and what that
-means. "Crosses torso at" is that crossing as a fraction from hip (0) to
-shoulder (1). The shaft angle is shown too, but only warns, since it changes
-with the club and camera height.
+means; the value is how far up the torso it crosses (0% = hip center, 100% =
+shoulder center). The shaft angle has a broad range, since it changes with
+the club and camera height.
 
 Face-on checks are described in the [Roadmap](#roadmap) (future release).
 

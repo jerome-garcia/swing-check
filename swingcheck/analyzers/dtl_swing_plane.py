@@ -4,18 +4,21 @@ The line through the clicked clubhead (hosel) and grip is the shaft plane.
 Two things are checked on the address frame:
 
   points at   where that line, extended up past the hands, crosses the
-              torso (0 = hip center, 1 = shoulder center). It should point
+              torso (0% = hip center, 100% = shoulder center). It should point
               roughly at the belt buckle. This is the key check.
   angle       the shaft's angle from horizontal. It varies with the club
-              (driver flattest, wedges steepest) and camera height, so it's
-              only a broad sanity range.
+              (driver flattest, wedges steepest) and camera height, so it's a
+              broad range.
+
+Both have green / yellow / red bands (see [analyzers.swing_plane]).
 """
 
 from __future__ import annotations
 
 import numpy as np
 
-from swingcheck.analyzers import REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, register
+from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
+                                  pct, register)
 
 PLANE_COLOR = (0, 140, 255)  # orange, like the classic drawn-on shaft line
 ZONE_COLOR = (80, 200, 80)
@@ -58,19 +61,27 @@ def swing_plane(ctx: SwingContext) -> Verdict:
     u = torso_crossing(clubhead, grip, hip, shoulder)
 
     # aim: short result (headline and frame label); aim_note: what it means.
-    if u < cfg["belt_min"]:
-        aim_status, aim = "flag", "Points below belt"
-        aim_note = "Shaft too flat: likely standing too far from the ball or hands too low."
-    elif u > cfg["belt_max"]:
-        aim_status, aim = "flag", "Points above belt"
-        aim_note = "Shaft too upright: likely standing too close to the ball or hands too high."
+    aim_status = grade(u, cfg["belt_min"], cfg["belt_max"], cfg["belt_watch_min"], cfg["belt_watch_max"])
+    if aim_status != "ok" and u < cfg["belt_min"]:
+        if aim_status == "warn":
+            aim, aim_note = "Points just below belt", "Shaft slightly flat: maybe standing a bit far from the ball or hands a bit low."
+        else:
+            aim, aim_note = "Points below belt", "Shaft too flat: likely standing too far from the ball or hands too low."
+    elif aim_status != "ok":
+        if aim_status == "warn":
+            aim, aim_note = "Points just above belt", "Shaft slightly upright: maybe standing a bit close to the ball or hands a bit high."
+        else:
+            aim, aim_note = "Points above belt", "Shaft too upright: likely standing too close to the ball or hands too high."
     else:
-        aim_status, aim, aim_note = "ok", "Points at belt buckle", "Shaft is well aligned with your body."
+        aim, aim_note = "Points at belt buckle", "Shaft is well aligned with your body."
 
-    angle_ok = cfg["angle_min"] <= angle <= cfg["angle_max"]
-    angle_text = "in range" if angle_ok else ("flat" if angle < cfg["angle_min"] else "steep")
+    angle_status = grade(angle, cfg["angle_min"], cfg["angle_max"], cfg["angle_watch_min"], cfg["angle_watch_max"])
+    angle_ok = angle_status == "ok"
+    angle_text = "in range" if angle_ok else (
+        ("slightly " if angle_status == "warn" else "") + ("flat" if angle < cfg["angle_min"] else "steep"))
 
-    status = aim_status if aim_status == "flag" else ("ok" if angle_ok else "warn")
+    order = {"ok": 0, "warn": 1, "flag": 2}
+    status = max(aim_status, angle_status, key=order.__getitem__)
     label = aim + ("" if angle_ok else f", angle {angle:.0f}° ({angle_text})")
     summary = aim_note
     if not angle_ok:
@@ -108,12 +119,17 @@ def swing_plane(ctx: SwingContext) -> Verdict:
             "angle": angle_text,
             "alignment": f"{aim}. {aim_note}",
             "crosses_torso_at": round(u, 2),
-            "units": "crosses torso at: 0 = hip, 1 = shoulder; the belt buckle is "
-                     f"{cfg['belt_min']:g}-{cfg['belt_max']:g}",
+            "units": "crosses torso at: share of the way from hip center (0) to shoulder center (1); "
+                     f"the belt buckle is {cfg['belt_min']:g}-{cfg['belt_max']:g}",
         },
         overlays=overlays,
         rows=[
-            Row("Alignment", f"{u:.2f} up torso", aim, aim_status),
-            Row("Shaft angle", f"{angle:.1f}°", angle_text, "ok" if angle_ok else "warn"),
+            Row("Alignment", f"{pct(u)} up the torso",
+                f"{ctx.distance_text(u)} {'above' if u >= 0 else 'below'} hip center · {aim} "
+                f"(green {pct(cfg['belt_min'])}–{pct(cfg['belt_max'])}, "
+                f"red below {pct(cfg['belt_watch_min'])} or above {pct(cfg['belt_watch_max'])})", aim_status),
+            Row("Shaft angle", f"{angle:.1f}°",
+                f"{angle_text} (green {cfg['angle_min']:g}–{cfg['angle_max']:g}°, "
+                f"red outside {cfg['angle_watch_min']:g}–{cfg['angle_watch_max']:g}°)", angle_status),
         ],
     )

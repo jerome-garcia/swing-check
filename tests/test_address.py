@@ -113,11 +113,11 @@ def test_good_address():
 
 @pytest.mark.parametrize("kwargs, problem", [
     ({"arm_deg": 18}, "arms reaching out"),
-    ({"arm_deg": -15}, "arms too close to body"),
+    ({"arm_deg": -18}, "arms too close to body"),
     ({"spine_deg": 20}, "spine too upright"),
     ({"spine_deg": 55}, "spine bent over too far"),
-    ({"knee_flex": 10}, "knees too straight"),
-    ({"knee_flex": 40}, "knees too much bend"),
+    ({"knee_flex": 5}, "knees too straight"),
+    ({"knee_flex": 45}, "knees too much bend"),
 ])
 def test_each_fault_flagged(kwargs, problem):
     v = run_address(dtl_address_pose(**kwargs))
@@ -125,15 +125,35 @@ def test_each_fault_flagged(kwargs, problem):
     assert problem in v.label
 
 
+@pytest.mark.parametrize("kwargs, problem", [
+    ({"arm_deg": 12}, "arms slightly reaching out"),
+    ({"arm_deg": -12}, "arms slightly close to body"),
+    ({"spine_deg": 28}, "spine slightly upright"),
+    ({"spine_deg": 48}, "spine slightly bent over"),
+    ({"knee_flex": 12}, "knees slightly straight"),
+    ({"knee_flex": 38}, "knees slightly too bent"),
+])
+def test_just_outside_good_range_is_yellow(kwargs, problem):
+    v = run_address(dtl_address_pose(**kwargs))
+    assert v.status == "warn"
+    assert v.label == problem
+
+
+def test_red_beats_yellow_overall():
+    v = run_address(dtl_address_pose(arm_deg=12, spine_deg=20))
+    assert v.status == "flag"
+    assert {r.label: r.status for r in v.rows}["Arms"] == "warn"
+
+
 def test_rows_say_how_much_to_adjust():
     v = run_address(dtl_address_pose(arm_deg=12, spine_deg=28, knee_flex=40))
     notes = {r.label: r.note for r in v.rows}
-    assert notes["Spine bend"] == "bend 2° more (30–45°)"
-    assert notes["Knee flex"] == "straighten 5° (15–35°)"
-    assert notes["Arms"] == "hands 2° too far out (within ±10°)"
+    assert notes["Spine bend"] == "bend 2° more (green 30–45°, red outside 25–50°)"
+    assert notes["Knee flex"] == "straighten 5° (green 15–35°, red outside 10–40°)"
+    assert notes["Arms"] == "hands 2° too far out (green within ±10°, red past ±15°)"
     assert "Hinge more from the hips" in v.summary
     good = run_address(dtl_address_pose())
-    assert {r.label: r.note for r in good.rows}["Spine bend"] == "good bend (30–45°)"
+    assert {r.label: r.note for r in good.rows}["Spine bend"] == "good bend (green 30–45°, red outside 25–50°)"
 
 
 def test_target_lines_drawn_at_middle_of_range():
@@ -182,7 +202,7 @@ def test_back_bulge_from_silhouette(monkeypatch):
     assert humped.status == "flag"
 
 
-@pytest.mark.parametrize("kwargs", [{"arm_deg": 18}, {"arm_deg": -12, "spine_deg": 25, "knee_flex": 40}])
+@pytest.mark.parametrize("kwargs", [{"arm_deg": 18}, {"arm_deg": -12, "spine_deg": 22, "knee_flex": 40}])
 def test_left_handed_mirror_matches(kwargs):
     right = run_address(dtl_address_pose(**kwargs))
     pose = dtl_address_pose(**kwargs)

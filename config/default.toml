@@ -12,6 +12,10 @@ handedness = "right"          # "right" | "left"
 #   fo  (camera facing golfer): right-handed -> target is screen-right
 #   dtl (camera behind golfer, looking at target): target is into the screen
 target_direction_fo = "auto"  # "auto" | "left" | "right"
+# Your torso length in cm (hip joint to shoulder joint, about belt line to the
+# top of the shoulder). Distances are measured as a share of your torso length;
+# this only turns them into rough centimetres for display.
+torso_cm = 50
 
 [ingest]
 # Downscale used for pose extraction only (annotated output stays full-res).
@@ -104,45 +108,55 @@ disabled = []
 # DTL address posture, measured on the frame you mark on, using the
 # camera-side (trail side) body points. Angles in degrees.
 #
-# Arms hang straight down: shoulder->wrist line within this many degrees of
-# vertical (either way).
+# Every measurement has three bands: green (good), yellow (watch: just
+# outside good) and red (flag: beyond the yellow band).
+#
+# Arms hang straight down: shoulder->wrist line, degrees from vertical
+# (either way). Green within arm_max_from_vertical, yellow up to arm_watch_max.
 arm_max_from_vertical = 10
+arm_watch_max = 15
 # Spine forward bend: hip-center->shoulder-center line, degrees from vertical.
 spine_bend_min = 30
 spine_bend_max = 45
+spine_bend_watch_min = 25
+spine_bend_watch_max = 50
 # Knee flex: 180 minus the hip-knee-ankle angle (0 = straight leg).
 knee_flex_min = 15
 knee_flex_max = 35
+knee_flex_watch_min = 10
+knee_flex_watch_max = 40
 # Back rounding: how far the outline of your back bulges out from a straight
-# line between hip and shoulder level, in body lengths (from the body
-# silhouette; loose clothing can add to it).
+# line between hip and shoulder level, as a share of torso length (0.06 = 6%;
+# from the body silhouette, loose clothing can add to it).
 back_bulge_max = 0.06
+back_bulge_watch_max = 0.09
 
 [analyzers.swing_plane]
 # DTL checkpoint 2, on the address frame: the line through the clicked
 # clubhead (hosel) and grip.
 #
 # Key check: extended up past the hands, the line should point roughly at the
-# belt buckle. Measured as where it crosses the torso, as a fraction of the
-# way from hip center (0) to shoulder center (1).
-belt_min = 0.0     # below this -> points below the belt (shaft too flat)
-belt_max = 0.45    # above this -> points above the belt (shaft too upright)
-# Shaft angle from horizontal, a broad sanity range covering all clubs.
-# Typical by club: driver 45-50, mid-irons 50-55, short irons/wedges 55-65.
-# Camera height also shifts it, so outside this range is only a "watch".
+# belt buckle. Measured as where it crosses the torso, as a share of the way
+# from hip center (0) to shoulder center (1, i.e. 100%).
+belt_min = 0.0     # green 0-45% up the torso
+belt_max = 0.45
+belt_watch_min = -0.10   # yellow from 10% below the hips...
+belt_watch_max = 0.60    # ...to 60% up; beyond: red (too flat / too upright)
+# Shaft angle from horizontal, degrees. Typical by club: driver 45-50,
+# mid-irons 50-55, short irons/wedges 55-65. Camera height also shifts it.
 angle_min = 45
 angle_max = 65
+angle_watch_min = 40
+angle_watch_max = 70
 
 [analyzers.takeaway]
 # DTL checkpoint 3, on the takeaway frame you mark (shaft parallel to the
 # target line): the clubhead should still be on the address shaft line (the
-# club is on plane). Distance allowed either side of that line, square to it,
-# in body lengths, to count as on plane (OK).
-line_tolerance = 0.15
-# Beyond line_tolerance and up to this: slightly inside/outside, a "watch" (many
-# good players take it back a little inside or outside). Beyond this: flagged.
-# First guess from McIlroy (0.04 out), Tiger (0.38 in) and an amateur (0.50 in).
-flag_distance = 0.45
+# club is on plane). Distance from that line, square to it, as a share of
+# torso length (0.20 = 20%, about 10 cm), either side.
+line_tolerance = 0.20   # green: on plane
+flag_distance = 0.50    # yellow up to this (slightly inside/outside, which many
+                        # good players do); red beyond (well inside/outside)
 
 [analyzers.hands_at_impact]
 # Lead wrist x minus ball x along the target direction, body units.
