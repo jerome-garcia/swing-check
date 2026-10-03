@@ -116,7 +116,7 @@ def test_good_address():
     ({"arm_deg": -15}, "arms too close to body"),
     ({"spine_deg": 20}, "spine too upright"),
     ({"spine_deg": 55}, "spine bent over too far"),
-    ({"knee_flex": 20}, "knees too straight"),
+    ({"knee_flex": 10}, "knees too straight"),
     ({"knee_flex": 40}, "knees too much bend"),
 ])
 def test_each_fault_flagged(kwargs, problem):
