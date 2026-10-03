@@ -51,7 +51,8 @@ class Overlay:
 
     kind: "line" (infinite line through points[0] along points[1]-points[0]),
           "ray" (from points[0] through points[1], to the frame edge),
-          "segment", "polyline" (through all points), "point",
+          "segment", "dashed" (a dashed segment, e.g. a target position; label at
+          its end), "polyline" (through all points), "point",
           "vline" (vertical line at points[0].x: full height, or from
           points[0].y to points[1].y when two points are given),
           "text" (label at points[0]),

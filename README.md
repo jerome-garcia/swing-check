@@ -45,6 +45,14 @@ camera side (your trail side). Settings live in `[analyzers.address]` in
 | Knee bend | knee flex = 180° − the hip-knee-ankle angle (0 = straight leg) | 15–35° |
 | Back rounding (hump) | how far the outline of your back bulges beyond a straight line from hip to shoulder level, from the body silhouette (MediaPipe segmentation), in body lengths | ≤ 0.06 |
 
+When something is out of range, the card says how far and which way to move,
+rounded up so following it lands you in range (e.g. *Spine bend 28.8° — bend
+2° more (30–45°)*), and the summary gives a plain fix, leading with the hips:
+standing tall with straight knees and reaching arms usually comes from too
+little hip hinge. The key frame adds a dashed green **aim** line for each
+flagged part at the middle of its range: the spine at 37.5°, the arm straight
+down, and the thigh at 25° of knee flex (shin kept where it is).
+
 **2. Swing plane (implemented).** The line through the clubhead (hosel) and
 grip you click at address. Drawn in orange on the address key frame, extended
 up to where it meets your body. Settings live in `[analyzers.swing_plane]`.

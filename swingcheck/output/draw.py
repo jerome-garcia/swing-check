@@ -73,6 +73,17 @@ def draw_line_overlay(img, kind: str, points, color, thickness: int, label: str,
             draw_text(img, label, (x, y), 0.5 * s, color)
     elif kind == "segment":
         cv2.line(img, _pt(points[0]), _pt(points[1]), color, thickness, cv2.LINE_AA)
+    elif kind == "dashed":
+        a, b = np.asarray(points[0], float), np.asarray(points[1], float)
+        length = float(np.linalg.norm(b - a))
+        dash = max(6.0, 12.0 * s)
+        for t0 in np.arange(0.0, length, 2 * dash):
+            p0 = a + (b - a) * (t0 / length)
+            p1 = a + (b - a) * (min(t0 + dash, length) / length)
+            cv2.line(img, _pt(p0), _pt(p1), (0, 0, 0), thickness + 2, cv2.LINE_AA)
+            cv2.line(img, _pt(p0), _pt(p1), color, thickness, cv2.LINE_AA)
+        if label:
+            draw_text(img, label, (_pt(b)[0] + 6, _pt(b)[1]), 0.45 * s, color)
     elif kind == "polyline":
         pts = [p for p in points if np.all(np.isfinite(p))]
         if len(pts) >= 2:

@@ -125,6 +125,36 @@ def test_each_fault_flagged(kwargs, problem):
     assert problem in v.label
 
 
+def test_rows_say_how_much_to_adjust():
+    v = run_address(dtl_address_pose(arm_deg=12, spine_deg=28, knee_flex=40))
+    notes = {r.label: r.note for r in v.rows}
+    assert notes["Spine bend"] == "bend 2° more (30–45°)"
+    assert notes["Knee flex"] == "straighten 5° (15–35°)"
+    assert notes["Arms"] == "hands 2° too far out (within ±10°)"
+    assert "Hinge more from the hips" in v.summary
+    good = run_address(dtl_address_pose())
+    assert {r.label: r.note for r in good.rows}["Spine bend"] == "good bend (30–45°)"
+
+
+def test_target_lines_drawn_at_middle_of_range():
+    v = run_address(dtl_address_pose(arm_deg=18, spine_deg=20, knee_flex=5))
+    dashed = [o for o in v.overlays if o.kind == "dashed"]
+    assert len(dashed) == 3
+    spine, arm, thigh = dashed
+    # Spine aim: 37.5 degrees forward of vertical, from the hips.
+    assert tilt_from_vertical_deg(np.subtract(spine.points[1], spine.points[0]), 1, up=True) == pytest.approx(37.5)
+    # Arm aim: straight down from the shoulder.
+    assert spine.points[0] != arm.points[0] and arm.points[0][0] == pytest.approx(arm.points[1][0])
+    # Knee aim: thigh swung so the knee flex is 25 degrees, hip behind the knee.
+    knee = np.array(thigh.points[0])
+    ankle = dtl_address_pose(knee_flex=5).data[0, LANDMARK_INDEX["right_ankle"], :2]
+    flex = 180 - angle_between_deg(np.subtract(thigh.points[1], knee), ankle - knee)
+    assert flex == pytest.approx(25)
+    assert thigh.points[1][0] < knee[0]
+    # Nothing out of range: no target lines.
+    assert not [o for o in run_address(dtl_address_pose()).overlays if o.kind == "dashed"]
+
+
 def test_back_bulge_from_silhouette(monkeypatch):
     pose = dtl_address_pose()
     hip = pose.data[0, LANDMARK_INDEX["right_hip"], :2]
