@@ -1,11 +1,23 @@
 // Shared helpers for the swing-check frontend.
 
+const OFFLINE = "Can't reach the swing-check app. Is it still running? If you closed or restarted it, start it again and try once more.";
+
 export async function api(path, options = {}) {
-  const res = await fetch(path, options);
+  let res;
+  try {
+    res = await fetch(path, options);
+  } catch {
+    // fetch() only throws when there's no answer at all: the app isn't running.
+    const err = new Error(OFFLINE);
+    err.offline = true;
+    throw err;
+  }
   if (!res.ok) {
     let detail = res.statusText;
     try { detail = (await res.json()).detail || detail; } catch { /* not JSON */ }
-    throw new Error(detail);
+    const err = new Error(detail);
+    err.status = res.status;
+    throw err;
   }
   return res.status === 204 ? null : res.json();
 }
@@ -70,9 +82,26 @@ export function verdictChips(verdicts) {
 // Poll a job until it finishes; onUpdate(job) is called on every poll.
 // Resolves with the finished job; stops (resolving null) if `isCurrent()` turns false,
 // e.g. after the user navigated away.
+// If the app stops answering, it keeps trying for a while (it may be busy or restarting);
+// jobs live in the app's memory, so after a restart the job is gone and that's reported.
 export async function pollJob(jobId, onUpdate, isCurrent = () => true) {
+  let offlineSince = null;
   while (isCurrent()) {
-    const job = await api(`/api/jobs/${jobId}`);
+    let job;
+    try {
+      job = await api(`/api/jobs/${jobId}`);
+      offlineSince = null;
+    } catch (err) {
+      if (err.status === 404) {
+        throw new Error("The app was restarted while this was running, so it stopped. Start it again from here.");
+      }
+      if (!err.offline) throw err;
+      offlineSince ??= Date.now();
+      if (Date.now() - offlineSince > 15000) throw err;
+      onUpdate({ fraction: null, message: "Lost contact with the app, retrying…" });
+      await new Promise(r => setTimeout(r, 1000));
+      continue;
+    }
     onUpdate(job);
     if (job.state === "done" || job.state === "failed") return job;
     await new Promise(r => setTimeout(r, 500));

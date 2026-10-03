@@ -411,6 +411,7 @@ Other useful settings:
 | `ffmpeg not found on PATH` (conversion fails) | Install it (Setup step 2), open a new terminal, and start the app again. |
 | Warning that the clip is 30 or 60 fps when you filmed slo-mo | The file was re-exported on the way off the phone. Use the original (see Filming). |
 | Phone can't open the app | Start with `swingcheck --phone`, check the phone is on the same Wi-Fi, and allow Python through the Windows firewall on private networks. |
+| "Can't reach the swing-check app" or "The app was restarted while this was running" | The app stopped (its terminal was closed or it was restarted) during a conversion or analysis. Analysis runs inside the app, so closing it stops the job. Start `swingcheck` again and press **Try again**. |
 | Address checks measured on the wrong frame | **Edit marks**, scrub to your set-up position, and save again. |
 | Back reads rounded but isn't | Loose clothing changes the outline; check the line drawn on the address key frame. |
 | Wrong top/impact | **Adjust** it under Phases on the results page. |

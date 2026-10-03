@@ -210,7 +210,9 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
     } catch (err) {
       if (!isCurrent()) return;
       view.replaceChildren(header(), el("div", { class: "notice error" }, `Analysis failed: ${err.message}`),
-        el("a", { class: "btn", href: swingUrl(s.id, "mark") }, "Check your marks"));
+        el("div", { class: "actions" },
+          el("button", { class: "btn primary", type: "button", onclick: () => startAnalysis(body) }, "Try again"),
+          el("a", { class: "btn", href: swingUrl(s.id, "mark") }, "Check your marks")));
       return;
     }
     if (isCurrent()) await rerender();
