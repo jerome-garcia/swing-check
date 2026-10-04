@@ -25,7 +25,7 @@ DTL_CHECKPOINTS: tuple[Checkpoint, ...] = (
     Checkpoint(2, "Swing plane", "swing_plane", "address",
                "Your swing plane line: the shaft at address points at the belt buckle, at a sensible angle."),
     Checkpoint(3, "Takeaway", "takeaway", "takeaway",
-               "When the club is parallel to the target line, the clubhead is still on the swing plane line from step 2."),
+               "When the club is parallel to the target line, the clubhead is still on the swing plane line from step 2, with the spine bend and trail knee flex kept from address."),
     Checkpoint(4, "Halfway back", "halfway_back", None,
                "Lead arm parallel to the ground: the shaft points at or just inside the ball (on plane)."),
     Checkpoint(5, "Top", "top", "top",

@@ -17,12 +17,24 @@ BALL = np.array([800.0, 1150.0])
 HANDS = np.array([520.0, 760.0])
 
 
-def pose(mirror=False):
+SPINE_BEND, KNEE_FLEX = 35.0, 25.0  # degrees at address
+
+
+def pose(mirror=False, spine_lost=0.0, knee_lost=0.0, legs=True):
+    """spine_lost / knee_lost: degrees of spine bend / trail knee flex lost by the
+    takeaway (from frame 8, clear of smoothing). legs=False: trail leg not tracked."""
     data = np.full((80, len(LANDMARKS), 4), np.nan)
-    for name, p in {"left_hip": HIP, "right_hip": HIP, "left_shoulder": HIP + (150, -210),
-                    "right_shoulder": HIP + (150, -210)}.items():
-        x = WIDTH - 1 - p[0] if mirror else p[0]
-        data[:, LANDMARK_INDEX[name]] = (x, p[1], 0.0, 0.95)
+    trail = "left" if mirror else "right"
+    for f in range(80):
+        bend, flex = np.radians(SPINE_BEND - (spine_lost if f >= 8 else 0.0)),             np.radians(KNEE_FLEX - (knee_lost if f >= 8 else 0.0))
+        sh = HIP + 258.0 * np.array([np.sin(bend), -np.cos(bend)])
+        pts = {"left_hip": HIP, "right_hip": HIP, "left_shoulder": sh, "right_shoulder": sh}
+        if legs:
+            knee = HIP + 230.0 * np.array([np.sin(flex), np.cos(flex)])  # thigh slopes back up to the hip
+            pts.update({f"{trail}_knee": knee, f"{trail}_ankle": knee + (0.0, 230.0)})
+        for name, p in pts.items():
+            x = WIDTH - 1 - p[0] if mirror else p[0]
+            data[f, LANDMARK_INDEX[name]] = (x, p[1], 0.0, 0.95)
     return PoseSeq(fps=240.0, width=WIDTH, height=1920, data=data)
 
 
@@ -40,7 +52,7 @@ def on_line(inside_by):
     return ADDR_CLUBHEAD + 0.6 * (ADDR_GRIP - ADDR_CLUBHEAD) + inside_by * SCALE * normal
 
 
-def run(inside_by=None, mirror=False, config=None, hands=HANDS):
+def run(inside_by=None, mirror=False, config=None, hands=HANDS, spine_lost=0.0, knee_lost=0.0, legs=True):
     """inside_by: the clubhead's distance from the address shaft line in body lengths
     (+ = golfer's side; None = takeaway not marked). mirror=True flips the whole scene
     for a left-hander."""
@@ -54,7 +66,7 @@ def run(inside_by=None, mirror=False, config=None, hands=HANDS):
     marks = Marks(view="dtl", address_frame=0,
                   points={"ball": flip(BALL), "clubhead": flip(ADDR_CLUBHEAD), "grip": flip(ADDR_GRIP)},
                   checkpoints=checkpoints)
-    ctx = SwingContext(view="dtl", pose=pose(mirror), marks=marks, phases=PHASES, scale=SCALE, config=config)
+    ctx = SwingContext(view="dtl", pose=pose(mirror, spine_lost, knee_lost, legs), marks=marks, phases=PHASES, scale=SCALE, config=config)
     (v,) = [v for v in run_analyzers(ctx) if v.name == "takeaway"]
     return v
 
@@ -118,3 +130,64 @@ def test_tip_only_when_off():
     assert run(inside_by=0.04).tip == ""
     assert "outside your hands" in run(inside_by=0.6).tip
     assert "turning your chest" in run(inside_by=-0.6).tip
+
+
+def test_body_rows_measure_from_address():
+    v = run(inside_by=0.0)
+    assert [r.label for r in v.rows] == ["Clubhead vs swing plane", "Spine bend kept", "Trail knee flex kept"]
+    assert v.rows[1].value == "35° (address 35°)" and v.rows[2].value == "25° (address 25°)"
+    assert v.status == "ok" and v.label == "Club on plane" and v.tip == ""
+
+
+@pytest.mark.parametrize("lost, status, label", [
+    (2, "ok", None),            # McIlroy
+    (5.5, "ok", None),          # Tiger
+    (8, "warn", "Slightly standing up"),
+    (14, "flag", "Standing up"),
+    (-7, "warn", "Slightly bending over"),
+    (-12, "flag", "Bending over"),
+])
+def test_spine_bend_bands(lost, status, label):
+    for mirror in (False, True):
+        v = run(inside_by=0.0, spine_lost=lost, mirror=mirror)
+        row = v.rows[1]
+        assert row.status == status and v.status == status
+        assert "green up to 6° lost or 5° gained, red past 10° lost or 10° gained" in row.note
+        if label:
+            assert v.label == f"Club on plane, {label.lower()}" and v.tip
+        else:
+            assert v.label == "Club on plane"
+
+
+@pytest.mark.parametrize("lost, status, label", [
+    (3, "ok", None),            # McIlroy
+    (-2, "ok", None),           # Tiger
+    (8, "warn", "Trail knee slightly straightening"),   # the user's indoor swing
+    (11, "flag", "Trail knee straightening"),           # the user's latest swing
+    (-10, "warn", "Trail knee slightly sinking"),
+    (-18, "flag", "Trail knee sinking"),
+])
+def test_trail_knee_bands(lost, status, label):
+    for mirror in (False, True):
+        v = run(inside_by=0.0, knee_lost=lost, mirror=mirror)
+        row = v.rows[2]
+        assert row.status == status and v.status == status
+        assert row.value.endswith(f"(address {KNEE_FLEX:.0f}°)")
+        if label:
+            assert v.label == f"Club on plane, {label[0].lower() + label[1:]}" and v.tip
+        else:
+            assert v.label == "Club on plane"
+
+
+def test_worst_of_the_three_and_tips_combine():
+    v = run(inside_by=0.3, spine_lost=14, knee_lost=8)
+    assert v.status == "flag"
+    assert v.label == "Clubhead slightly inside the swing plane, standing up, trail knee slightly straightening"
+    assert v.rows[0].status == "warn"  # the plane row keeps its own grade
+    assert v.tip.count(".") >= 3
+
+
+def test_untracked_leg_is_not_measured():
+    v = run(inside_by=0.0, legs=False)
+    assert v.rows[2].status == "error" and v.rows[2].value == "not measured"
+    assert v.status == "ok"

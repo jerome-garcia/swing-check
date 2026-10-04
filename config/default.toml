@@ -157,6 +157,18 @@ angle_watch_max = 70
 line_tolerance = 0.20   # green: on plane
 flag_distance = 0.50    # yellow up to this (slightly inside/outside, which many
                         # good players do); red beyond (well inside/outside)
+# Body kept from address, degrees. Spine bend (hip center -> shoulder center
+# from vertical): lost = standing up early. McIlroy loses about 2°, Tiger 5.5°.
+posture_loss_max = 6       # green up to 6° more upright...
+posture_loss_watch = 10    # ...yellow to 10°; red beyond (standing up)
+posture_gain_max = 5       # green up to 5° more bent...
+posture_gain_watch = 10    # ...yellow to 10°; red beyond (bending over)
+# Trail knee flex (180 - hip-knee-ankle angle): lost = the trail leg
+# straightening. McIlroy about 3° straighter, Tiger about 2° more bent.
+knee_straighten_max = 5    # green up to 5° straighter...
+knee_straighten_watch = 10 # ...yellow to 10°; red beyond (locking out)
+knee_bend_max = 8          # green up to 8° more bent...
+knee_bend_watch = 15       # ...yellow to 15°; red beyond (sinking)
 
 [analyzers.halfway_back]
 # DTL checkpoint 4, on the frame you mark where the lead arm is parallel to the

@@ -99,6 +99,12 @@ takeaway checkpoint. Settings live in `[analyzers.takeaway]`.
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
 | **Clubhead vs swing plane** | distance of the clubhead from the swing plane line (checkpoint 2's line), square to it, as % of torso length | within ±20% (≈10 cm): **Club on plane** | 20–50%: *slightly inside / outside the swing plane* | past 50% (≈25 cm): *well inside* (your side: pulled inside or rolled open) or *well outside* (ball side: picked up outside) |
+| **Spine bend kept** | spine bend (hip center → shoulder center, from vertical) on the takeaway frame vs address, from tracking | up to 6° more upright or 5° more bent: **posture kept** | 6–10° more upright (*slightly standing up*) or 5–10° more bent (*slightly bending over*) | more than 10°: **standing up** early or **bending over** |
+| **Trail knee flex kept** | trail knee flex (180° − hip-knee-ankle angle) on the takeaway frame vs address, from tracking | up to 5° straighter or 8° more bent: **flex kept** | 5–10° straighter (*slightly straightening*) or 8–15° more bent (*slightly sinking*) | more than 10° straighter: trail leg **straightening** (locking out); more than 15° more bent: **sinking** |
+
+The card shows the worst of the three. References: McIlroy loses 2° of spine
+bend and 3° of knee flex, Tiger 5.5° and gains 2°, all green. If a body point
+isn't tracked, that row says "not measured" and the others decide.
 
 Where your hands are doesn't matter for this check. The rule started as "the
 club covers the hands", but that depends on where the hands went, and the
