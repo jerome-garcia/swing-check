@@ -24,7 +24,6 @@ from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, O
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.analyzers.dtl_takeaway import address_line
 
-BAND_COLOR = (150, 150, 150)
 HOLD_MS = 400
 ORDER = {"ok": 0, "warn": 1, "flag": 2}
 
@@ -37,7 +36,6 @@ def downswing(ctx: SwingContext) -> Verdict:
     cfg = ctx.cfg
     f = mark.frame
     clubhead = np.asarray(mark.points["clubhead"], float)
-    hands = np.asarray(mark.points["grip"], float)
     line = address_line(ctx)
     under = line.inside_by(ctx, clubhead)  # + = behind the line (under the plane), - = above it
 
@@ -84,21 +82,29 @@ def downswing(ctx: SwingContext) -> Verdict:
     label = plane_label + (f", {shallow_label[0].lower() + shallow_label[1:]}" if shallow_status else "")
     summary = f"Coming down, {plane_meaning}" + (f", and {shallow_meaning}." if shallow_status else ".")
 
-    # Drawing: the address shaft line with the on-plane band (under side), a square tick
-    # from the clubhead to the line, and the takeaway clubhead for comparison.
+    # Drawing: the swing plane line, a square tick from the clubhead to it, and the
+    # takeaway clubhead with its own (dashed) tick, so the two distances compare by eye.
+    # The hands aren't drawn: neither measurement uses them.
     s = ctx.scale
     show = (f, min(len(ctx.pose) - 1, f + int(round(HOLD_MS * ctx.fps / 1000))))
     col = STATUS_COLORS[plane_status]
     foot = clubhead - (under * s) * line.normal
     overlays = swing_plane_line(ctx, show) + [
         Overlay("segment", [tuple(clubhead), tuple(foot)], col, "", show, 2),
-        Overlay("point", [tuple(hands)], REFERENCE_COLOR, "", show, 1),
         Overlay("point", [tuple(clubhead)], col, "", show, 2),
         Overlay("text", [(float(clubhead[0]) - line.toward_golfer * 0.15 * s, float(clubhead[1]) + 0.25 * s)], col,
                 plane_label, show),
     ]
     if take is not None:
-        overlays.append(Overlay("point", [tuple(take.points["clubhead"])], BAND_COLOR, "clubhead at takeaway", show, 1))
+        take_ch = np.asarray(take.points["clubhead"], float)
+        take_foot = take_ch - line.inside_by(ctx, take_ch) * s * line.normal
+        overlays += [
+            Overlay("dashed", [tuple(take_ch), tuple(take_foot)], REFERENCE_COLOR, "", show, 1),
+            Overlay("point", [tuple(take_ch)], REFERENCE_COLOR, "", show, 1),
+            # Label on the golfer's side of the point, clear of the club and hands.
+            Overlay("text", [(float(take_ch[0]) + line.toward_golfer * 0.9 * s, float(take_ch[1]) - 0.1 * s)],
+                    REFERENCE_COLOR, "clubhead at takeaway", show),
+        ]
 
     side = "under" if under >= 0 else "above"
     tips = []
