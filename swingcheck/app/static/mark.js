@@ -28,8 +28,9 @@ const STEPS = {
 // outlines with a center dot, so you can still see exactly what you clicked.
 const POINT_INFO = {
   ball: { label: "Ball", hint: "Center of the ball", color: "#ffffff", shape: "ring", dx: 13, dy: 20 },
-  clubhead: { label: "Clubhead", hint: "Where the shaft meets the clubhead (the hosel)", color: "#ffffff", shape: "circle", dx: -70, dy: -10 },
-  grip: { label: "Hands", hint: "Center of your hands on the shaft", color: "#ffffff", shape: "square", dx: 13, dy: -9 },
+  // At address the point is the club neck, not the clubface: the shaft line through it is the swing plane.
+  clubhead: { label: "Club neck", hint: "Where the shaft goes into the clubhead (the hosel)", color: "#ffffff", shape: "circle", dx: -70, dy: -10 },
+  grip: { label: "Hands", hint: "Middle of your grip, between your two hands", color: "#ffffff", shape: "square", dx: 13, dy: -9 },
 };
 const PLANE_COLOR = "#ff00ff"; // the address shaft line is the swing plane, magenta as on the key frames
 // Wording for points on a later checkpoint frame.

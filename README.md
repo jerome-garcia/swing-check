@@ -435,8 +435,9 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
 2. **Mark your address.** Scrub to your address position with the slider, the
    ‹ › buttons or the arrow keys (Shift = 10 frames). Then click:
    - the **ball**
-   - the **clubhead at the hosel**, where the shaft meets the head
-   - your **hands**, the center of your hands on the shaft
+   - the **club neck**, where the shaft goes into the clubhead (the hosel), not
+     the clubface: the shaft line through it is your swing plane
+   - your **hands**, the middle of your grip, between your two hands
 
    A magnifier follows the cursor; on a phone, touch and hold, slide to aim with
    the magnifier above your finger, and let go to place the point. **Undo**
