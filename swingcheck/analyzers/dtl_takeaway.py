@@ -152,7 +152,8 @@ def takeaway(ctx: SwingContext) -> Verdict:
         },
         rows=[
             Row("Clubhead vs swing plane", offset_text,
-                f"{pct(abs(inside_by))} of torso length · {_note(plane_label, tol, flag_at)}", plane_status),
+                f"{pct(abs(inside_by))} of torso length · {_note(plane_label, tol, flag_at)}",
+                grade(inside_by, -tol, tol, -flag_at, flag_at)),
         ] + [b.row for b in body],
         overlays=overlays,
     )

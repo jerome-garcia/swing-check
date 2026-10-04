@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from swingcheck.analyzers import REFERENCE_COLOR, STATUS_COLORS, Overlay, Row, SwingContext, grade
+from swingcheck.analyzers import REFERENCE_COLOR, STATUS_COLORS, Grade, Overlay, Row, SwingContext, grade
 from swingcheck.geometry import angle_between_deg, tilt_from_vertical_deg
 
 ORDER = {"ok": 0, "warn": 1, "flag": 2}
@@ -71,12 +71,12 @@ def posture_kept(ctx: SwingContext, f: int, forward: float, show: tuple[int, int
     elif lost > 0:
         label = "Slightly standing up" if soft else "Standing up"
         meaning = "spine is a little more upright than at address" if soft else "spine stands up from its address bend"
-        tip = "Keep your spine angle as you start back: turn around it instead of lifting up."
+        tip = "Keep your spine angle: turn around it instead of standing up out of it."
         word = label.lower()
     else:
         label = "Slightly bending over" if soft else "Bending over"
         meaning = "spine bends a little more than at address" if soft else "spine bends over more than at address"
-        tip = "Keep your spine angle as you start back instead of dipping your chest toward the ball."
+        tip = "Keep your spine angle instead of dipping your chest toward the ball."
         word = label.lower()
     limits = _limits(cfg, "posture_loss_max", "posture_loss_watch", "lost",
                      "posture_gain_max", "posture_gain_watch", "gained")
@@ -113,7 +113,7 @@ def trail_knee_kept(ctx: SwingContext, f: int, forward: float, show: tuple[int, 
                    -cfg["knee_bend_watch"], cfg["knee_straighten_watch"])
     soft = status == "warn"
     if status == "flag":
-        status = "warn"  # capped: see the docstring
+        status = Grade("warn", 1.0)  # capped: see the docstring
     if status == "ok":
         label = meaning = tip = ""
         word = "flex kept"

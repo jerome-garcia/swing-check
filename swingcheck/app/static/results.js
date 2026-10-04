@@ -50,9 +50,15 @@ function summaryPanel(s, states, onSelect) {
   const counts = { ok: 0, warn: 0, flag: 0 };
   for (const { state } of states) if (state in counts) counts[state] += 1;
   const notMarked = states.filter(({ state }) => state === "error" || state === "missing");
-  // The first red checkpoint in swing order, else the first yellow: the one thing to work on.
-  const focusIndex = ["flag", "warn"].map(st => states.findIndex(x => x.state === st)).find(i => i >= 0);
-  const focus = focusIndex !== undefined ? states[focusIndex] : null;
+  // The one thing to work on: picked at analysis time from importance tiers and how far
+  // into red each fault is (swingcheck/priority.py). Older analyses without a pick: the
+  // first red checkpoint in swing order, else the first yellow.
+  const picked = s.analysis && s.analysis.focus;
+  let focusIndex = picked ? states.findIndex(x => x.cp.analyzer === picked.checkpoint) : -1;
+  if (focusIndex < 0) focusIndex = ["flag", "warn"].map(st => states.findIndex(x => x.state === st)).find(i => i >= 0);
+  const focus = focusIndex !== undefined && focusIndex >= 0 ? states[focusIndex] : null;
+  const focusRow = focus && picked && picked.checkpoint === focus.cp.analyzer
+    ? (focus.verdict.rows || []).find(r => r.label === picked.row) : null;
 
   const tally = el("div", { class: "tally" },
     ...[["ok", "good"], ["warn", "to watch"], ["flag", "to fix"]].map(([st, word]) =>
@@ -62,8 +68,9 @@ function summaryPanel(s, states, onSelect) {
   if (focus) {
     const v = focus.verdict;
     focusBox = el("div", { class: `focus ${focus.state}` },
-      el("div", { class: "focus-kicker" }, focus.state === "flag" ? "Work on first" : "Worth a look"),
+      el("div", { class: "focus-kicker" }, (picked ? picked.status : focus.state) === "flag" ? "Work on first" : "Worth a look"),
       el("div", { class: "focus-title" }, `${focus.cp.number}. ${focus.cp.title}: ${v.label}`),
+      focusRow ? el("p", { class: "focus-row small" }, `Biggest issue: ${focusRow.label}, ${focusRow.value}`) : null,
       v.tip ? el("p", { class: "focus-tip" }, v.tip) : null,
       el("button", { class: "btn small", type: "button", onclick: () => onSelect(focusIndex) }, "See this checkpoint →"));
   } else if (counts.ok) {

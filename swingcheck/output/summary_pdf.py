@@ -170,7 +170,11 @@ def summary_pdf(folder: Path, swing_name: str, created: str, analysis: dict[str,
     doc.ln(4)
 
     # The one thing to work on: the first red checkpoint in swing order, else the first yellow.
-    focus = next((it for st in ("flag", "warn") for it in items if it["status"] == st and it["verdict"]), None)
+    # The saved pick (importance tiers + how far into red, swingcheck/priority.py); older
+    # analyses: the first red checkpoint in swing order, else the first yellow.
+    picked = analysis.get("focus")
+    focus = next((it for it in items if picked and it["name"] == picked.get("checkpoint") and it["verdict"]), None) \
+        or next((it for st in ("flag", "warn") for it in items if it["status"] == st and it["verdict"]), None)
     if focus:
         v, st = focus["verdict"], focus["status"]
         kicker = ("WORK ON FIRST" if st == "flag" else "WORTH A LOOK") + f" · {focus['number']}. {focus['title'].upper()}"

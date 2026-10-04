@@ -19,6 +19,8 @@ from typing import Any
 from swingcheck.analyzers import SwingContext, Verdict, run_analyzers
 from swingcheck.body import body_scale, hands
 from swingcheck.ingest import VideoInfo, normalize
+from swingcheck.checkpoints import DTL_CHECKPOINTS
+from swingcheck.priority import pick_focus
 from swingcheck.models import CHECKPOINT_MARKS, REQUIRED_MARKS, CheckpointMark, Marks, Point, PoseSeq
 from swingcheck.output.annotate import Annotator, write_outputs
 from swingcheck.output.report import build_report
@@ -194,10 +196,13 @@ def analyze(
         video_path=run_dir / "normalized.mp4",
     )
     verdicts = run_analyzers(ctx)
+    saved = [v.to_json() for v in verdicts]
+    order = [cp.analyzer for cp in DTL_CHECKPOINTS] if view == "dtl" else [v.name for v in verdicts]
     (run_dir / "analysis.json").write_text(json.dumps(
         {"view": view, "phases": phases.as_dict(), "manual_phases": phases.manual, "fps": pose.fps,
          "body_scale_px": round(ctx.scale, 2), "warnings": warnings,
-         "verdicts": [v.to_json() for v in verdicts]},
+         "focus": pick_focus(saved, order),
+         "verdicts": saved},
         indent=2, default=float,
     ))
     report = build_report(Path(info.source), view, info, phases, verdicts, ctx.scale, config["scale"]["method"])

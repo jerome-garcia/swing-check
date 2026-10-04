@@ -497,9 +497,32 @@ images and `report.txt`. Back up or delete that folder like any other files.
 
 The results page opens with a **swing summary**: one numbered dot per
 checkpoint (green, yellow, red; dashed = not measured yet), how many are good /
-to watch / to fix, and **Work on first**: the first red checkpoint in swing
-order (or the first yellow) with a one-line fix. Tap a dot to jump to that
-checkpoint. Below it, the checkpoints go one at a time (‹ › or the arrow keys):
+to watch / to fix, and **Work on first**: the one fault to work on, with its
+fix and the measurement behind it ("Biggest issue"). Tap a dot to jump to that
+checkpoint.
+
+How **Work on first** is picked (`swingcheck/priority.py`): every yellow or red
+measurement gets a score = how deep into its band it is × how much that kind of
+fault matters.
+
+- **Depth:** 0–1 across the yellow band; past the red limit, 1 plus how many
+  more yellow-band widths it goes. So "barely red" scores about 1, and a fault
+  twice as far past red as the yellow band is wide scores 3.
+- **Importance tiers** (weights 1.5 / 1.0 / 0.6):
+  1. faults that cost shots directly: the club over the top or stuck coming down
+     (6), early extension and standing up / dipping at impact (7);
+  2. positions (the default): setup, and the club at each checkpoint;
+  3. contributors: posture and trail knee kept through the backswing and
+     downswing (3–6).
+- A red always beats a yellow; among the same color the higher score wins, and
+  swing order breaks ties. With nothing red it says **Worth a look** instead.
+
+So a tier-1 fault just past red (1.5) beats a tier-2 one a little further in,
+but a position that's far into red (say the shaft pointing well past the ball)
+still comes first. Swings analyzed before this change use the old rule (first
+red in swing order) until re-analyzed.
+
+Below it, the checkpoints go one at a time (‹ › or the arrow keys):
 the checkpoint's key frame next to its card, which gives the result, what it
 means, **How to fix** when it's yellow or red, and each measurement with its
 limits. The annotated video and the detected phases sit beside it on a wide

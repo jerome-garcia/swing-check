@@ -45,13 +45,38 @@ REFERENCE_COLOR: Color = (255, 255, 255)  # address-position reference lines
 BALL_COLOR: Color = (255, 255, 0)
 
 
-def grade(value: float, ok_lo: float, ok_hi: float, watch_lo: float, watch_hi: float) -> str:
-    """Green / yellow / red: "ok" inside [ok_lo, ok_hi], "warn" inside [watch_lo, watch_hi], else "flag"."""
+class Grade(str):
+    """A status ("ok" / "warn" / "flag") that also knows how deep into its band the value
+    is (`depth`): 0 in the green, 0-1 across the yellow band, 1 + how far past the red
+    limit (in widths of the yellow band on that side) in the red. A Row built with one
+    picks the depth up, so the "Work on first" pick (swingcheck/priority.py) can
+    compare faults across checkpoints."""
+
+    depth: float
+
+    def __new__(cls, status: str, depth: float = 0.0) -> "Grade":
+        g = super().__new__(cls, status)
+        g.depth = depth
+        return g
+
+    def __reduce__(self):  # copies (e.g. dataclasses.asdict) keep the depth
+        return Grade, (str(self), self.depth)
+
+
+def grade(value: float, ok_lo: float, ok_hi: float, watch_lo: float, watch_hi: float) -> Grade:
+    """Green / yellow / red: "ok" inside [ok_lo, ok_hi], "warn" inside [watch_lo, watch_hi], else "flag"
+    (a Grade, so it also carries how deep into the band the value is)."""
     if ok_lo <= value <= ok_hi:
-        return "ok"
+        return Grade("ok", 0.0)
+    high = value > ok_hi
+    edge, limit = (ok_hi, watch_hi) if high else (ok_lo, watch_lo)
+    width = abs(limit - edge)
+    if not np.isfinite(width) or width <= 0:
+        width = 1.0  # no usable yellow band on this side: count raw distance
+    past_green = abs(value - edge)
     if watch_lo <= value <= watch_hi:
-        return "warn"
-    return "flag"
+        return Grade("warn", min(1.0, past_green / width))
+    return Grade("flag", 1.0 + abs(value - limit) / width if np.isfinite(limit) else 1.0 + past_green / width)
 
 
 def pct(body_units: float) -> str:
@@ -91,6 +116,12 @@ class Row:
     value: str  # formatted, e.g. "33.7°"
     note: str = ""  # short verdict, e.g. "good flex"
     status: str = "ok"  # one of STATUSES; colors the row's dot
+    depth: float | None = None  # how deep into its band (see Grade); taken from a Grade status
+
+    def __post_init__(self) -> None:
+        if self.depth is None and isinstance(self.status, Grade):
+            self.depth = round(float(self.status.depth), 3)
+        self.status = str(self.status)
 
 
 @dataclass
