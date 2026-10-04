@@ -509,8 +509,9 @@ fault matters.
   more yellow-band widths it goes. So "barely red" scores about 1, and a fault
   twice as far past red as the yellow band is wide scores 3.
 - **Importance tiers** (weights 1.5 / 1.0 / 0.6):
-  1. faults that cost shots directly: the club over the top or stuck coming down
-     (6), early extension and standing up / dipping at impact (7);
+  1. faults that cost shots directly: the club over the top or stuck coming down,
+     and coming down steeper than it went back (6), early extension and standing
+     up / dipping at impact (7);
   2. positions (the default): setup, and the club at each checkpoint;
   3. contributors: posture and trail knee kept through the backswing and
      downswing (3–6).

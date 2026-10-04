@@ -61,6 +61,7 @@ def test_ties_go_to_swing_order_and_green_means_nothing():
 def test_tiers():
     assert tier("impact", "Hips vs tush line") == 1
     assert tier("downswing", "Clubhead vs swing plane") == 1
+    assert tier("downswing", "Shallowing") == 1
     assert tier("takeaway", "Trail knee flex kept") == 3
     assert tier("top", "Lead arm vs spine") == 2
 

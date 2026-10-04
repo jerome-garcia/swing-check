@@ -4,8 +4,9 @@ Every graded row on a checkpoint card carries a severity (Row.depth): 0 in the
 green, 0-1 across the yellow band, and 1 plus how far past the red limit
 (in widths of the yellow band) once red. Each row also has an importance tier:
 
-  1  costs shots directly: the club over the top / stuck coming down, early
-     extension and standing up / dipping at impact
+  1  costs shots directly: the club over the top / stuck coming down (and
+     coming down steeper than it went back), early extension and standing up /
+     dipping at impact
   2  positions (the default): setup, the club at each checkpoint
   3  contributors: posture and trail knee kept through the backswing and
      downswing (the impact posture row is tier 1)
@@ -24,6 +25,7 @@ TIER_WEIGHT = {1: 1.5, 2: 1.0, 3: 0.6}
 # (checkpoint, row label) -> tier. Rows not listed are tier 2.
 TIERS: dict[tuple[str, str], int] = {
     ("downswing", "Clubhead vs swing plane"): 1,
+    ("downswing", "Shallowing"): 1,  # coming down steeper than going back: the over-the-top loop
     ("impact", "Hips vs tush line"): 1,
     ("impact", "Spine bend kept"): 1,
     ("takeaway", "Spine bend kept"): 3,
