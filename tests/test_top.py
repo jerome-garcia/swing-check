@@ -23,7 +23,8 @@ LEAD_SHOULDER_TOP = np.array([590.0, 880.0])
 HEAD = HIP + 1.3 * (SHOULDER_MID - HIP)  # the spine runs from the hips through the head
 
 
-def pose(mirror=False, head=None):
+def pose(mirror=False, head=None, heel_x=None):
+    """heel_x: screen x of the trail (right) heel; None = heel not tracked."""
     head = HEAD if head is None else head
     data = np.full((60, len(LANDMARKS), 4), np.nan)
     for f in range(60):
@@ -31,6 +32,8 @@ def pose(mirror=False, head=None):
                "left_ear": head + (6, 0), "right_ear": head - (6, 0),
                "left_shoulder": LEAD_SHOULDER_TOP if f >= 20 else SHOULDER_MID + (60, 40),
                "right_shoulder": 2 * SHOULDER_MID - LEAD_SHOULDER_TOP if f >= 20 else TRAIL_SHOULDER_ADDR}
+        if heel_x is not None:
+            pts["right_heel"] = np.array([heel_x, 1600.0])
         for name, p in pts.items():
             if mirror:
                 name = name.replace("left", "tmp").replace("right", "left").replace("tmp", "right")
@@ -48,7 +51,8 @@ def hands_at(arm_deg, length=300.0):
     return LEAD_SHOULDER_TOP + length * (rot @ spine)
 
 
-def run(hands, mirror=False, config=None, marked=True, head=None):
+def run(hands, mirror=False, config=None, marked=True, head=None, heel_out=0.0, heel=True):
+    """heel_out: torso lengths the hands sit out toward the ball from the trail heel."""
     config = copy.deepcopy(config or CONFIG)
     flip = (lambda p: (WIDTH - 1 - float(p[0]), float(p[1]))) if mirror else (lambda p: (float(p[0]), float(p[1])))
     if mirror:
@@ -58,7 +62,7 @@ def run(hands, mirror=False, config=None, marked=True, head=None):
     marks = Marks(view="dtl", address_frame=0,
                   points={"ball": flip(BALL), "clubhead": flip(ADDR_CLUBHEAD), "grip": flip(ADDR_GRIP)},
                   checkpoints=checkpoints)
-    ctx = SwingContext(view="dtl", pose=pose(mirror, head), marks=marks, phases=PHASES, scale=SCALE, config=config)
+    ctx = SwingContext(view="dtl", pose=pose(mirror, head, hands[0] - heel_out * SCALE if heel else None), marks=marks, phases=PHASES, scale=SCALE, config=config)
     (v,) = [v for v in run_analyzers(ctx) if v.name == "top"]
     return v
 
@@ -104,10 +108,42 @@ def test_not_marked_explains_how():
     assert v.status == "error" and "Top" in v.summary
 
 
-def test_judges_the_arm_only():
+def test_judges_the_arm_and_the_hands_over_the_heel():
     v = run(hands_at(90))
-    assert [r.label for r in v.rows] == ["Lead arm vs spine"]
+    assert [r.label for r in v.rows] == ["Lead arm vs spine", "Hands vs trail heel"]
     assert v.label == "Lead arm matches the shoulders" and v.tip == ""
+    assert v.measurements["hands_out_from_heel"] == pytest.approx(0.0, abs=1e-3)
+
+
+@pytest.mark.parametrize("out, status, label", [
+    (0.03, "ok", "Hands over the trail heel"),      # McIlroy
+    (-0.12, "ok", "Hands over the trail heel"),
+    (0.2, "warn", "Hands slightly outside the heel"),
+    (0.4, "flag", "Hands outside the heel"),
+    (-0.2, "warn", "Hands slightly behind the heel"),
+    (-0.4, "flag", "Hands behind the heel"),
+])
+def test_hands_vs_trail_heel_bands(out, status, label):
+    for mirror in (False, True):
+        v = run(hands_at(90), heel_out=out, mirror=mirror)
+        row = v.rows[1]
+        assert row.status == status and label.lower() in row.note
+        assert v.status == status  # the arm is green, so the hands decide
+        assert v.measurements["hands_out_from_heel"] == pytest.approx(out, abs=1e-3)
+        assert row.value.endswith("toward the ball" if out >= 0 else "behind")
+        assert "green within ±15%, red past 30%" in row.note
+        assert (label.lower() in v.label.lower()) == (status != "ok")
+        assert (v.tip == "") == (status == "ok")
+
+
+def test_heel_not_tracked_is_not_measured():
+    v = run(hands_at(90), heel=False)
+    assert v.rows[1].status == "error" and v.rows[1].value == "not measured"
+    assert v.status == "ok" and v.measurements["hands_out_from_heel"] is None
+
+
+def test_key_frame_shows_the_trail_heel_line():
+    assert any(o.kind == "dashed" and o.label == "trail heel" for o in run(hands_at(90)).overlays)
 
 
 def test_key_frame_shows_the_swing_plane_line():

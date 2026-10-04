@@ -180,6 +180,11 @@ arm_spine_min = 75
 arm_spine_max = 105
 arm_spine_watch_min = 65
 arm_spine_watch_max = 115
+# Hands vs the trail heel, across the picture, as a share of torso length:
+# the hands should sit straight above the trail heel. + = out toward the ball,
+# - = behind the heel (deep). McIlroy +3%, Tiger +11%.
+heel_max = 0.15    # green within ±15% (about 7 cm)...
+heel_watch = 0.30  # ...yellow to 30% (about 15 cm); red beyond
 
 [analyzers.downswing]
 # DTL checkpoint 6, on the frame you mark where the shaft is parallel to the

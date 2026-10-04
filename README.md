@@ -146,6 +146,11 @@ your **hands**. Body points come from tracking. Settings live in
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
 | **Lead arm vs spine** | angle between the lead arm (lead shoulder → hands) and the spine, drawn from the hip center through the head, on the top frame; 90° = the arm matches the shoulders | 75–105°: **Lead arm matches the shoulders** | 65–75° (*slightly above*) or 105–115° (*slightly below*) | under 65°: arm lifted **above the shoulders** (upright); over 115°: **below the shoulders** (flat, around the body) |
+| **Hands vs trail heel** | how far the hands sit across the picture from straight above the trail heel (tracked, median of a few frames around the top), as % of torso length; drawn as a dashed plumb line up from the heel | within ±15% (about 7 cm): **Hands over the trail heel** | 15–30% (*slightly outside* / *slightly behind the heel*) | more than 30%: hands **outside the heel** (out toward the ball) or **behind the heel** (deep, flat) |
+
+The card shows the worse of the two. References for the hands: McIlroy about
+2 cm toward the ball, Tiger about 6 cm, both green. If the heel isn't tracked,
+that row says "not measured" and the arm decides.
 
 The spine runs from the hips **through the head**, the way golf instruction
 draws the spine angle (it matched the coach's spine marker on the reference
