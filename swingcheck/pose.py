@@ -215,7 +215,10 @@ def segment_frame(frame: np.ndarray, config: dict[str, Any]) -> np.ndarray:
             result = landmarker.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=cv2.cvtColor(padded, cv2.COLOR_BGR2RGB)))
     if not result.segmentation_masks:
         raise RuntimeError("no person found for segmentation")
-    mask = np.asarray(result.segmentation_masks[0].numpy_view(), dtype=np.float32).squeeze()[:sh, :sw]
+    # Copy: numpy_view() points into MediaPipe's own buffer, which is freed with the
+    # landmarker; reading a view of it later (when no resize below makes a copy, e.g.
+    # a 576x1024 clip) crashes the whole process with an access violation.
+    mask = np.array(result.segmentation_masks[0].numpy_view(), dtype=np.float32).squeeze()[:sh, :sw].copy()
     return cv2.resize(mask, (w, h), interpolation=cv2.INTER_LINEAR) if mask.shape != (h, w) else mask
 
 
