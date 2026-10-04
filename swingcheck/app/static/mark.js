@@ -1,4 +1,4 @@
-import { api, el, features, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
+import { api, el, features, formatDate, pollJob, postJSON, progressBlock, putJSON, swingUrl } from "./util.js";
 import { swingHeader } from "./swing.js";
 
 // Marking steps per view. Address is required; later checkpoints are optional and
@@ -69,10 +69,12 @@ const LOUPE_SIZE = 150;
 const LOUPE_ZOOM = 4;
 
 export async function renderMark(view, id, isCurrent) {
-  const [s, reference] = await Promise.all([
+  const [s, firstReference, allSwings] = await Promise.all([
     api(`/api/swings/${encodeURIComponent(id)}`),
     api("/api/reference").catch(() => ({ id: null })),
+    api("/api/swings").catch(() => []),
   ]);
+  let reference = firstReference;
   if (!isCurrent()) return;
   if (!s.video || (s.job && ["queued", "running"].includes(s.job.state))) {
     location.replace(swingUrl(id));
@@ -336,25 +338,51 @@ export async function renderMark(view, id, isCurrent) {
   n === -10 ? "«" : n === -1 ? "‹" : n === 1 ? "›" : "»");
 
   // --- Reference swing ------------------------------------------------------
-  // The swing the user picked as a reference (⋯ → Use as marking reference on its page):
-  // its frame for this step, with its marks, next to the step's instructions.
-  const refBox = el("figure", { class: "ref-frame" });
+  // Another marked swing to compare with (a pro's clip, say): its frame for this step, with
+  // its marks, next to the step's instructions. One choice for the whole app, also set from
+  // a swing's ⋯ menu (Use as marking reference).
+  const candidates = s.view === "dtl"
+    ? allSwings.filter(o => o.id !== id && o.view === "dtl" && ["marked", "analyzed"].includes(o.status)) : [];
+  const refSelect = el("select", { class: "ref-select", "aria-label": "Compare with" },
+    el("option", { value: "" }, "None"),
+    candidates.map(o => el("option", { value: o.id, selected: o.id === reference.id || null }, `${o.name} · ${formatDate(o.created)}`)));
+  refSelect.addEventListener("change", async () => {
+    refSelect.disabled = true;
+    try {
+      reference = await putJSON("/api/reference", { id: refSelect.value || null });
+    } catch (err) {
+      alert(err.message);
+    }
+    refSelect.disabled = false;
+    refShown = null;
+    renderRef();
+  });
+  const refPicture = el("figure", { class: "ref-frame" });
+  const refBox = el("div", { class: "ref-box" },
+    el("label", { class: "ref-pick small" }, el("strong", {}, "Compare with "), refSelect),
+    refPicture);
   let refShown = null; // the step it's showing; frames aren't cached, so redraw only on a step change
   function renderRef() {
     if (refShown === state.active) return;
     refShown = state.active;
-    if (s.view !== "dtl" || reference.id === id) { refBox.hidden = true; return; }
+    if (s.view !== "dtl") { refBox.hidden = true; return; }
     refBox.hidden = false;
-    if (!reference.id) {
-      refBox.replaceChildren(el("figcaption", { class: "subtle small" },
-        "Tip: open a swing you'd like to copy (a pro's clip, say) and choose ⋯ → Use as marking reference. "
-        + "Its frame for each step then shows here."));
+    if (!candidates.length) {
+      refBox.replaceChildren(el("p", { class: "subtle small" },
+        "Once you've marked another swing (a pro's clip, say), you can show it here in the same position "
+        + "as an example to follow."));
+      return;
+    }
+    const showing = reference.id && reference.id !== id;
+    if (!showing) {
+      refPicture.replaceChildren(el("figcaption", { class: "subtle small" },
+        "Pick one of your marked swings to see it in the same position while you mark."));
       return;
     }
     const st = reference.steps[state.active];
     if (!st) {
-      refBox.replaceChildren(el("figcaption", { class: "subtle small" },
-        `Your reference swing (${reference.name}) has no ${stepDef().title.toLowerCase()} marks.`));
+      refPicture.replaceChildren(el("figcaption", { class: "subtle small" },
+        `${reference.name} has no ${stepDef().title.toLowerCase()} marks.`));
       return;
     }
     const url = `/api/swings/${encodeURIComponent(reference.id)}/frames/${st.frame}.jpg`;
@@ -373,7 +401,7 @@ export async function renderMark(view, id, isCurrent) {
     link.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Reference frame">`
       + `<image href="${url}?w=360" width="${w}" height="${h}"/>${shaft}`
       + Object.entries(p).filter(([n]) => POINT_INFO[n]).map(([n, pt]) => mark(n, pt)).join("") + "</svg>";
-    refBox.replaceChildren(link, el("figcaption", { class: "subtle small" }, `Reference: ${reference.name}`));
+    refPicture.replaceChildren(link, el("figcaption", { class: "subtle small" }, `${reference.name} at ${stepDef().title.toLowerCase()}`));
   }
 
   // --- Mark checks ----------------------------------------------------------

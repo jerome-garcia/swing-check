@@ -470,10 +470,12 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    the **clubhead** and then your **hands** (or the lowest point of the shaft
    you can see, if your hands are hidden).
 
-   **Reference swing.** Open a swing you'd like to copy (a pro's clip you've
-   marked, say) and choose **⋯ → Use as marking reference**. Every marking step
-   then shows that swing's frame for the same step, with its marks, beside the
-   instructions. It's labelled *Marking reference* in your swings list.
+   **Compare with.** Pick one of your other marked swings (a pro's clip, say)
+   under the step's instructions, and every marking step shows that swing in the
+   same position, with its marks, as an example to follow. The choice is
+   remembered for every swing you mark; you can also set it from a swing's page
+   (**⋯ → Use as marking reference**), and it's labelled *Marking reference* in
+   your swings list.
 
    **Mark checks.** Marks that look wrong get a yellow note under the points and
    a **!** on the step: hands below the club neck at address, the club neck far
