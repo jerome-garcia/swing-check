@@ -456,13 +456,18 @@ export async function renderMark(view, id, isCurrent) {
     const next = nextPoint();
     renderHud(next);
     const warned = new Set(markWarnings().map(([key]) => key));
-    stepTabs.replaceChildren(...steps.map(st => el("button", {
-      type: "button", role: "tab", class: `step-tab ${st.key === state.active ? "selected" : ""} ${complete(st.key) ? "complete" : ""} ${warned.has(st.key) ? "warned" : ""}`,
-      "aria-selected": String(st.key === state.active), onclick: () => selectStep(st.key),
-      title: complete(st.key) ? "Marked" : "Still to mark",
-    },
-    el("span", { class: "step-tab-state" }, warned.has(st.key) ? "!" : complete(st.key) ? "✓" : started(st.key) ? "…" : "•"),
-    el("span", {}, st.title))));
+    // Numbered badges read as progress: the step number, ✓ once marked, ! if a mark looks off.
+    stepTabs.replaceChildren(...steps.map((st, i) => {
+      const done = complete(st.key);
+      const status = warned.has(st.key) ? "warned" : done ? "complete" : started(st.key) ? "started" : "";
+      return el("button", {
+        type: "button", role: "tab", class: `step-tab ${st.key === state.active ? "selected" : ""} ${status}`,
+        "aria-selected": String(st.key === state.active), onclick: () => selectStep(st.key),
+        title: { warned: "Check this step's marks", complete: "Marked", started: "Started" }[status] || "Still to mark",
+      },
+      el("span", { class: "step-tab-state", "aria-hidden": "true" }, status === "warned" ? "!" : done ? "✓" : String(i + 1)),
+      el("span", {}, st.title));
+    }));
     stepIntro.textContent = stepDef().intro;
     pointList.replaceChildren(...stepDef().points.map(name => {
       const done = Boolean(cur().points[name]);
@@ -596,7 +601,7 @@ export async function renderMark(view, id, isCurrent) {
       el("aside", { class: "mark-side stack" },
         el("section", { class: "panel" },
           el("h2", {}, steps.length > 1 ? "Mark your swing" : "Mark your address"),
-          steps.length > 1 ? el("p", { class: "subtle small" }, `Mark all ${steps.length} steps, one per checkpoint (• = still to mark).`) : null,
+          steps.length > 1 ? el("p", { class: "subtle small" }, `Mark all ${steps.length} steps, one per checkpoint.`) : null,
           steps.length > 1 ? stepTabs : null,
           stepIntro,
           pointList,

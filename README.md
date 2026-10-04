@@ -438,7 +438,8 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    open on a **suggested frame**. (Face-on is shown but disabled until a future
    release.)
 2. **Mark your swing.** There are six steps, all required: address, then one
-   per checkpoint. **Save and analyze** unlocks once every step is marked, and
+   per checkpoint. Each step tab shows its number, turning into a green ✓ once
+   it's marked. **Save and analyze** unlocks once every step is marked, and
    the line under it lists what's still to mark. Each step opens on its
    suggested frame (the caption says *Suggested frame*); check it and scrub to
    the exact frame if needed with the slider, the ‹ › buttons or the arrow keys

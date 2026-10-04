@@ -482,10 +482,13 @@ button.score-item:hover { background: var(--surface-2); }
 }
 .step-tab:hover { background: var(--surface-2); }
 .step-tab.selected { border-color: var(--accent); background: var(--accent-soft); }
-.step-tab.complete .step-tab-state { color: var(--ok); }
-.step-tab-state { font-size: 12px; font-weight: 700; color: var(--muted); min-width: 0.6em; }
-.step-tab-state:empty { display: none; }
-.step-tab.warned .step-tab-state { color: var(--warn); }
+.step-tab-state {
+  display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  border: 1.5px solid var(--border); color: var(--muted); font-size: 11px; font-weight: 700; line-height: 1;
+}
+.step-tab.started .step-tab-state { border-color: var(--accent); color: var(--accent); }
+.step-tab.complete .step-tab-state { border-color: var(--ok); background: var(--ok); color: #fff; }
+.step-tab.warned .step-tab-state { border-color: var(--warn); background: var(--warn); color: #fff; }
 /* Marking: the suggested starting frame, the reference swing, and mark checks. */
 .suggested-tag { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); font-weight: 600; }
 .suggested-tag[hidden] { display: none; }
