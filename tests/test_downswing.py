@@ -45,7 +45,7 @@ def run(under=0.15, takeaway=0.0, mirror=False, config=None, marked=True):
     if takeaway is not None:
         checkpoints["takeaway"] = CheckpointMark(frame=20, points={"clubhead": flip(on_line(takeaway)), "grip": flip(HANDS)})
     if marked:
-        checkpoints["downswing"] = CheckpointMark(frame=55, points={"clubhead": flip(on_line(under)), "grip": flip(HANDS)})
+        checkpoints["downswing"] = CheckpointMark(frame=55, points={"clubhead": flip(on_line(under))})
     marks = Marks(view="dtl", address_frame=0,
                   points={"ball": flip(BALL), "clubhead": flip(ADDR_CLUBHEAD), "grip": flip(ADDR_GRIP)},
                   checkpoints=checkpoints)
@@ -115,3 +115,14 @@ def test_left_handed_mirror_matches():
 def test_not_marked_explains_how():
     v = run(marked=False)
     assert v.status == "error" and "Downswing" in v.summary
+
+
+def test_only_the_clubhead_is_clicked():
+    from swingcheck.models import CHECKPOINT_MARKS
+    assert CHECKPOINT_MARKS["dtl"]["downswing"] == ("clubhead",)
+
+
+def test_dashed_line_joins_takeaway_and_downswing_clubheads():
+    v = run(under=0.15, takeaway=-0.04)
+    (dash,) = [o for o in v.overlays if o.kind == "dashed"]
+    assert dash.points[0] == pytest.approx(on_line(-0.04)) and dash.points[1] == pytest.approx(on_line(0.15))

@@ -1,7 +1,7 @@
 """Down-the-line checkpoint 6: downswing (shallowing).
 
 On the frame you mark where the shaft is parallel to the ground coming down
-(P6, the mirror of the takeaway), using the clubhead and hands you click:
+(P6, the mirror of the takeaway), using the clubhead you click:
 
   down the plane  the clubhead's distance from the address shaft line, square
                   to it (as at the takeaway). Coming down it should be on the
@@ -32,7 +32,7 @@ ORDER = {"ok": 0, "warn": 1, "flag": 2}
 def downswing(ctx: SwingContext) -> Verdict:
     mark = ctx.marks.checkpoint("downswing")
     if mark is None:
-        raise MissingData("the downswing isn't marked yet: Edit marks → Downswing, then click the clubhead and hands")
+        raise MissingData("the downswing isn't marked yet: Edit marks → Downswing, then click the clubhead")
     cfg = ctx.cfg
     f = mark.frame
     clubhead = np.asarray(mark.points["clubhead"], float)
@@ -83,8 +83,8 @@ def downswing(ctx: SwingContext) -> Verdict:
     summary = f"Coming down, {plane_meaning}" + (f", and {shallow_meaning}." if shallow_status else ".")
 
     # Drawing: the swing plane line, a square tick from the clubhead to it, and the
-    # takeaway clubhead with its own (dashed) tick, so the two distances compare by eye.
-    # The hands aren't drawn: neither measurement uses them.
+    # takeaway clubhead joined to the downswing clubhead by a dashed line, to show how
+    # far it moved between the two.
     s = ctx.scale
     show = (f, min(len(ctx.pose) - 1, f + int(round(HOLD_MS * ctx.fps / 1000))))
     col = STATUS_COLORS[plane_status]
@@ -97,9 +97,8 @@ def downswing(ctx: SwingContext) -> Verdict:
     ]
     if take is not None:
         take_ch = np.asarray(take.points["clubhead"], float)
-        take_foot = take_ch - line.inside_by(ctx, take_ch) * s * line.normal
         overlays += [
-            Overlay("dashed", [tuple(take_ch), tuple(take_foot)], REFERENCE_COLOR, "", show, 1),
+            Overlay("dashed", [tuple(take_ch), tuple(clubhead)], REFERENCE_COLOR, "", show, 1),
             Overlay("point", [tuple(take_ch)], REFERENCE_COLOR, "", show, 1),
             # Label on the golfer's side of the point, clear of the club and hands.
             Overlay("text", [(float(take_ch[0]) + line.toward_golfer * 0.9 * s, float(take_ch[1]) - 0.1 * s)],

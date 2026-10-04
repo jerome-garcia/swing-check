@@ -13,8 +13,8 @@ const STEPS = {
       intro: "Scrub to where your lead arm is parallel to the ground (hands about level with your lead shoulder). Click the clubhead, then your hands. This frame is the halfway-back checkpoint." },
     { key: "top", title: "Top", points: ["clubhead", "grip"], optional: true,
       intro: "Scrub to the top of your backswing (the moment the club stops going back). Click the clubhead, then your hands. This frame is the top checkpoint." },
-    { key: "downswing", title: "Downswing", points: ["clubhead", "grip"], optional: true,
-      intro: "Scrub to where the shaft is parallel to the ground on the way down (hands about hip height). Click the clubhead, then your hands. This frame is the downswing checkpoint." },
+    { key: "downswing", title: "Downswing", points: ["clubhead"], optional: true,
+      intro: "Scrub to where the shaft is parallel to the ground on the way down (hands about hip height). Click the clubhead. This frame is the downswing checkpoint." },
     { key: "follow_through", title: "Follow-through", points: ["clubhead", "grip"], optional: true,
       intro: "Scrub to where your trail arm is parallel to the ground after impact (hands about shoulder height, the mirror of halfway back; if your arms are hidden, pick where the shaft looks about as steep as at halfway back). Click the clubhead, then your hands. This frame is the follow-through checkpoint." },
   ],
@@ -45,7 +45,6 @@ const STEP_POINT_INFO = {
   },
   downswing: {
     clubhead: { label: "Clubhead", hint: "Center of the clubhead (it may be blurred: click the middle of the streak)" },
-    grip: { label: "Hands", hint: "Center of your hands" },
   },
   follow_through: {
     clubhead: { label: "Clubhead", hint: "Center of the clubhead, or the highest point of the shaft you can see if it's out of frame" },

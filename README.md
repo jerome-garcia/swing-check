@@ -172,8 +172,10 @@ line square to the spine where the arm should be.
 
 **6. Downswing (implemented).** On the **Downswing** marking step, scrub to
 where the **shaft is parallel to the ground on the way down** (P6, hands about
-hip height; the mirror of the takeaway) and click the **clubhead** and your
-**hands**. Settings live in `[analyzers.downswing]`.
+hip height; the mirror of the takeaway) and click the **clubhead** (only the
+clubhead: neither measurement uses the hands). On the key frame a dashed line
+joins the clubhead at the takeaway to the clubhead here, to show how far it
+moved. Settings live in `[analyzers.downswing]`.
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
