@@ -104,7 +104,6 @@ def top(ctx: SwingContext) -> Verdict:
             Row("Lead arm vs spine", f"{arm_angle:.0f}°",
                 f"{label.lower()} (green {cfg['arm_spine_min']:g}–{cfg['arm_spine_max']:g}°, "
                 f"red outside {cfg['arm_spine_watch_min']:g}–{cfg['arm_spine_watch_max']:g}°)", status),
-            Row("Top frame", str(f), "marked by you", "ok"),
         ],
         overlays=swing_plane_line(ctx, show) + overlays,
     )

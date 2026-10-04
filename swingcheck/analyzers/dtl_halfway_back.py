@@ -110,7 +110,6 @@ def halfway_back(ctx: SwingContext) -> Verdict:
                 f"{pct(abs(inside_by))} of torso length · {label.lower()} "
                 f"(green {pct(-cfg['inside_min'])} outside to {pct(cfg['inside_max'])} inside, "
                 f"red past {pct(cfg['inside_watch_max'])} inside or {pct(-cfg['inside_watch_min'])} outside)", status),
-            Row("Halfway frame", str(f), "marked by you", "ok"),
         ],
         overlays=swing_plane_line(ctx, show) + overlays,
     )

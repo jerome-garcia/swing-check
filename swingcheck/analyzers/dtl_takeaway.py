@@ -133,7 +133,6 @@ def takeaway(ctx: SwingContext) -> Verdict:
         rows=[
             Row("Clubhead vs swing plane", offset_text,
                 f"{pct(abs(inside_by))} of torso length · {_note(label, tol, flag_at)}", status),
-            Row("Takeaway frame", str(f), "marked by you", "ok"),
         ],
         overlays=overlays,
     )

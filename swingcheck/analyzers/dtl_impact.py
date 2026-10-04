@@ -151,7 +151,6 @@ def impact(ctx: SwingContext) -> Verdict:
                 f"{abs(lost):.0f}° {'more upright' if lost >= 0 else 'more bent'} · {posture_label.lower()} "
                 f"(green up to {cfg['posture_loss_max']:g}° lost, red past {cfg['posture_loss_watch']:g}°)",
                 posture_status),
-            Row("Impact frame", str(f), "detected (adjust under Phases)", "ok"),
         ],
         overlays=swing_plane_line(ctx, show) + overlays,
     )

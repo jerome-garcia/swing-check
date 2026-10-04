@@ -129,7 +129,6 @@ def downswing(ctx: SwingContext) -> Verdict:
                 f"(green {pct(cfg['under_min'])}–{pct(cfg['under_max'])} under, "
                 f"red past {pct(-cfg['under_watch_min'])} above or {pct(cfg['under_watch_max'])} under)", plane_status),
             *rows_extra,
-            Row("Downswing frame", str(f), "marked by you", "ok"),
         ],
         overlays=overlays,
     )

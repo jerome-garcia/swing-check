@@ -106,7 +106,7 @@ def test_not_marked_explains_how():
 
 def test_judges_the_arm_only():
     v = run(hands_at(90))
-    assert [r.label for r in v.rows] == ["Lead arm vs spine", "Top frame"]
+    assert [r.label for r in v.rows] == ["Lead arm vs spine"]
     assert v.label == "Lead arm matches the shoulders" and v.tip == ""
 
 

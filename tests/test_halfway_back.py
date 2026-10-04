@@ -54,7 +54,7 @@ def test_reference_photo_is_green():
     assert v.status == "ok" and v.label == "Points just inside the ball"
     assert v.measurements["shaft_inside_ball"] == pytest.approx(0.26, abs=0.01)
     assert v.frame == 30  # key frame is the marked frame
-    assert [r.label for r in v.rows] == ["Shaft points", "Halfway frame"]  # no biceps check
+    assert [r.label for r in v.rows] == ["Shaft points"]  # no biceps check
 
 
 @pytest.mark.parametrize("inside_by, status, label", [

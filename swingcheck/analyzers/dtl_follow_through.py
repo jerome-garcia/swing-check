@@ -131,7 +131,6 @@ def follow_through(ctx: SwingContext) -> Verdict:
                 f"(green {pct(-cfg['inside_min'])} outside to {pct(cfg['inside_max'])} inside, "
                 f"red past {pct(-cfg['inside_watch_min'])} outside or {pct(cfg['inside_watch_max'])} inside)", shaft_status),
             same_row,
-            Row("Follow-through frame", str(f), "marked by you", "ok"),
         ],
         overlays=swing_plane_line(ctx, show) + overlays,
     )
