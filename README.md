@@ -100,10 +100,14 @@ don't matter here); that frame is the takeaway checkpoint. Settings live in `[an
 |---|---|---|---|---|
 | **Clubhead vs swing plane** | distance of the clubhead from the swing plane line (checkpoint 2's line), square to it, as % of torso length | within ±20% (≈10 cm): **Club on plane** | 20–50%: *slightly inside / outside the swing plane* | past 50% (≈25 cm): *well inside* (your side: pulled inside or rolled open) or *well outside* (ball side: picked up outside) |
 | **Spine bend kept** | spine bend (hip center → shoulder center, from vertical) on the takeaway frame vs address, from tracking | up to 6° more upright or 5° more bent: **posture kept** | 6–10° more upright (*slightly standing up*) or 5–10° more bent (*slightly bending over*) | more than 10°: **standing up** early or **bending over** |
-| **Trail knee flex kept** | trail knee flex (180° − hip-knee-ankle angle) on the takeaway frame vs address, from tracking | up to 5° straighter or 8° more bent: **flex kept** | 5–10° straighter (*slightly straightening*) or 8–15° more bent (*slightly sinking*) | more than 10° straighter: trail leg **straightening** (locking out); more than 15° more bent: **sinking** |
+| **Trail knee flex kept** | trail knee flex (180° − hip-knee-ankle angle) on the takeaway frame vs address, from tracking | up to 5° straighter or 8° more bent: **flex kept** | more than 5° straighter (*slightly straightening*; past 10°, *straightening*) or more than 8° more bent (*sinking*) | never: a watch item (see below) |
 
 The card shows the worst of the three. References: McIlroy loses 2° of spine
-bend and 3° of knee flex, Tiger 5.5° and gains 2°, all green. If a body point
+bend and 3° of knee flex, Tiger 5.5° and gains 2°, all green. The trail knee is
+yellow at most, never red: an early-straightening trail leg makes it easier to
+lose posture, but it rarely costs a shot by itself, and the knee angle seen from
+behind gets rough once the hips turn. So it never becomes "Work on first" ahead
+of the faults that do cost shots (over the top, early extension). If a body point
 isn't tracked, that row says "not measured" and the others decide.
 
 Where your hands are doesn't matter for this check. The rule started as "the
@@ -134,7 +138,7 @@ Settings live in `[analyzers.halfway_back]`.
 |---|---|---|---|---|
 | **Shaft points** | the line from the clubhead through the hands, carried down to the ball's level: where it lands vs the ball, as % of torso length | 10% past the ball to 40% inside (between the ball and your feet): **Points at the ball** / **just inside the ball** | 40–70% inside (*a little steep*) or 10–25% past the ball (*a little flat*) | past 70% inside: **Points at your feet** (too steep / upright); more than 25% past the ball: **Points outside the ball** (too flat / laid off) |
 | **Spine bend kept** | as at the takeaway: spine bend on this frame vs address, from tracking | up to 8° more upright or 5° more bent | 8–12° more upright (*slightly standing up*) or 5–10° more bent | more than 12° more upright: **standing up**; more than 10° more bent: **bending over** |
-| **Trail knee flex kept** | as at the takeaway: trail knee flex on this frame vs address | up to 6° straighter or 8° more bent | 6–10° straighter (*slightly straightening*) or 8–15° more bent | more than 10° straighter: trail leg **straightening**; more than 15° more bent: **sinking** |
+| **Trail knee flex kept** | as at the takeaway: trail knee flex on this frame vs address | up to 6° straighter or 8° more bent | more than 6° straighter (*slightly straightening*; past 10°, *straightening*) or more than 8° more bent | never: a watch item |
 
 The card shows the worst of the three. Good players lose only a few degrees of
 either by here (McIlroy about 4° and 4°, Tiger 6° and 2°); most of the trail

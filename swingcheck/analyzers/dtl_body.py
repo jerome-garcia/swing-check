@@ -94,7 +94,12 @@ def posture_kept(ctx: SwingContext, f: int, forward: float, show: tuple[int, int
 
 
 def trail_knee_kept(ctx: SwingContext, f: int, forward: float, show: tuple[int, int]) -> BodyCheck:
-    """Trail knee flex on frame f vs address; lost = the leg straightening."""
+    """Trail knee flex on frame f vs address; lost = the leg straightening.
+
+    A watch item at most, never red: a trail leg that straightens early is a
+    contributor (it makes losing posture easier) rather than a fault that costs
+    shots by itself, and the 2D knee angle from behind is rough once the hips
+    turn. Past knee_*_watch only the wording gets stronger."""
     cfg = ctx.cfg
     a = ctx.marks.address_frame
     hip, knee, ankle = (ctx.track(ctx.side(p, "trail")) for p in ("hip", "knee", "ankle"))
@@ -107,12 +112,14 @@ def trail_knee_kept(ctx: SwingContext, f: int, forward: float, show: tuple[int, 
     status = grade(lost, -cfg["knee_bend_max"], cfg["knee_straighten_max"],
                    -cfg["knee_bend_watch"], cfg["knee_straighten_watch"])
     soft = status == "warn"
+    if status == "flag":
+        status = "warn"  # capped: see the docstring
     if status == "ok":
         label = meaning = tip = ""
         word = "flex kept"
     elif lost > 0:
         label = "Trail knee slightly straightening" if soft else "Trail knee straightening"
-        meaning = "trail knee straightens a little" if soft else "trail knee straightens, locking the trail leg"
+        meaning = "trail knee straightens a little" if soft else "trail knee straightens, nearly locking the trail leg"
         tip = "Keep the flex in your trail knee as you start back; let the hips turn without locking the leg."
         word = "slightly straightening" if soft else "straightening"
     else:
@@ -120,8 +127,8 @@ def trail_knee_kept(ctx: SwingContext, f: int, forward: float, show: tuple[int, 
         meaning = "trail knee bends a little more" if soft else "trail knee bends more, sinking down"
         tip = "Keep your trail knee flex as at address instead of squatting as you start back."
         word = "slightly sinking" if soft else "sinking"
-    limits = _limits(cfg, "knee_straighten_max", "knee_straighten_watch", "straighter",
-                     "knee_bend_max", "knee_bend_watch", "more bent")
+    limits = (f"green up to {cfg['knee_straighten_max']:g}° straighter or {cfg['knee_bend_max']:g}° more bent; "
+              f"yellow beyond, never red")
     row = Row("Trail knee flex kept", f"{flex1:.0f}° (address {flex0:.0f}°)",
               f"{abs(lost):.0f}° {'straighter' if lost >= 0 else 'more bent'} · {word} ({limits})", status)
     col = STATUS_COLORS[status]

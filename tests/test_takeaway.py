@@ -163,9 +163,9 @@ def test_spine_bend_bands(lost, status, label):
     (3, "ok", None),            # McIlroy
     (-2, "ok", None),           # Tiger
     (8, "warn", "Trail knee slightly straightening"),   # the user's indoor swing
-    (11, "flag", "Trail knee straightening"),           # the user's latest swing
+    (11, "warn", "Trail knee straightening"),           # the user's latest swing: never red
     (-10, "warn", "Trail knee slightly sinking"),
-    (-18, "flag", "Trail knee sinking"),
+    (-18, "warn", "Trail knee sinking"),                # never red
 ])
 def test_trail_knee_bands(lost, status, label):
     for mirror in (False, True):

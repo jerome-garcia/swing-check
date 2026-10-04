@@ -127,7 +127,7 @@ def test_key_frame_shows_the_swing_plane_line():
     (10, 0, "warn", "slightly standing up"),              # jolo
     (14, 0, "flag", "standing up"),
     (0, 9, "warn", "trail knee slightly straightening"),  # the user's indoor swing
-    (0, 11, "flag", "trail knee straightening"),          # the user's latest swing
+    (0, 11, "warn", "trail knee straightening"),          # the user's latest swing: never red
 ])
 def test_body_rows(spine, knee, status, extra):
     for mirror in (False, True):
