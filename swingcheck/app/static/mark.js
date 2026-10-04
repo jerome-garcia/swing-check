@@ -364,7 +364,12 @@ export async function renderMark(view, id, isCurrent) {
     link.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Reference frame">`
       + `<image href="${url}" width="${w}" height="${h}"/>${shaft}`
       + Object.entries(p).filter(([n]) => POINT_INFO[n]).map(([n, pt]) => mark(n, pt)).join("") + "</svg>";
-    refBox.replaceChildren(link, el("figcaption", { class: "subtle small" }, `${reference.name} at ${stepDef().title.toLowerCase()}`));
+    // Labelled as an example on the picture itself too, so it's never mistaken for your swing.
+    link.append(el("span", { class: "ref-tag" }, "Example"));
+    refBox.replaceChildren(
+      el("div", { class: "ref-head" }, el("strong", {}, "Example to follow"),
+        el("div", { class: "subtle small" }, `${reference.name} at ${stepDef().title.toLowerCase()}, for comparison. Not your swing: mark yours on your own video.`)),
+      link);
   }
 
   // --- Mark checks ----------------------------------------------------------
