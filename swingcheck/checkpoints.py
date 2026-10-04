@@ -21,21 +21,21 @@ class Checkpoint:
 
 DTL_CHECKPOINTS: tuple[Checkpoint, ...] = (
     Checkpoint(1, "Address", "address", "address",
-               "Arms perpendicular to the ground, spine tilt, knee bend, back rounding."),
+               "Your setup: arms hanging straight down, spine tilted forward, knees softly bent, upper back straight."),
     Checkpoint(2, "Swing plane", "swing_plane", "address",
-               "Your swing plane line: the shaft at address points at the belt buckle, at a sensible angle."),
+               "The club shaft at address points at your belt buckle, at a normal angle. This line is your swing plane for the later steps."),
     Checkpoint(3, "Takeaway", "takeaway", "takeaway",
-               "When the club is parallel to the target line, the clubhead is still on the swing plane line from step 2, with the spine bend and trail knee flex kept from address."),
+               "Club parallel to the ground, pointing along the target line: the clubhead is still on your swing plane line, and your spine and back knee keep their address bend."),
     Checkpoint(4, "Halfway back", "halfway_back", None,
-               "Lead arm parallel to the ground: the shaft points at or just inside the ball (on plane), with the spine bend and trail knee flex kept from address."),
+               "Front arm parallel to the ground: the shaft points at the ball, and your spine and back knee keep their address bend."),
     Checkpoint(5, "Top", "top", "top",
-               "The lead arm matches the shoulders (about 90° to the spine), the hands sit above the trail heel, and the spine bend is kept."),
+               "Your front arm lines up with your shoulders (about 90° to your spine), your hands sit above your back heel, and your spine keeps its bend."),
     Checkpoint(6, "Downswing", "downswing", "early_downswing",
-               "Shaft parallel coming down: the clubhead is back on the swing plane line, flatter than at the takeaway (shallowing), with the spine bend kept."),
+               "Shaft parallel to the ground on the way down: the clubhead is back on your swing plane line, flatter than on the way back (shallowing), and your spine keeps its bend."),
     Checkpoint(7, "Impact", "impact", "impact",
-               "The hips stay back on the tush line (no early extension) and the spine bend is kept."),
+               "Your hips stay back instead of pushing toward the ball (no early extension), and your spine keeps its bend."),
     Checkpoint(8, "Follow-through", "follow_through", None,
-               "Trail arm parallel after impact: the shaft exits on plane, on the same line as at halfway back."),
+               "Back arm parallel to the ground after impact: the shaft points at the ball again, on the same line as halfway back."),
 )
 
 

@@ -67,19 +67,19 @@ def run(inside_by=0.25, mirror=False, config=None, marked=True, clubhead=None, s
 
 def test_reference_photo_is_green():
     v = run(clubhead=np.array([183.0, 268.0]))  # the photo's clubhead and hands
-    assert v.status == "ok" and v.label == "Points just inside the ball"
+    assert v.status == "ok" and v.label == "Points at the ball"
     assert v.measurements["shaft_inside_ball"] == pytest.approx(0.26, abs=0.01)
     assert v.frame == 30  # key frame is the marked frame
-    assert [r.label for r in v.rows] == ["Shaft points", "Spine bend kept", "Trail knee flex kept"]  # no biceps check
+    assert [r.label for r in v.rows] == ["Shaft points at", "Spine bend kept", "Back knee bend kept"]  # no biceps check
 
 
 @pytest.mark.parametrize("inside_by, status, label", [
-    (0.2, "ok", "Points just inside the ball"),
+    (0.2, "ok", "Points at the ball"),
     (-0.05, "ok", "Points at the ball"),
-    (0.55, "warn", "Points well inside the ball"),
+    (0.55, "warn", "Points between the ball and your feet"),
     (0.9, "flag", "Points at your feet"),
-    (-0.15, "warn", "Points just outside the ball"),
-    (-0.4, "flag", "Points outside the ball"),
+    (-0.15, "warn", "Points just past the ball"),
+    (-0.4, "flag", "Points well past the ball"),
 ])
 def test_shaft_bands(inside_by, status, label):
     v = run(inside_by=inside_by)
@@ -90,8 +90,9 @@ def test_shaft_bands(inside_by, status, label):
 
 def test_row_has_units_and_limits():
     row = run(inside_by=0.9).rows[0]
-    assert row.value == "≈45 cm inside the ball"  # 90% of the default 50 cm torso
-    assert "of torso length" in row.note and "green 10% outside to 40% inside" in row.note
+    assert row.value == "45 cm toward your feet"  # 90% of the default 50 cm torso
+    assert row.good == "5 cm past the ball to 20 cm toward your feet"
+    assert row.fix == "more than 13 cm past the ball or 35 cm toward your feet"
 
 
 def test_left_handed_mirror_matches():
@@ -118,7 +119,7 @@ def test_clubhead_below_hands_is_a_marking_error():
 
 
 def test_key_frame_shows_the_swing_plane_line():
-    assert any(o.kind == "line" and o.label == "swing plane" for o in run().overlays)
+    assert any(o.kind == "line" and o.label == "Swing plane" for o in run().overlays)
 
 
 @pytest.mark.parametrize("spine, knee, status, extra", [
@@ -126,16 +127,17 @@ def test_key_frame_shows_the_swing_plane_line():
     (6, 2, "ok", None),                                   # Tiger
     (10, 0, "warn", "slightly standing up"),              # jolo
     (14, 0, "flag", "standing up"),
-    (0, 9, "warn", "trail knee slightly straightening"),  # the user's indoor swing
-    (0, 11, "warn", "trail knee straightening"),          # the user's latest swing: never red
+    (0, 9, "warn", "back knee slightly straightening"),  # the user's indoor swing
+    (0, 11, "warn", "back knee straightening"),          # the user's latest swing: never red
 ])
 def test_body_rows(spine, knee, status, extra):
     for mirror in (False, True):
         v = run(inside_by=0.2, spine_lost=spine, knee_lost=knee, mirror=mirror)
         assert v.rows[0].status == "ok"  # the shaft row keeps its own grade
         assert v.status == status
-        assert v.rows[1].value == f"{SPINE_BEND - spine:.0f}° (address {SPINE_BEND:.0f}°)"
-        assert v.rows[2].value == f"{KNEE_FLEX - knee:.0f}° (address {KNEE_FLEX:.0f}°)"
-        assert "green up to 8° lost" in v.rows[1].note and "green up to 6° straighter" in v.rows[2].note
-        assert v.label == "Points just inside the ball" + (f", {extra}" if extra else "")
+        assert v.rows[1].value == f"{SPINE_BEND - spine:.0f}° ({SPINE_BEND:.0f}° at address)"
+        assert v.rows[2].value == f"{KNEE_FLEX - knee:.0f}° ({KNEE_FLEX:.0f}° at address)"
+        assert v.rows[1].good == "up to 8° more upright or 5° more bent"
+        assert v.rows[2].good == "up to 6° straighter or 8° more bent"
+        assert v.label == "Points at the ball" + (f", {extra}" if extra else "")
         assert (v.tip == "") == (status == "ok")

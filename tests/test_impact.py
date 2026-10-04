@@ -70,14 +70,14 @@ def test_back_edge_finds_rear_of_body():
 
 
 @pytest.mark.parametrize("fwd, status, label", [
-    (-0.05, "ok", "Hips on the tush line"),
-    (0.08, "ok", "Hips on the tush line"),
-    (0.13, "warn", "Hips slightly off the tush line"),
-    (0.25, "flag", "Early extension"),
+    (-0.05, "ok", "Hips stay back"),
+    (0.08, "ok", "Hips stay back"),
+    (0.13, "warn", "Hips slightly toward the ball"),
+    (0.25, "flag", "Hips toward the ball"),
 ])
 def test_hip_bands(monkeypatch, fwd, status, label):
     v = run(monkeypatch, hips_forward=fwd)
-    assert v.rows[0].status == status and label.lower() in v.rows[0].note
+    assert v.rows[0].status == status and label.lower() in v.label.lower()
     assert v.measurements["hips_toward_ball"] == pytest.approx(fwd, abs=0.01)
 
 
@@ -90,15 +90,15 @@ def test_hip_bands(monkeypatch, fwd, status, label):
 ])
 def test_posture_bands(monkeypatch, bend, status, label):
     v = run(monkeypatch, impact_bend=bend)
-    assert v.rows[1].status == status and label.lower() in v.rows[1].note
+    assert v.rows[1].status == status and label.lower() in v.label.lower()
     assert v.measurements["posture_lost_deg"] == pytest.approx(35 - bend, abs=0.1)
 
 
 def test_rows_have_units_and_overall_is_worst(monkeypatch):
     v = run(monkeypatch, hips_forward=0.25, impact_bend=30)
-    assert v.status == "flag" and v.label == "Early extension, posture kept"
-    assert v.rows[0].value == "≈12 cm toward the ball"  # 25% of the default 50 cm torso
-    assert v.rows[1].value == "30° (address 35°)"
+    assert v.status == "flag" and v.label == "Hips toward the ball, posture kept"
+    assert v.rows[0].value == "13 cm toward the ball"  # 25% of the default 50 cm torso
+    assert v.rows[1].value == "30° (35° at address)"
 
 
 def test_left_handed_mirror_matches(monkeypatch):

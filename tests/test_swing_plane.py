@@ -56,36 +56,38 @@ def test_geometry_helpers():
 
 def test_points_at_belt_buckle():
     v = run(grip_for(0.3))
-    assert v.status == "ok" and v.label == "Points at belt buckle"
-    assert v.measurements["alignment"].startswith("Points at belt buckle.")
+    assert v.status == "ok" and v.label == "Points at your belt buckle"
+    assert v.measurements["alignment"].startswith("Points at your belt buckle.")
     assert v.measurements["crosses_torso_at"] == pytest.approx(0.3, abs=0.02)  # body center is 4 px off the trail side
     assert 45 <= v.measurements["shaft_angle_deg"] <= 65
 
 
 def test_points_above_belt_is_flagged():
     v = run(grip_for(0.8))
-    assert v.status == "flag" and "Points above belt" in v.label
+    assert v.status == "flag" and "Points above your belt" in v.label
     assert "too close" in v.summary and "too close" in v.measurements["alignment"]
 
 
 def test_points_below_belt_is_flagged():
     v = run(grip_for(-0.3))
-    assert v.status == "flag" and "Points below belt" in v.label
+    assert v.status == "flag" and "Points below your belt" in v.label
     assert "too far" in v.summary
 
 
 def test_points_just_off_the_belt_is_yellow():
     v = run(grip_for(0.5))
-    assert v.status == "warn" and "Points just above belt" in v.label
-    assert "slightly upright" in v.summary
+    assert v.status == "warn" and "Points just above your belt" in v.label
+    assert "a little upright" in v.summary
     v = run(grip_for(-0.05))
-    assert v.status == "warn" and "Points just below belt" in v.label
+    assert v.status == "warn" and "Points just below your belt" in v.label
 
 
 def test_alignment_row_has_units():
     row = run(grip_for(0.3)).rows[0]
-    assert row.value in ("29% up the torso", "30% up the torso")  # 0.3 of the torso, give or take rounding
-    assert "cm above hip center · Points at belt buckle (green 0%–45%, red below -10% or above 60%)" in row.note
+    assert row.label == "Shaft points at" and row.value in ("14 cm above your hips", "15 cm above your hips")
+    assert row.note == "At your belt buckle"
+    assert row.good == "your hips to 23 cm above (belt buckle)"
+    assert row.fix == "more than 5 cm below or 30 cm above your hips"
 
 
 def test_angle_has_its_own_bands():
@@ -99,7 +101,7 @@ def test_angle_has_its_own_bands():
     expected = "warn" if angle >= 40 else "flag"
     assert {r.label: r.status for r in v.rows}["Shaft angle"] == expected
     assert v.status == expected
-    assert "Points at belt buckle" in v.label
+    assert "Points at your belt buckle" in v.label
 
 
 def test_ranges_come_from_config():
@@ -126,7 +128,7 @@ def test_overlapping_marks_are_an_error_not_a_crash():
 
 def test_swing_plane_line_spans_the_frame_and_the_whole_video():
     v = run(grip_for(0.3))
-    lines = [o for o in v.overlays if o.kind == "line" and o.label == "swing plane"]
+    lines = [o for o in v.overlays if o.kind == "line" and o.label == "Swing plane"]
     assert len(lines) == 1
     assert lines[0].frames == (0, 39)  # the whole clip, so the clubhead can be followed against it
     bounds = [o for o in v.overlays if o.kind == "line" and o.label == ""]
@@ -134,4 +136,4 @@ def test_swing_plane_line_spans_the_frame_and_the_whole_video():
     # ±20% of torso either side, square to the line.
     p0, p1 = np.array(bounds[0].points[0]), np.array(bounds[1].points[0])
     assert np.linalg.norm(p0 - p1) == pytest.approx(2 * 0.20 * 260.0, abs=0.5)
-    assert [o.label for o in v.overlays if o.kind == "text"] == ["Points at belt buckle"]
+    assert [o.label for o in v.overlays if o.kind == "text"] == ["Points at your belt buckle"]

@@ -26,7 +26,7 @@ from __future__ import annotations
 import numpy as np
 
 from swingcheck.analyzers import (MissingData, Overlay, REFERENCE_COLOR, Row, STATUS_COLORS, SwingContext, Verdict,
-                                  clubhead_mark, grade, hands_mark, pct, register, spot_mark)
+                                  clubhead_mark, deg_text, grade, hands_mark, register, spot_mark)
 from swingcheck.analyzers.dtl_body import posture_kept, with_body
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.geometry import angle_between_deg
@@ -40,7 +40,7 @@ HEEL_WINDOW = 3  # frames either side of the top: the heel sits still, so a medi
 def top(ctx: SwingContext) -> Verdict:
     mark = ctx.marks.checkpoint("top")
     if mark is None:
-        raise MissingData("the top isn't marked yet: Edit marks → Top, then click the clubhead and hands")
+        raise MissingData("The top isn't marked yet. Go to Edit marks → Top and click the clubhead and hands.")
     cfg = ctx.cfg
     f = mark.frame
     clubhead = np.asarray(mark.points["clubhead"], float)
@@ -49,33 +49,34 @@ def top(ctx: SwingContext) -> Verdict:
 
     hip0 = ctx.midpoint("left_hip", "right_hip")[ctx.marks.address_frame]
     if not np.all(np.isfinite(hip0)):
-        hip0 = ctx.value(ctx.track(ctx.side("hip", "trail")), ctx.marks.address_frame, "trail hip")
+        hip0 = ctx.value(ctx.track(ctx.side("hip", "trail")), ctx.marks.address_frame, "back hip")
     toward_golfer = -1.0 if hip0[0] < ball[0] else 1.0
 
     # Lead arm vs spine on the top frame.
-    lead_shoulder = ctx.value(ctx.track(ctx.side("shoulder", "lead")), f, "lead shoulder")
+    lead_shoulder = ctx.value(ctx.track(ctx.side("shoulder", "lead")), f, "front shoulder")
     hip_mid = ctx.midpoint("left_hip", "right_hip")[f]
     # Spine: hip center through the head (between the ears; the nose if the ears are lost).
     head = ctx.midpoint("left_ear", "right_ear")[f]
     if not np.all(np.isfinite(head)):
         head = ctx.track("nose")[f]
     if not (np.all(np.isfinite(head)) and np.all(np.isfinite(hip_mid))):
-        raise MissingData(f"head or hips not tracked on the top frame ({f})")
+        raise MissingData(f"Your head or hips weren't tracked on the top frame ({f}).")
     arm_angle = angle_between_deg(hands - lead_shoulder, head - hip_mid)
     arm_status = grade(arm_angle, cfg["arm_spine_min"], cfg["arm_spine_max"],
                    cfg["arm_spine_watch_min"], cfg["arm_spine_watch_max"])
     soft = arm_status == "warn"
     if arm_status == "ok":
-        label, meaning = "Lead arm matches the shoulders", "your lead arm is square to your spine, on the shoulder plane"
+        label, meaning = ("Front arm matches your shoulders",
+                          "your front (lead) arm is square to your spine, in line with your shoulders")
         tip = ""
     elif arm_angle < cfg["arm_spine_min"]:
-        label = "Lead arm slightly above the shoulders" if soft else "Lead arm above the shoulders"
-        meaning = "your lead arm is lifted above the shoulder plane (upright)"
-        tip = "Turn your shoulders more and keep the lead arm across your chest instead of lifting it."
+        label = "Front arm slightly above your shoulders" if soft else "Front arm above your shoulders"
+        meaning = "your front (lead) arm is lifted above your shoulder line (upright)"
+        tip = "Turn your shoulders more and keep your front arm across your chest instead of lifting it."
     else:
-        label = "Lead arm slightly below the shoulders" if soft else "Lead arm below the shoulders"
-        meaning = "your lead arm is below the shoulder plane (flat, around your body)"
-        tip = "Swing the lead arm a little higher so it matches your shoulder turn."
+        label = "Front arm slightly below your shoulders" if soft else "Front arm below your shoulders"
+        meaning = "your front (lead) arm is below your shoulder line (flat, around your body)"
+        tip = "Swing your front arm a little higher so it matches your shoulder turn."
 
     # Hands vs the trail heel, across the picture.
     forward = -toward_golfer  # screen x direction toward the ball
@@ -87,22 +88,24 @@ def top(ctx: SwingContext) -> Verdict:
         heel_status = grade(out, -cfg["heel_max"], cfg["heel_max"], -cfg["heel_watch"], cfg["heel_watch"])
         heel_soft = heel_status == "warn"
         if heel_status == "ok":
-            heel_label, heel_meaning, heel_tip = ("Hands over the trail heel",
-                                                  "your hands are right above your trail heel", "")
+            heel_label, heel_meaning, heel_tip = ("Hands over your back heel",
+                                                  "your hands are right above your back (trail) heel", "")
         elif out > 0:
-            heel_label = "Hands slightly outside the heel" if heel_soft else "Hands outside the heel"
-            heel_meaning = "your hands are out toward the ball, past your trail heel"
+            heel_label = "Hands slightly toward the ball" if heel_soft else "Hands too far toward the ball"
+            heel_meaning = "your hands are out toward the ball, past your back heel"
             heel_tip = "Turn your shoulders more instead of pushing your hands out toward the ball at the top."
         else:
-            heel_label = "Hands slightly behind the heel" if heel_soft else "Hands behind the heel"
-            heel_meaning = "your hands are deep behind your trail heel (flat, around the body)"
-            heel_tip = "Swing your hands more up than around, so they finish above your trail heel."
-        heel_row = Row("Hands vs trail heel", f"{ctx.distance_text(out)} {'toward the ball' if out >= 0 else 'behind'}",
-                       f"{pct(abs(out))} of torso length · {heel_label.lower()} "
-                       f"(green within ±{pct(cfg['heel_max'])}, red past {pct(cfg['heel_watch'])})", heel_status)
+            heel_label = "Hands slightly behind your back heel" if heel_soft else "Hands behind your back heel"
+            heel_meaning = "your hands are deep behind your back heel (flat, around the body)"
+            heel_tip = "Swing your hands more up than around, so they finish above your back heel."
+        heel_value = ("Right above it" if abs(ctx.cm(out)) < 0.75 else
+                      f"{ctx.distance_text(out)} {'toward the ball' if out >= 0 else 'behind'}")
+        heel_row = Row("Hands vs back heel", heel_value, heel_label.removeprefix("Hands ").capitalize(), heel_status,
+                       good=f"within {ctx.distance_text(cfg['heel_max'])} of your heel",
+                       fix=f"more than {ctx.distance_text(cfg['heel_watch'])} either way")
     else:
         out, heel_status, heel_label, heel_meaning, heel_tip = None, "ok", "", "", ""
-        heel_row = Row("Hands vs trail heel", "not measured", "trail heel not tracked around the top", "error")
+        heel_row = Row("Hands vs back heel", "Not measured", "Back heel not tracked around the top", "error")
 
     arm_label = label
     status = max(arm_status, heel_status, key=ORDER.__getitem__)
@@ -128,19 +131,19 @@ def top(ctx: SwingContext) -> Verdict:
     overlays = [
         Overlay("segment", [tuple(hip_mid), tuple(head)], REFERENCE_COLOR, "", show, 2),
         Overlay("segment", [tuple(lead_shoulder), tuple(hands)], col, "", show, 3),
-        Overlay("dashed", [tuple(lead_shoulder), tuple(target)], REFERENCE_COLOR, "90 deg" if arm_status != "ok" else "",
+        Overlay("dashed", [tuple(lead_shoulder), tuple(target)], REFERENCE_COLOR, "Target 90 deg" if arm_status != "ok" else "",
                 show, 2),
         hands_mark(hands, col, show),
         clubhead_mark(clubhead, REFERENCE_COLOR, show),  # shown, not measured here
         Overlay("text", [(float(lead_shoulder[0]) - toward_golfer * 0.1 * s, float(lead_shoulder[1]) + 0.2 * s)], col,
-                f"arm {arm_angle:.0f} deg", show),
+                f"Arm {arm_angle:.0f} deg", show),
     ]
     if heel_xy is not None:
         # A plumb line up from the trail heel past the hands, and the gap to the hands.
         hx, hy = float(heel_xy[0]), float(heel_xy[1])
         heel_col = STATUS_COLORS[heel_status]
         overlays += [
-            Overlay("dashed", [(hx, hy), (hx, float(hands[1]) - 0.25 * s)], REFERENCE_COLOR, "trail heel", show, 2),
+            Overlay("dashed", [(hx, hy), (hx, float(hands[1]) - 0.25 * s)], REFERENCE_COLOR, "Back heel", show, 2),
             spot_mark((hx, hy), REFERENCE_COLOR, show),
             Overlay("segment", [(hx, float(hands[1])), (float(hands[0]), float(hands[1]))], heel_col, "", show, 2),
         ]
@@ -160,9 +163,9 @@ def top(ctx: SwingContext) -> Verdict:
                      "+ = toward the ball",
         },
         rows=[
-            Row("Lead arm vs spine", f"{arm_angle:.0f}°",
-                f"{arm_label.lower()} (green {cfg['arm_spine_min']:g}–{cfg['arm_spine_max']:g}°, "
-                f"red outside {cfg['arm_spine_watch_min']:g}–{cfg['arm_spine_watch_max']:g}°)", arm_status),
+            Row("Front arm vs spine", deg_text(arm_angle), arm_label.removeprefix("Front arm ").capitalize(),
+                arm_status, good=f"{cfg['arm_spine_min']:g}–{cfg['arm_spine_max']:g}° (about square)",
+                fix=f"under {cfg['arm_spine_watch_min']:g}° or over {cfg['arm_spine_watch_max']:g}°"),
             heel_row,
             posture.row,
         ],

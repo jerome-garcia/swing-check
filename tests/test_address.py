@@ -107,17 +107,17 @@ def test_good_address():
     assert m["spine_bend_deg"] == pytest.approx(35, abs=1)
     assert m["knee_flex_deg"] == pytest.approx(30, abs=0.5)
     # No video here, so the back isn't measured; the other checks still pass.
-    assert m["back"].startswith("not measured")
-    assert v.status == "ok" and v.label == "good"
+    assert m["back"].startswith("Not measured")
+    assert v.status == "ok" and v.label == "Good posture"
 
 
 @pytest.mark.parametrize("kwargs, problem", [
-    ({"arm_deg": 18}, "arms reaching out"),
-    ({"arm_deg": -18}, "arms too close to body"),
-    ({"spine_deg": 20}, "spine too upright"),
-    ({"spine_deg": 55}, "spine bent over too far"),
-    ({"knee_flex": 5}, "knees too straight"),
-    ({"knee_flex": 45}, "knees too much bend"),
+    ({"arm_deg": 18}, "Arms reaching out"),
+    ({"arm_deg": -18}, "Hands too close to the body"),
+    ({"spine_deg": 20}, "Spine too upright"),
+    ({"spine_deg": 55}, "Spine bent over too far"),
+    ({"knee_flex": 5}, "Knees too straight"),
+    ({"knee_flex": 45}, "Knees bent too much"),
 ])
 def test_each_fault_flagged(kwargs, problem):
     v = run_address(dtl_address_pose(**kwargs))
@@ -126,12 +126,12 @@ def test_each_fault_flagged(kwargs, problem):
 
 
 @pytest.mark.parametrize("kwargs, problem", [
-    ({"arm_deg": 12}, "arms slightly reaching out"),
-    ({"arm_deg": -12}, "arms slightly close to body"),
-    ({"spine_deg": 28}, "spine slightly upright"),
-    ({"spine_deg": 48}, "spine slightly bent over"),
-    ({"knee_flex": 12}, "knees slightly straight"),
-    ({"knee_flex": 38}, "knees slightly too bent"),
+    ({"arm_deg": 12}, "Arms slightly reaching out"),
+    ({"arm_deg": -12}, "Hands slightly close to the body"),
+    ({"spine_deg": 28}, "Spine slightly upright"),
+    ({"spine_deg": 48}, "Spine slightly bent over"),
+    ({"knee_flex": 12}, "Knees slightly straight"),
+    ({"knee_flex": 38}, "Knees slightly too bent"),
 ])
 def test_just_outside_good_range_is_yellow(kwargs, problem):
     v = run_address(dtl_address_pose(**kwargs))
@@ -147,13 +147,18 @@ def test_red_beats_yellow_overall():
 
 def test_rows_say_how_much_to_adjust():
     v = run_address(dtl_address_pose(arm_deg=12, spine_deg=28, knee_flex=40))
-    notes = {r.label: r.note for r in v.rows}
-    assert notes["Spine bend"] == "bend 2° more (green 30–45°, red outside 25–50°)"
-    assert notes["Knee flex"] == "straighten 5° (green 15–35°, red outside 10–40°)"
-    assert notes["Arms"] == "hands 2° too far out (green within ±10°, red past ±15°)"
+    rows = {r.label: r for r in v.rows}
+    assert rows["Spine bend"].note == "Bend 2° more" and rows["Spine bend"].value == "28°"
+    assert (rows["Spine bend"].good, rows["Spine bend"].fix) == ("30–45°", "under 25° or over 50°")
+    assert rows["Knee bend"].note == "Straighten 5°"
+    assert (rows["Knee bend"].good, rows["Knee bend"].fix) == ("15–35°", "under 10° or over 40°")
+    assert rows["Arms"].note == "Bring your hands 2° closer" and rows["Arms"].value == "12° out"
+    assert (rows["Arms"].good, rows["Arms"].fix) == ("within 10° of straight down", "more than 15° out or in")
     assert "Hinge more from the hips" in v.tip
+    # Several faults: one label, sentence case, the first capitalized.
+    assert v.label == "Spine slightly upright, knees slightly too bent, arms slightly reaching out"
     good = run_address(dtl_address_pose())
-    assert {r.label: r.note for r in good.rows}["Spine bend"] == "good bend (green 30–45°, red outside 25–50°)"
+    assert {r.label: r.note for r in good.rows}["Spine bend"] == "Good bend"
 
 
 def test_target_lines_drawn_at_middle_of_range():
@@ -195,9 +200,11 @@ def test_back_bulge_from_silhouette(monkeypatch):
         return ((behind <= back) & (behind >= -80) & (t > -0.1) & (t < 1.1)).astype(np.float32)
 
     flat = run_address(pose, mask=mask_with(0), monkeypatch=monkeypatch)
-    assert flat.measurements["back"] == "straight"
+    assert flat.measurements["back"] == "Straight"
     humped = run_address(pose, mask=mask_with(40), monkeypatch=monkeypatch)
-    assert humped.measurements["back"] == "rounded / hump"
+    assert humped.measurements["back"] == "Upper back rounded"
+    row = {r.label: r for r in humped.rows}["Upper back"]
+    assert row.value.endswith(" cm curve") and (row.good, row.fix) == ("up to 3 cm", "over 5 cm")
     assert humped.measurements["back_bulge"] > CONFIG["analyzers"]["address"]["back_bulge_max"]
     assert humped.status == "flag"
 

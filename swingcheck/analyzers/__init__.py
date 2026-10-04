@@ -73,6 +73,20 @@ class Grade(str):
         return Grade, (str(self), self.depth)
 
 
+def cm_text(cm: float) -> str:
+    """A rough distance for people, in whole centimetres (halves round up): '12 cm',
+    or 'under 1 cm'. Magnitude only."""
+    cm = abs(float(cm))
+    if cm < 0.5:
+        return "under 1 cm"
+    return f"{int(cm + 0.5)} cm"
+
+
+def deg_text(deg: float) -> str:
+    """Whole degrees: '34°'."""
+    return f"{round(float(deg)):.0f}°"
+
+
 def clubhead_mark(xy, color: Color, show: tuple[int, int] | None, label: str = "") -> "Overlay":
     """The clubhead: a solid circle."""
     return Overlay("circle", [(float(xy[0]), float(xy[1]))], color, label, show, 2)
@@ -137,10 +151,12 @@ class Overlay:
 class Row:
     """One line on the results card: a measurement, its value and what it means."""
 
-    label: str  # e.g. "Knee flex"
-    value: str  # formatted, e.g. "33.7°"
-    note: str = ""  # short verdict, e.g. "good flex"
+    label: str  # e.g. "Knee bend"
+    value: str  # formatted, e.g. "34°"
+    note: str = ""  # short verdict in plain words, sentence case, no period, e.g. "Good bend"
     status: str = "ok"  # one of STATUSES; colors the row's dot
+    good: str = ""  # the green range, e.g. "15–35°"
+    fix: str = ""  # the red range, e.g. "under 10° or over 40°" (in between is yellow, Watch)
     depth: float | None = None  # how deep into its band (see Grade); taken from a Grade status
 
     def __post_init__(self) -> None:
@@ -185,7 +201,7 @@ class SwingContext:
     def image(self, frame: int) -> np.ndarray:
         """The BGR video frame at `frame`."""
         if self.video_path is None:
-            raise MissingData("no video available to this analyzer")
+            raise MissingData("No video available to this check")
         cap = cv2.VideoCapture(str(self.video_path))
         try:
             cap.set(cv2.CAP_PROP_POS_FRAMES, frame)
@@ -193,14 +209,14 @@ class SwingContext:
         finally:
             cap.release()
         if not ok:
-            raise MissingData(f"could not read video frame {frame}")
+            raise MissingData(f"Couldn't read video frame {frame}")
         return img
 
     def value(self, track: np.ndarray, frame: int, what: str) -> np.ndarray:
         """track[frame], raising MissingData (with `what` in the message) if it wasn't tracked."""
         v = track[frame]
         if not np.all(np.isfinite(v)):
-            raise MissingData(f"{what} not tracked at frame {frame}")
+            raise MissingData(f"Your {what} wasn't tracked on frame {frame}")
         return v
 
     @property
@@ -245,7 +261,7 @@ class SwingContext:
         """Value of a track at a phase; raises if it's missing there."""
         value = track[self.frame(phase)]
         if not np.all(np.isfinite(value)):
-            raise MissingData(f"not tracked at {phase} (frame {self.frame(phase)})")
+            raise MissingData(f"Your body wasn't tracked at {phase.replace('_', ' ')} (frame {self.frame(phase)})")
         return value
 
     def units(self, px: float) -> float:
@@ -256,8 +272,8 @@ class SwingContext:
         return body_units * self.config["golfer"]["torso_cm"]
 
     def distance_text(self, body_units: float) -> str:
-        """'≈10 cm' for a distance in torso lengths (magnitude only)."""
-        return f"≈{abs(self.cm(body_units)):.0f} cm"
+        """'10 cm' for a distance in torso lengths (magnitude only; see cm_text)."""
+        return cm_text(self.cm(body_units))
 
     def vspan(self, xy, half_height: float = 0.3) -> list[tuple[float, float]]:
         """Points for a short "vline" overlay centered on xy, +/- half_height body lengths."""
@@ -318,10 +334,12 @@ def run_analyzers(ctx: SwingContext) -> list[Verdict]:
         try:
             verdict = analyzer.func(ctx)
         except MissingData as e:
-            verdict = Verdict(status="error", label="no data", summary=f"Couldn't measure: {e}.")
+            msg = str(e)
+            msg = msg[:1].upper() + msg[1:]
+            verdict = Verdict(status="error", label="Not measured", summary=msg if msg.endswith(".") else msg + ".")
         except Exception as e:  # noqa: BLE001 - report and keep going
             verdict = Verdict(
-                status="error", label="crashed", summary=f"Analyzer failed: {e!r}",
+                status="error", label="Couldn't be checked", summary=f"Something went wrong measuring this: {e!r}",
                 measurements={"traceback": traceback.format_exc()},
             )
         if verdict.status not in STATUSES:

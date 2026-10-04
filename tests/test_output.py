@@ -77,7 +77,7 @@ def test_report_lists_phases_and_flags():
     text = build_report(__import__("pathlib").Path("swing.mov"), "fo", info, PHASES, fo_verdicts(), 260.0, "torso")
     assert "face-on" in text and "trimmed 1s to end" in text
     assert "impact" in text and "Note: a note" in text
-    assert "[FLAG] Hands at impact: behind" in text
+    assert "[FIX] Hands at impact: behind" in text
     assert "SUMMARY" in text and "- Hands at impact: behind" in text
 
 

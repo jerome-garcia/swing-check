@@ -42,7 +42,10 @@ function verdictCard(v) {
       r.status ? el("span", { class: `dot ${r.status}`, title: STATUS_WORD[r.status] }) : el("span", {}),
       el("span", { class: "row-label" }, r.label),
       el("span", { class: "row-value" }, r.value),
-      el("span", { class: "row-note" }, r.note)))) : null);
+      el("span", { class: "row-note" }, r.note),
+      r.good || r.fix ? el("span", { class: "row-range" },
+        r.good ? el("span", {}, el("b", { class: "rng-good" }, "Good"), ` ${r.good}`) : null,
+        r.fix ? el("span", {}, el("b", { class: "rng-fix" }, "Fix"), ` ${r.fix}`) : null) : null))) : null);
 }
 
 // --- Summary: the whole swing at a glance ------------------------------------
@@ -99,12 +102,15 @@ const LEGEND = [
   ["mark square", "Square: the hands"],
   ["mark ring", "Ring: the ball, a heel, or where a shaft line lands"],
 ];
+// Shown under the legend: how to read the Good / Fix line on each measurement.
+const RANGES_NOTE = "Each measurement lists its Good range (green) and its Fix range (red); anything in between is Watch (yellow). Distances are rough estimates in centimetres.";
 let legendOpen = false; // kept while stepping through the checkpoints
 
 function drawingLegend() {
   const d = el("details", { class: "legend", open: legendOpen || null },
     el("summary", {}, "How to read the drawings"),
-    el("ul", {}, LEGEND.map(([cls, text]) => el("li", {}, el("span", { class: cls, "aria-hidden": "true" }), text))));
+    el("ul", {}, LEGEND.map(([cls, text]) => el("li", {}, el("span", { class: cls, "aria-hidden": "true" }), text))),
+    el("p", { class: "legend-note" }, RANGES_NOTE));
   d.addEventListener("toggle", () => { legendOpen = d.open; });
   return d;
 }

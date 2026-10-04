@@ -100,11 +100,18 @@ def _key_frame(folder: Path, name: str) -> tuple[io.BytesIO, float] | None:
     return (io.BytesIO(buf.tobytes()), h / w) if ok else None
 
 
+def _note_text(r: dict[str, Any]) -> str:
+    """The row's verdict, then its Good / Fix ranges on the next line."""
+    ranges = " · ".join(t for t in (f"Good {r['good']}" if r.get("good") else "",
+                                    f"Fix {r['fix']}" if r.get("fix") else "") if t)
+    return "\n".join(t for t in (r.get("note", ""), ranges) if t)
+
+
 def _row_height(doc: _Doc, r: dict[str, Any], text_w: float, lab_w: float, val_w: float) -> float:
     doc.font(8.5, True)
     h = max(doc.para(lab_w - 6, 4, r.get("label", ""), dry=True), doc.para(val_w - 2, 4, r.get("value", ""), dry=True))
     doc.font(8.5)
-    return max(4.4, h, doc.para(text_w - lab_w - val_w, 4, r.get("note", ""), dry=True))
+    return max(4.4, h, doc.para(text_w - lab_w - val_w, 4, _note_text(r), dry=True))
 
 
 def _items(view: str, verdicts: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -267,7 +274,7 @@ def summary_pdf(folder: Path, swing_name: str, created: str, analysis: dict[str,
             doc.para(val_w - 2, 4, r.get("value", ""))
             doc.set_xy(text_x + lab_w + val_w, ry)
             doc.font(8.5, color=MUTED)
-            doc.para(text_w - lab_w - val_w, 4, r.get("note", ""))
+            doc.para(text_w - lab_w - val_w, 4, _note_text(r))
             doc.set_xy(text_x, ry + h_row + 1.4)
 
         if tip:
@@ -286,15 +293,13 @@ def summary_pdf(folder: Path, swing_name: str, created: str, analysis: dict[str,
 
     # How to read it, plus any notes about the clip.
     notes = [
-        "Every reading has a green, yellow and red band, listed next to it. Green is a good range, "
-        "yellow is worth watching, red is a fault to fix.",
         "The magenta line on each frame is the swing plane: the club shaft's line at address. The two grey "
         "lines either side mark the on-plane zone.",
         "On the frames, green / yellow / red marks what was measured, white dashed lines are targets or "
         "where you were at address, and cyan is an earlier checkpoint. Circle = clubhead, square = hands, "
         "ring = ball or another spot.",
-        f"Distances are measured as a share of torso length and shown as rough centimetres, assuming a "
-        f"{torso_cm:g} cm torso.",
+        "Each measurement lists its Good range and its Fix range; anything in between is Watch (yellow).",
+        f"Distances are rough estimates in centimetres, scaled from a typical {torso_cm:g} cm torso.",
     ] + list(analysis.get("warnings", []))
     doc.font(8.5)
     need = 12 + sum(doc.para(CONTENT_W - 4, 4.2, n, dry=True) + 1.5 for n in notes)

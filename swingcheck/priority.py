@@ -25,15 +25,15 @@ TIER_WEIGHT = {1: 1.5, 2: 1.0, 3: 0.6}
 # (checkpoint, row label) -> tier. Rows not listed are tier 2.
 TIERS: dict[tuple[str, str], int] = {
     ("downswing", "Clubhead vs swing plane"): 1,
-    ("downswing", "Shallowing"): 1,  # coming down steeper than going back: the over-the-top loop
-    ("impact", "Hips vs tush line"): 1,
+    ("downswing", "Vs your takeaway"): 1,  # coming down steeper than going back: the over-the-top loop
+    ("impact", "Hips vs address"): 1,
     ("impact", "Spine bend kept"): 1,
     ("takeaway", "Spine bend kept"): 3,
     ("halfway_back", "Spine bend kept"): 3,
     ("top", "Spine bend kept"): 3,
     ("downswing", "Spine bend kept"): 3,
-    ("takeaway", "Trail knee flex kept"): 3,
-    ("halfway_back", "Trail knee flex kept"): 3,
+    ("takeaway", "Back knee bend kept"): 3,
+    ("halfway_back", "Back knee bend kept"): 3,
 }
 
 

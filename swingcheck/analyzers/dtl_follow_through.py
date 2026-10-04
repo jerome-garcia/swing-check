@@ -19,8 +19,8 @@ from __future__ import annotations
 import numpy as np
 
 from swingcheck.analyzers import (BALL_COLOR, MissingData, Overlay, PAST_COLOR, Row, STATUS_COLORS, SwingContext,
-                                  Verdict, clubhead_mark, grade, hands_mark, pct, register, spot_mark)
-from swingcheck.analyzers.dtl_halfway_back import shaft_landing
+                                  Verdict, clubhead_mark, grade, hands_mark, register, spot_mark)
+from swingcheck.analyzers.dtl_halfway_back import landing_ranges, landing_text, shaft_landing
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 
 HOLD_MS = 400
@@ -31,7 +31,7 @@ ORDER = {"ok": 0, "warn": 1, "flag": 2}
 def follow_through(ctx: SwingContext) -> Verdict:
     mark = ctx.marks.checkpoint("follow_through")
     if mark is None:
-        raise MissingData("the follow-through isn't marked yet: Edit marks → Follow-through, then click the clubhead and hands")
+        raise MissingData("The follow-through isn't marked yet. Go to Edit marks → Follow-through and click the clubhead and hands.")
     cfg = ctx.cfg
     f = mark.frame
     clubhead = np.asarray(mark.points["clubhead"], float)
@@ -43,13 +43,14 @@ def follow_through(ctx: SwingContext) -> Verdict:
     shaft_status = grade(inside_by, cfg["inside_min"], cfg["inside_max"], cfg["inside_watch_min"], cfg["inside_watch_max"])
     soft = shaft_status == "warn"
     if shaft_status == "ok":
-        shaft_label, shaft_meaning = "Exits on plane", "the shaft points at the ball line, on plane"
+        shaft_label, shaft_meaning = "Exits on the swing plane", "the shaft points at the ball, on the swing plane"
     elif inside_by > cfg["inside_max"]:
         shaft_label = "Exits slightly steep" if soft else "Exits steep"
-        shaft_meaning = "the shaft points toward your feet: " + ("a little steep" if soft else "a steep exit")
+        shaft_meaning = ("the shaft points toward your feet (" + ("a little steep" if soft else "a steep exit") + ")")
     else:
         shaft_label = "Exits slightly flat" if soft else "Exits flat"
-        shaft_meaning = "the shaft points past the ball: " + ("a little flat" if soft else "a flat exit, around the body")
+        shaft_meaning = ("the shaft points past the ball (" +
+                         ("a little flat" if soft else "a flat exit, around the body") + ")")
 
     # 2. Same line as the backswing (halfway back).
     back = ctx.marks.checkpoint("halfway_back")
@@ -60,19 +61,22 @@ def follow_through(ctx: SwingContext) -> Verdict:
         back_landing, back_inside, _ = shaft_landing(ctx, back.points["clubhead"], back.points["grip"], "halfway back")
         diff = inside_by - back_inside  # + = exits more inside (steeper) than it went back
         same_status = grade(abs(diff), 0.0, cfg["same_line_max"], 0.0, cfg["same_line_watch"])
+        steeper = diff > 0
         if same_status == "ok":
-            same_label, same_meaning = "Same line as the backswing", "it exits on the line it went back on"
+            same_label, same_meaning = "Same line as going back", "it exits on the line it went back on"
         else:
-            steeper = diff > 0
-            same_label = ("Exits " + ("slightly " if same_status == "warn" else "") +
-                          ("steeper" if steeper else "flatter") + " than the backswing")
+            same_label = (("Slightly " if same_status == "warn" else "") +
+                          ("steeper" if steeper else "flatter") + " than going back")
+            same_label = same_label[0].upper() + same_label[1:]
             same_meaning = f"it exits on a {'steeper' if steeper else 'flatter'} line than it went back on"
-        same_row = Row("Same line as backswing", f"{ctx.distance_text(diff)} {'steeper' if diff >= 0 else 'flatter'}",
-                       f"{pct(abs(diff))} of torso length apart at the ball · {same_label.lower()} "
-                       f"(green within ±{pct(cfg['same_line_max'])}, red past {pct(cfg['same_line_watch'])})",
-                       same_status)
+        same_value = ("Same line" if abs(ctx.cm(diff)) < 0.75 else
+                      f"{ctx.distance_text(diff)} {'steeper' if steeper else 'flatter'}")
+        same_row = Row("Vs halfway back", same_value, same_label, same_status,
+                       good=f"within {ctx.distance_text(cfg['same_line_max'])} at the ball",
+                       fix=f"more than {ctx.distance_text(cfg['same_line_watch'])} apart")
     else:
-        same_row = Row("Same line as backswing", "–", "mark halfway back to compare the exit with the backswing", "error")
+        same_row = Row("Vs halfway back", "Not measured", "Mark halfway back to compare the way through with the way back",
+                       "error")
 
     statuses = [shaft_status] + ([same_status] if same_status else [])
     status = max(statuses, key=ORDER.__getitem__)
@@ -98,10 +102,10 @@ def follow_through(ctx: SwingContext) -> Verdict:
             spot_mark(back_landing, PAST_COLOR, show),
             Overlay("segment", [tuple(back_landing), tuple(landing)], same_col, "", show, 2),
             Overlay("text", [(float(back_landing[0]) - toward_golfer * 0.1 * s, float(back_landing[1]) + 0.35 * s)],
-                    PAST_COLOR, "backswing line", show),
+                    PAST_COLOR, "Halfway back", show),
         ]
 
-    side = "inside" if inside_by >= 0 else "outside"
+    ranges = landing_ranges(ctx, cfg)
     tips = []
     if shaft_status != "ok":
         tips.append("Turn your chest through to the target and let the arms swing around you."
@@ -125,10 +129,8 @@ def follow_through(ctx: SwingContext) -> Verdict:
                      "exit vs backswing: + = lands more inside (steeper) than at halfway back",
         },
         rows=[
-            Row("Shaft points", f"{ctx.distance_text(inside_by)} {side} the ball",
-                f"{pct(abs(inside_by))} of torso length · {shaft_label.lower()} "
-                f"(green {pct(-cfg['inside_min'])} outside to {pct(cfg['inside_max'])} inside, "
-                f"red past {pct(-cfg['inside_watch_min'])} outside or {pct(cfg['inside_watch_max'])} inside)", shaft_status),
+            Row("Shaft points at", landing_text(ctx, inside_by), shaft_label, shaft_status,
+                good=ranges[0], fix=ranges[1]),
             same_row,
         ],
         overlays=swing_plane_line(ctx, show) + overlays,

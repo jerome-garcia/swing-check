@@ -84,16 +84,16 @@ def test_spine_runs_through_the_head_not_the_shoulders():
 
 
 @pytest.mark.parametrize("arm, status, label", [
-    (90, "ok", "Lead arm matches the shoulders"),
-    (70, "warn", "Lead arm slightly above the shoulders"),
-    (60, "flag", "Lead arm above the shoulders"),
-    (110, "warn", "Lead arm slightly below the shoulders"),
-    (120, "flag", "Lead arm below the shoulders"),
+    (90, "ok", "Front arm matches your shoulders"),
+    (70, "warn", "Front arm slightly above your shoulders"),
+    (60, "flag", "Front arm above your shoulders"),
+    (110, "warn", "Front arm slightly below your shoulders"),
+    (120, "flag", "Front arm below your shoulders"),
 ])
 def test_arm_bands(arm, status, label):
     v = run(hands_at(arm))
     assert v.measurements["arm_to_spine_deg"] == pytest.approx(arm, abs=0.1)
-    assert v.rows[0].status == status and label.lower() in v.rows[0].note
+    assert v.rows[0].status == status and label.lower() in v.label.lower()
     assert v.frame == 30
 
 
@@ -111,44 +111,44 @@ def test_not_marked_explains_how():
 
 def test_judges_the_arm_and_the_hands_over_the_heel():
     v = run(hands_at(90))
-    assert [r.label for r in v.rows] == ["Lead arm vs spine", "Hands vs trail heel", "Spine bend kept"]
-    assert v.label == "Lead arm matches the shoulders" and v.tip == ""
+    assert [r.label for r in v.rows] == ["Front arm vs spine", "Hands vs back heel", "Spine bend kept"]
+    assert v.label == "Front arm matches your shoulders" and v.tip == ""
     assert v.measurements["hands_out_from_heel"] == pytest.approx(0.0, abs=1e-3)
 
 
 @pytest.mark.parametrize("out, status, label", [
-    (0.03, "ok", "Hands over the trail heel"),      # McIlroy
-    (-0.12, "ok", "Hands over the trail heel"),
-    (0.2, "warn", "Hands slightly outside the heel"),
-    (0.4, "flag", "Hands outside the heel"),
-    (-0.2, "warn", "Hands slightly behind the heel"),
-    (-0.4, "flag", "Hands behind the heel"),
+    (0.03, "ok", "Hands over your back heel"),      # McIlroy
+    (-0.12, "ok", "Hands over your back heel"),
+    (0.2, "warn", "Hands slightly toward the ball"),
+    (0.4, "flag", "Hands too far toward the ball"),
+    (-0.2, "warn", "Hands slightly behind your back heel"),
+    (-0.4, "flag", "Hands behind your back heel"),
 ])
 def test_hands_vs_trail_heel_bands(out, status, label):
     for mirror in (False, True):
         v = run(hands_at(90), heel_out=out, mirror=mirror)
         row = v.rows[1]
-        assert row.status == status and label.lower() in row.note
+        assert row.status == status and row.note == label.removeprefix("Hands ").capitalize()
         assert v.status == status  # the arm is green, so the hands decide
         assert v.measurements["hands_out_from_heel"] == pytest.approx(out, abs=1e-3)
         assert row.value.endswith("toward the ball" if out >= 0 else "behind")
-        assert "green within ±15%, red past 30%" in row.note
+        assert (row.good, row.fix) == ("within 8 cm of your heel", "more than 15 cm either way")
         assert (label.lower() in v.label.lower()) == (status != "ok")
         assert (v.tip == "") == (status == "ok")
 
 
 def test_heel_not_tracked_is_not_measured():
     v = run(hands_at(90), heel=False)
-    assert v.rows[1].status == "error" and v.rows[1].value == "not measured"
+    assert v.rows[1].status == "error" and v.rows[1].value == "Not measured"
     assert v.status == "ok" and v.measurements["hands_out_from_heel"] is None
 
 
 def test_key_frame_shows_the_trail_heel_line():
-    assert any(o.kind == "dashed" and o.label == "trail heel" for o in run(hands_at(90)).overlays)
+    assert any(o.kind == "dashed" and o.label == "Back heel" for o in run(hands_at(90)).overlays)
 
 
 def test_key_frame_shows_the_swing_plane_line():
-    assert any(o.kind == "line" and o.label == "swing plane" for o in run(hands_at(90)).overlays)
+    assert any(o.kind == "line" and o.label == "Swing plane" for o in run(hands_at(90)).overlays)
 
 
 
@@ -162,9 +162,9 @@ def test_spine_bend_kept_at_the_top(upright, status, extra):
         v = run(hands_at(90), upright=upright, mirror=mirror)
         row = v.rows[2]
         assert row.label == "Spine bend kept" and row.status == status
-        assert "green up to 8° lost" in row.note
+        assert row.good == "up to 8° more upright or 5° more bent"
         assert v.status == status
-        assert v.label == "Lead arm matches the shoulders" + (f", {extra}" if extra else "")
-        assert v.rows[0].note.startswith("lead arm matches the shoulders (")  # the arm row's own wording
+        assert v.label == "Front arm matches your shoulders" + (f", {extra}" if extra else "")
+        assert v.rows[0].note == "Matches your shoulders"  # the arm row's own wording
         # The posture lines are drawn only when it's off (the top already has a spine line).
-        assert any(o.label == "address spine" for o in v.overlays) == (status != "ok")
+        assert any(o.label == "Address spine" for o in v.overlays) == (status != "ok")

@@ -26,7 +26,7 @@ from __future__ import annotations
 import numpy as np
 
 from swingcheck.analyzers import (BALL_COLOR, MissingData, Overlay, Row, STATUS_COLORS, SwingContext, Verdict,
-                                  clubhead_mark, grade, hands_mark, pct, register, spot_mark)
+                                  clubhead_mark, grade, hands_mark, register, spot_mark)
 from swingcheck.analyzers.dtl_body import posture_kept, trail_knee_kept, with_body
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 
@@ -42,22 +42,38 @@ def shaft_landing(ctx: SwingContext, clubhead, hands, where: str) -> tuple[np.nd
     clubhead, hands = np.asarray(clubhead, float), np.asarray(hands, float)
     ball = np.asarray(ctx.marks.points["ball"], float)
     if hands[1] - clubhead[1] < 1:
-        raise MissingData(f"the clubhead should be above the hands at {where}; check the {where} marks")
+        raise MissingData(f"The clubhead should be above the hands at {where}. Check the {where} marks.")
     # Screen x direction from the ball toward the golfer (hips at address).
     hip = ctx.midpoint("left_hip", "right_hip")[ctx.marks.address_frame]
     if not np.all(np.isfinite(hip)):
-        hip = ctx.value(ctx.track(ctx.side("hip", "trail")), ctx.marks.address_frame, "trail hip")
+        hip = ctx.value(ctx.track(ctx.side("hip", "trail")), ctx.marks.address_frame, "back hip")
     toward_golfer = -1.0 if hip[0] < ball[0] else 1.0
     slope = (hands[0] - clubhead[0]) / (hands[1] - clubhead[1])  # screen x per screen y
     landing = np.array([hands[0] + (ball[1] - hands[1]) * slope, ball[1]])
     return landing, ctx.units((landing[0] - ball[0]) * toward_golfer), toward_golfer
 
 
+def landing_text(ctx: SwingContext, inside_by: float) -> str:
+    """Where a shaft line lands, in plain words: 'At the ball', '8 cm toward your feet', '2 cm past the ball'."""
+    if abs(ctx.cm(inside_by)) < 0.75:
+        return "At the ball"
+    return f"{ctx.distance_text(inside_by)} {'toward your feet' if inside_by > 0 else 'past the ball'}"
+
+
+def landing_ranges(ctx: SwingContext, cfg: dict) -> tuple[str, str]:
+    """(good, fix) for a shaft-landing row from the inside_* bands."""
+    good = (f"{ctx.distance_text(cfg['inside_min'])} past the ball to "
+            f"{ctx.distance_text(cfg['inside_max'])} toward your feet")
+    fix = (f"more than {ctx.distance_text(cfg['inside_watch_min'])} past the ball or "
+           f"{ctx.distance_text(cfg['inside_watch_max'])} toward your feet")
+    return good, fix
+
+
 @register("halfway_back", view="dtl", title="Halfway back")
 def halfway_back(ctx: SwingContext) -> Verdict:
     mark = ctx.marks.checkpoint("halfway_back")
     if mark is None:
-        raise MissingData("halfway back isn't marked yet: Edit marks → Halfway back, then click the clubhead and hands")
+        raise MissingData("Halfway back isn't marked yet. Go to Edit marks → Halfway back and click the clubhead and hands.")
     cfg = ctx.cfg
     f = mark.frame
     clubhead = np.asarray(mark.points["clubhead"], float)  # or any point high up the shaft
@@ -66,18 +82,17 @@ def halfway_back(ctx: SwingContext) -> Verdict:
     landing, inside_by, toward_golfer = shaft_landing(ctx, clubhead, hands, "halfway back")
 
     status = grade(inside_by, cfg["inside_min"], cfg["inside_max"], cfg["inside_watch_min"], cfg["inside_watch_max"])
-    if status == "ok" and inside_by < 0:
-        label, meaning = "Points at the ball", "the shaft points at the ball line, on plane"
-    elif status == "ok":
-        label, meaning = "Points just inside the ball", "the shaft points just inside the ball, on plane"
+    if status == "ok":
+        label, meaning = "Points at the ball", "the shaft points at the ball, on the swing plane"
     elif inside_by > cfg["inside_max"]:
-        label, meaning = (("Points well inside the ball", "the shaft points toward your feet: a little steep")
+        label, meaning = (("Points between the ball and your feet",
+                           "the shaft points between the ball and your feet (a little steep)")
                           if status == "warn" else
-                          ("Points at your feet", "the shaft points at your feet: too steep / upright"))
+                          ("Points at your feet", "the shaft points at your feet (too steep, or upright)"))
     else:
-        label, meaning = (("Points just outside the ball", "the shaft points just past the ball: a little flat")
+        label, meaning = (("Points just past the ball", "the shaft points just past the ball (a little flat)")
                           if status == "warn" else
-                          ("Points outside the ball", "the shaft points well past the ball: too flat / laid off"))
+                          ("Points well past the ball", "the shaft points well past the ball (too flat, or laid off)"))
     tip = "" if status == "ok" else (
         "Turn your chest more and let the club set a little more around you."
         if inside_by > cfg["inside_max"] else
@@ -101,7 +116,7 @@ def halfway_back(ctx: SwingContext) -> Verdict:
         Overlay("text", [(float(landing[0]) - toward_golfer * 0.1 * s, float(landing[1]) + 0.2 * s)], col, shaft_label, show),
     ]
 
-    side = "inside" if inside_by >= 0 else "outside"
+    ranges = landing_ranges(ctx, cfg)
     return Verdict(
         status=status,
         label=label,
@@ -115,10 +130,8 @@ def halfway_back(ctx: SwingContext) -> Verdict:
                      "- = past the ball",
         },
         rows=[
-            Row("Shaft points", f"{ctx.distance_text(inside_by)} {side} the ball",
-                f"{pct(abs(inside_by))} of torso length · {shaft_label.lower()} "
-                f"(green {pct(-cfg['inside_min'])} outside to {pct(cfg['inside_max'])} inside, "
-                f"red past {pct(cfg['inside_watch_max'])} inside or {pct(-cfg['inside_watch_min'])} outside)", shaft_status),
+            Row("Shaft points at", landing_text(ctx, inside_by), shaft_label.removeprefix("Points ").capitalize(),
+                shaft_status, good=ranges[0], fix=ranges[1]),
         ] + [b.row for b in body],
         overlays=swing_plane_line(ctx, show) + overlays,
     )

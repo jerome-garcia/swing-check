@@ -54,13 +54,13 @@ def run(inside_by=0.1, back=0.2, mirror=False, config=None, marked=True):
 
 def test_reference_like_exit_is_green():
     v = run(inside_by=0.02, back=0.2)  # the reference photos: on the ball, 20% inside going back
-    assert v.status == "ok" and v.label == "Exits on plane, same line as the backswing"
+    assert v.status == "ok" and v.label == "Exits on the swing plane, same line as going back"
     assert v.measurements["exit_vs_backswing"] == pytest.approx(-0.18, abs=1e-3)
     assert v.frame == 50
 
 
 @pytest.mark.parametrize("inside_by, status, label", [
-    (0.3, "ok", "Exits on plane"),
+    (0.3, "ok", "Exits on the swing plane"),
     (0.7, "warn", "Exits slightly steep"),
     (1.0, "flag", "Exits steep"),
     (-0.2, "warn", "Exits slightly flat"),
@@ -68,33 +68,33 @@ def test_reference_like_exit_is_green():
 ])
 def test_shaft_bands(inside_by, status, label):
     v = run(inside_by=inside_by, back=None)
-    assert v.rows[0].status == status and label.lower() in v.rows[0].note
+    assert v.rows[0].status == status and label.lower() in v.label.lower()
     assert v.measurements["shaft_inside_ball"] == pytest.approx(inside_by, abs=1e-3)
 
 
 @pytest.mark.parametrize("back, status, label", [
-    (0.1, "ok", "same line as the backswing"),
-    (-0.4, "warn", "exits slightly steeper than the backswing"),
-    (0.45, "warn", "exits slightly flatter than the backswing"),
-    (-1.17, "flag", "exits steeper than the backswing"),  # the amateur swing: laid off going back
+    (0.1, "ok", "same line as going back"),
+    (-0.4, "warn", "slightly steeper than going back"),
+    (0.45, "warn", "slightly flatter than going back"),
+    (-1.17, "flag", "steeper than going back"),  # the amateur swing: laid off going back
 ])
 def test_same_line_bands(back, status, label):
     v = run(inside_by=0.0, back=back)
     row = v.rows[1]
-    assert row.status == status and label in row.note
+    assert row.status == status and row.note.lower() == label.lower()
 
 
 def test_without_halfway_back_shaft_only():
     v = run(back=None)
     assert v.status == "ok"
-    assert v.rows[1].status == "error" and "mark halfway back" in v.rows[1].note
+    assert v.rows[1].status == "error" and "Mark halfway back" in v.rows[1].note
     assert v.measurements["exit_vs_backswing"] is None
 
 
 def test_rows_have_units():
     v = run(inside_by=0.0, back=-1.0)
-    assert v.rows[1].value == "≈50 cm steeper"
-    assert "of torso length apart at the ball" in v.rows[1].note
+    assert v.rows[1].value == "50 cm steeper"
+    assert v.rows[1].good.startswith("within ") and v.rows[1].good.endswith(" cm at the ball")
 
 
 def test_left_handed_mirror_matches():
@@ -111,4 +111,4 @@ def test_not_marked_explains_how():
 
 
 def test_key_frame_shows_the_swing_plane_line():
-    assert any(o.kind == "line" and o.label == "swing plane" for o in run().overlays)
+    assert any(o.kind == "line" and o.label == "Swing plane" for o in run().overlays)

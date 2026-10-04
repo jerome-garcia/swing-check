@@ -63,52 +63,52 @@ def run(under=0.15, takeaway=0.0, mirror=False, config=None, marked=True, spine_
 
 def test_on_plane_and_shallowed():
     v = run(under=0.15, takeaway=-0.04)  # McIlroy-like
-    assert v.status == "ok" and v.label == "Club down the swing plane, shallowed"
+    assert v.status == "ok" and v.label == "Clubhead on the swing plane, flatter than going back"
     assert v.measurements["shallowing_vs_takeaway"] == pytest.approx(0.19, abs=1e-3)
     assert v.frame == 55
 
 
 @pytest.mark.parametrize("under, status, label", [
-    (0.2, "ok", "Club down the swing plane"),
+    (0.2, "ok", "Clubhead on the swing plane"),
     (-0.1, "warn", "Clubhead slightly above the swing plane"),
     (-0.18, "warn", "Clubhead slightly above the swing plane"),  # inside the grey line
     (-0.28, "warn", "Clubhead slightly above the swing plane"),  # past the grey line, still yellow
     (-0.35, "flag", "Clubhead above the swing plane"),
     (0.55, "warn", "Clubhead well under the swing plane"),
-    (0.9, "flag", "Clubhead stuck under the swing plane"),
+    (0.9, "flag", "Clubhead too far under the swing plane"),
 ])
 def test_plane_bands(under, status, label):
     v = run(under=under, takeaway=None)
-    assert v.rows[0].status == status and label.lower() in v.rows[0].note
+    assert v.rows[0].status == status and label.lower() in v.label.lower()
     assert v.measurements["clubhead_under_line"] == pytest.approx(under, abs=1e-3)
 
 
 @pytest.mark.parametrize("takeaway, status, label", [
-    (0.0, "ok", "shallowed"),
-    (0.25, "warn", "slightly steeper than the takeaway"),
-    (0.5, "flag", "steeper than the takeaway"),
+    (0.0, "ok", "flatter than going back"),
+    (0.25, "warn", "slightly steeper than going back"),
+    (0.5, "flag", "steeper than going back"),
 ])
 def test_shallowing_bands(takeaway, status, label):
     # Same downswing position (on plane); only the takeaway differs. An inside takeaway
     # followed by an on-plane downswing is the over-the-top loop.
     v = run(under=0.2, takeaway=takeaway)
     row = v.rows[1]
-    assert row.label == "Shallowing" and row.status == status and label in row.note
+    assert row.label == "Vs your takeaway" and row.status == status and row.note.lower() == label.lower()
     assert v.status == max(["ok", status], key={"ok": 0, "warn": 1, "flag": 2}.get)
 
 
 def test_without_takeaway_marks_plane_only():
     v = run(under=0.2, takeaway=None)
     assert v.status == "ok"
-    assert v.rows[1].status == "error" and "mark the takeaway" in v.rows[1].note
+    assert v.rows[1].status == "error" and "Mark the takeaway" in v.rows[1].note
     assert v.measurements["shallowing_vs_takeaway"] is None
 
 
 def test_rows_have_units():
     v = run(under=0.2, takeaway=0.5)
-    assert v.rows[0].value == "≈10 cm under"
-    assert v.rows[1].value == "≈15 cm steeper"
-    assert "of torso length" in v.rows[1].note
+    assert v.rows[0].value == "10 cm under the line"
+    assert v.rows[1].value == "15 cm steeper"
+    assert v.rows[1].value.endswith(" cm steeper") or v.rows[1].value.endswith(" cm flatter")
 
 
 def test_left_handed_mirror_matches():
@@ -154,7 +154,7 @@ def test_spine_bend_kept_coming_down(lost, status, extra):
         v = run(under=0.15, takeaway=-0.04, spine_lost=lost, mirror=mirror)  # club green
         row = v.rows[-1]
         assert row.label == "Spine bend kept" and row.status == status
-        assert "green up to 5° lost" in row.note
+        assert row.good == "up to 5° either way" and row.fix == "more than 10° either way"
         assert v.status == status
-        assert v.label == "Club down the swing plane, shallowed" + (f", {extra}" if extra else "")
-        assert any(o.label == "address spine" for o in v.overlays) == (status != "ok")
+        assert v.label == "Clubhead on the swing plane, flatter than going back" + (f", {extra}" if extra else "")
+        assert any(o.label == "Address spine" for o in v.overlays) == (status != "ok")

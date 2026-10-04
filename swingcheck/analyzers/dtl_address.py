@@ -20,8 +20,8 @@ import math
 import numpy as np
 
 from swingcheck import pose as pose_mod
-from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
-                                  pct, register)
+from swingcheck.analyzers import (MissingData, Overlay, REFERENCE_COLOR, Row, STATUS_COLORS, SwingContext, Verdict,
+                                  deg_text, grade, register)
 from swingcheck.geometry import angle_between_deg, max_bulge, normal, silhouette_edge, tilt_from_vertical_deg
 
 # Back outline is sampled from this fraction of the way up the spine (skipping
@@ -29,30 +29,47 @@ from swingcheck.geometry import angle_between_deg, max_bulge, normal, silhouette
 BACK_SAMPLES = np.linspace(0.2, 0.95, 24)
 
 
-# (part, direction) -> how it reads when yellow, when red, and the fix.
+# (part, direction) -> label when yellow, label when red, a summary sentence, and the fix.
 WORDING = {
-    ("arms", "out"): ("slightly reaching out", "reaching out", "Let your arms hang straight down from your shoulders."),
-    ("arms", "in"): ("slightly close to body", "too close to body", "Give your hands a little more room from your body."),
-    ("spine", "low"): ("slightly upright", "too upright",
+    ("arms", "out"): ("Arms slightly reaching out", "Arms reaching out",
+                      "Your hands reach out toward the ball instead of hanging under your shoulders.",
+                      "Let your arms hang straight down from your shoulders."),
+    ("arms", "in"): ("Hands slightly close to the body", "Hands too close to the body",
+                     "Your hands are tucked in toward your body.",
+                     "Give your hands a little more room from your body."),
+    ("spine", "low"): ("Spine slightly upright", "Spine too upright",
+                       "You stand a little tall: your upper body isn't tilted forward enough.",
                        "Hinge more from the hips: push them back and tilt forward with a straight back."),
-    ("spine", "high"): ("slightly bent over", "bent over too far", "Stand up a little: tilt less from the hips."),
-    ("knees", "low"): ("slightly straight", "too straight", "Soften your knees a little."),
-    ("knees", "high"): ("slightly too bent", "too much bend", "Straighten your knees a little."),
-    ("back", "high"): ("slightly rounded", "rounded / hump", "Keep your back straight as you tilt: chest up, no hump."),
+    ("spine", "high"): ("Spine slightly bent over", "Spine bent over too far",
+                        "Your upper body tilts too far forward.",
+                        "Stand up a little: tilt less from the hips."),
+    ("knees", "low"): ("Knees slightly straight", "Knees too straight",
+                       "Your knees are close to straight.",
+                       "Soften your knees a little."),
+    ("knees", "high"): ("Knees slightly too bent", "Knees bent too much",
+                        "You're squatting: your knees bend more than needed.",
+                        "Straighten your knees a little."),
+    ("back", "high"): ("Upper back slightly rounded", "Upper back rounded",
+                       "Your upper back curves (a hump) instead of staying straight.",
+                       "Keep your back straight as you tilt: chest up, no hump."),
 }
-GOOD = {"arms": "hanging straight", "spine": "good bend", "knees": "good flex", "back": "straight"}
+GOOD = {"arms": "Hanging straight", "spine": "Good bend", "knees": "Good bend", "back": "Straight"}
 
 
 def _item(part: str, status: str, direction: str) -> tuple[str, str, str]:
-    """(status, note, direction) for one measurement."""
+    """(status, label, direction) for one measurement."""
     if status == "ok":
         return status, GOOD[part], direction
-    soft, hard, _ = WORDING[(part, direction)]
+    soft, hard, _, _ = WORDING[(part, direction)]
     return status, soft if status == "warn" else hard, direction
 
 
-def _bands(lo: float, hi: float, wlo: float, whi: float) -> str:
-    return f"green {lo:g}–{hi:g}°, red outside {wlo:g}–{whi:g}°"
+def _range(lo: float, hi: float) -> str:
+    return f"{lo:g}–{hi:g}°"
+
+
+def _outside(lo: float, hi: float) -> str:
+    return f"under {lo:g}° or over {hi:g}°"
 
 
 def _deg(x: float) -> str:
@@ -80,11 +97,11 @@ def address(ctx: SwingContext) -> Verdict:
     f = ctx.marks.address_frame
     trail = lambda part: ctx.track(ctx.side(part, "trail"))  # noqa: E731
 
-    shoulder = ctx.value(trail("shoulder"), f, "trail shoulder")
-    wrist = ctx.value(trail("wrist"), f, "trail wrist")
-    hip = ctx.value(trail("hip"), f, "trail hip")
-    knee = ctx.value(trail("knee"), f, "trail knee")
-    ankle = ctx.value(trail("ankle"), f, "trail ankle")
+    shoulder = ctx.value(trail("shoulder"), f, "back shoulder")
+    wrist = ctx.value(trail("wrist"), f, "back wrist")
+    hip = ctx.value(trail("hip"), f, "back hip")
+    knee = ctx.value(trail("knee"), f, "back knee")
+    ankle = ctx.value(trail("ankle"), f, "back ankle")
     # Spine from body centers when both sides are tracked; trail side otherwise.
     sh_mid = ctx.midpoint("left_shoulder", "right_shoulder")[f]
     hip_mid = ctx.midpoint("left_hip", "right_hip")[f]
@@ -121,24 +138,22 @@ def address(ctx: SwingContext) -> Verdict:
         if np.isfinite(bulge_px):
             bulge = ctx.units(bulge_px)
     except (MissingData, RuntimeError) as e:
-        items["back"] = ("error", f"not measured ({e})", "")
+        items["back"] = ("error", f"Not measured ({e})", "")
     if bulge is not None:
         items["back"] = _item("back", grade(bulge, -np.inf, cfg["back_bulge_max"], -np.inf, cfg["back_bulge_watch_max"]),
                               "high")
     elif "back" not in items:
-        items["back"] = ("error", "outline not found", "")
+        items["back"] = ("error", "Not measured", "")
 
     off = {name: it for name, it in items.items() if it[0] in ("warn", "flag")}
-    problems = [f"{name} {it[1]}" for name, it in off.items()]
+    order = [name for name in ("spine", "knees", "arms", "back") if name in off]
     status = "flag" if any(it[0] == "flag" for it in off.values()) else ("warn" if off else "ok")
-    label = ", ".join(problems) if problems else "good"
+    labels = [off[name][1] for name in order]
+    label = ", ".join([labels[0]] + [x[0].lower() + x[1:] for x in labels[1:]]) if labels else "Good posture"
+    summary = (" ".join(WORDING[(name, off[name][2])][2] for name in order) if order else
+               "Your arms hang straight, your spine and knees are bent well, and your back is straight.")
     # Tips lead with the hips: hinging more often fixes reaching arms too.
-    tips = [WORDING[(name, off[name][2])][2] for name in ("spine", "knees", "arms", "back") if name in off]
-    summary = (
-        "Address posture looks good: arms hanging, spine bent, knees flexed, back straight."
-        if not problems else "Address: " + "; ".join(problems) + "."
-    )
-    fix_tip = " ".join(tips)
+    fix_tip = " ".join(WORDING[(name, off[name][2])][3] for name in order)
 
     measurements = {
         "arm_from_vertical_deg": round(arm, 1),
@@ -161,14 +176,15 @@ def address(ctx: SwingContext) -> Verdict:
         *([Overlay("vline", [tuple(shoulder), (float(shoulder[0]), float(wrist[1]))], REFERENCE_COLOR, "", show, 1)]
           if items["arms"][0] not in ("warn", "flag") else []),
         Overlay("segment", [tuple(shoulder), tuple(wrist)], col["arms"], "", show, 3),
-        Overlay("text", [(float(wrist[0]) + 0.08 * s, float(wrist[1]))], col["arms"], f"arm {arm:+.0f} deg", show),
+        Overlay("text", [(float(wrist[0]) + 0.08 * s, float(wrist[1]))], col["arms"],
+                f"Arm {abs(arm):.0f} deg {'out' if arm >= 0 else 'in'}", show),
         # Spine line with its angle.
         Overlay("segment", [tuple(hip_mid), tuple(sh_mid)], col["spine"], "", show, 3),
         Overlay("text", [tuple((hip_mid + sh_mid) / 2 + forward * np.array([0.12 * s, 0.0]))], col["spine"],
-                f"spine {spine:.0f} deg", show),
+                f"Spine {spine:.0f} deg", show),
         # Leg with knee flex.
         Overlay("polyline", [tuple(hip), tuple(knee), tuple(ankle)], col["knees"], "", show, 3),
-        Overlay("text", [(float(knee[0]) + forward * 0.1 * s, float(knee[1]))], col["knees"], f"knee {knee_flex:.0f} deg", show),
+        Overlay("text", [(float(knee[0]) + forward * 0.1 * s, float(knee[1]))], col["knees"], f"Knee {knee_flex:.0f} deg", show),
     ]
     # Dashed target lines (middle of the good range) for whatever is out of range.
     target = REFERENCE_COLOR  # targets are white, like every other "where it should be" line
@@ -176,11 +192,11 @@ def address(ctx: SwingContext) -> Verdict:
         aim = (cfg["spine_bend_min"] + cfg["spine_bend_max"]) / 2
         length = float(np.linalg.norm(sh_mid - hip_mid))
         tip = hip_mid + length * np.array([forward * np.sin(np.radians(aim)), -np.cos(np.radians(aim))])
-        overlays.append(Overlay("dashed", [tuple(hip_mid), tuple(tip)], target, f"aim {aim:.0f} deg", show, 2))
+        overlays.append(Overlay("dashed", [tuple(hip_mid), tuple(tip)], target, f"Aim {aim:.0f} deg", show, 2))
     if items["arms"][0] in ("warn", "flag"):
         length = float(np.linalg.norm(wrist - shoulder))
         overlays.append(Overlay("dashed", [tuple(shoulder), (float(shoulder[0]), float(shoulder[1]) + length)], target,
-                                "aim", show, 2))
+                                "Aim", show, 2))
     if items["knees"][0] in ("warn", "flag"):
         # Shin stays put; the thigh swings to the target flex (hip behind the knee).
         aim = (cfg["knee_flex_min"] + cfg["knee_flex_max"]) / 2
@@ -188,38 +204,39 @@ def address(ctx: SwingContext) -> Verdict:
         thigh_len = float(np.linalg.norm(hip - knee))
         options = [knee + thigh_len * _rotate(shin, sign * (180.0 - aim)) for sign in (1, -1)]
         hip_aim = min(options, key=lambda p: (p[0] - knee[0]) * forward)
-        overlays.append(Overlay("dashed", [tuple(knee), tuple(hip_aim)], target, f"aim {aim:.0f} deg", show, 2))
+        overlays.append(Overlay("dashed", [tuple(knee), tuple(hip_aim)], target, f"Aim {aim:.0f} deg", show, 2))
     if len(back_points) and np.isfinite(back_points).any():
         pts = [tuple(p) for p in back_points if np.all(np.isfinite(p))]
         overlays.append(Overlay("polyline", pts, col["back"], "", show, 2))
         overlays.append(Overlay("segment", [pts[0], pts[-1]], REFERENCE_COLOR, "", show, 1))
         if bulge is not None:
             mid = pts[len(pts) // 2]
-            overlays.append(Overlay("text", [(mid[0] - forward * 0.35 * s, mid[1])], col["back"], f"back {pct(bulge)}", show))
-    back_note = items["back"][1]
-    if bulge is not None:
-        back_note = (f"{pct(bulge)} of torso length · {back_note} "
-                     f"(green up to {pct(cfg['back_bulge_max'])}, red past {pct(cfg['back_bulge_watch_max'])})")
-    spine_bands = _bands(cfg["spine_bend_min"], cfg["spine_bend_max"], cfg["spine_bend_watch_min"], cfg["spine_bend_watch_max"])
-    knee_bands = _bands(cfg["knee_flex_min"], cfg["knee_flex_max"], cfg["knee_flex_watch_min"], cfg["knee_flex_watch_max"])
+            overlays.append(Overlay("text", [(mid[0] - forward * 0.35 * s, mid[1])], col["back"],
+                                    f"Back {ctx.distance_text(bulge)}", show))
     rows = [
-        Row("Arms", f"{arm:+.1f}°", _arm_note(arm, arm_lim, arm_watch), items["arms"][0]),
-        Row("Spine bend", f"{spine:.1f}°",
-            _adjust(spine, cfg["spine_bend_min"], cfg["spine_bend_max"], "good bend", "bend {} more", "stand up {}")
-            + f" ({spine_bands})", items["spine"][0]),
-        Row("Knee flex", f"{knee_flex:.1f}°",
-            _adjust(knee_flex, cfg["knee_flex_min"], cfg["knee_flex_max"], "good flex", "flex {} more", "straighten {}")
-            + f" ({knee_bands})", items["knees"][0]),
-        Row("Back", ctx.distance_text(bulge) if bulge is not None else "–", back_note, items["back"][0]),
+        Row("Arms", "Straight down" if abs(arm) < 0.5 else f"{deg_text(abs(arm))} {'out' if arm > 0 else 'in'}",
+            _arm_note(arm, arm_lim), items["arms"][0],
+            good=f"within {arm_lim:g}° of straight down", fix=f"more than {arm_watch:g}° out or in"),
+        Row("Spine bend", deg_text(spine),
+            _adjust(spine, cfg["spine_bend_min"], cfg["spine_bend_max"], "Good bend", "Bend {} more", "Stand up {}"),
+            items["spine"][0], good=_range(cfg["spine_bend_min"], cfg["spine_bend_max"]),
+            fix=_outside(cfg["spine_bend_watch_min"], cfg["spine_bend_watch_max"])),
+        Row("Knee bend", deg_text(knee_flex),
+            _adjust(knee_flex, cfg["knee_flex_min"], cfg["knee_flex_max"], "Good bend", "Bend {} more", "Straighten {}"),
+            items["knees"][0], good=_range(cfg["knee_flex_min"], cfg["knee_flex_max"]),
+            fix=_outside(cfg["knee_flex_watch_min"], cfg["knee_flex_watch_max"])),
+        Row("Upper back", f"{ctx.distance_text(bulge)} curve" if bulge is not None else "Not measured",
+            items["back"][1] if bulge is not None else "Couldn't find the outline of your back", items["back"][0],
+            good=f"up to {ctx.distance_text(cfg['back_bulge_max'])}" if bulge is not None else "",
+            fix=f"over {ctx.distance_text(cfg['back_bulge_watch_max'])}" if bulge is not None else ""),
     ]
     return Verdict(status=status, label=label, summary=summary, tip=fix_tip, measurements=measurements, overlays=overlays,
                    rows=rows)
 
 
-def _arm_note(arm: float, limit: float, watch: float) -> str:
-    bands = f"(green within ±{limit:g}°, red past ±{watch:g}°)"
+def _arm_note(arm: float, limit: float) -> str:
     if arm > limit:
-        return f"hands {_deg(arm - limit)} too far out {bands}"
+        return f"Bring your hands {_deg(arm - limit)} closer"
     if arm < -limit:
-        return f"hands {_deg(-limit - arm)} too close {bands}"
-    return f"hanging straight {bands}"
+        return f"Move your hands {_deg(-limit - arm)} out"
+    return "Hanging straight"

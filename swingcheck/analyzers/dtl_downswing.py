@@ -20,7 +20,7 @@ from __future__ import annotations
 import numpy as np
 
 from swingcheck.analyzers import (MissingData, Overlay, PAST_COLOR, Row, STATUS_COLORS, SwingContext, Verdict,
-                                  clubhead_mark, grade, pct, register)
+                                  clubhead_mark, grade, register)
 from swingcheck.analyzers.dtl_body import posture_kept, with_body
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.analyzers.dtl_takeaway import address_line
@@ -33,7 +33,7 @@ ORDER = {"ok": 0, "warn": 1, "flag": 2}
 def downswing(ctx: SwingContext) -> Verdict:
     mark = ctx.marks.checkpoint("downswing")
     if mark is None:
-        raise MissingData("the downswing isn't marked yet: Edit marks → Downswing, then click the clubhead")
+        raise MissingData("The downswing isn't marked yet. Go to Edit marks → Downswing and click the clubhead.")
     cfg = ctx.cfg
     f = mark.frame
     clubhead = np.asarray(mark.points["clubhead"], float)
@@ -44,15 +44,16 @@ def downswing(ctx: SwingContext) -> Verdict:
     plane_status = grade(under, cfg["under_min"], cfg["under_max"], cfg["under_watch_min"], cfg["under_watch_max"])
     soft = plane_status == "warn"
     if plane_status == "ok":
-        plane_label, plane_meaning = "Club down the swing plane", "the club is back on your swing plane line, clubhead just behind your hands"
+        plane_label, plane_meaning = ("Clubhead on the swing plane",
+                                      "the clubhead is back on your swing plane line, or just under it")
     elif under < cfg["under_min"]:
         plane_label = "Clubhead slightly above the swing plane" if soft else "Clubhead above the swing plane"
-        plane_meaning = ("the clubhead is a little above your swing plane line (steep)" if soft else
-                         "the clubhead is well above your swing plane line: over the top")
+        plane_meaning = ("the clubhead is a little above your swing plane line (a little steep)" if soft else
+                         "the clubhead is well above your swing plane line (over the top)")
     else:
-        plane_label = "Clubhead well under the swing plane" if soft else "Clubhead stuck under the swing plane"
-        plane_meaning = ("the clubhead is well behind your swing plane line (very shallow)" if soft else
-                         "the clubhead is far behind your swing plane line: stuck, too flat")
+        plane_label = "Clubhead well under the swing plane" if soft else "Clubhead too far under the swing plane"
+        plane_meaning = ("the clubhead is well under your swing plane line (very shallow)" if soft else
+                         "the clubhead is far under your swing plane line (stuck, too flat)")
 
     # 2. Shallowing vs the takeaway (same measure, going back).
     rows_extra: list[Row] = []
@@ -63,20 +64,23 @@ def downswing(ctx: SwingContext) -> Verdict:
         shallowing = under - line.inside_by(ctx, take.points["clubhead"])
         shallow_status = grade(shallowing, cfg["shallow_min"], np.inf, cfg["shallow_watch_min"], np.inf)
         if shallow_status == "ok":
-            shallow_label, shallow_meaning = "Shallowed", "it comes down flatter than it went back"
+            shallow_label, shallow_meaning = ("Flatter than going back",
+                                              "it comes down flatter than it went back (shallowing)")
         elif shallow_status == "warn":
-            shallow_label, shallow_meaning = "Slightly steeper than the takeaway", "it comes down a little steeper than it went back"
+            shallow_label, shallow_meaning = ("Slightly steeper than going back",
+                                              "it comes down a little steeper than it went back")
         else:
-            shallow_label, shallow_meaning = ("Steeper than the takeaway",
-                                              "it comes down much steeper than it went back: the over-the-top loop")
+            shallow_label, shallow_meaning = ("Steeper than going back",
+                                              "it comes down much steeper than it went back (the over-the-top loop)")
         direction = "flatter" if shallowing >= 0 else "steeper"
         rows_extra.append(Row(
-            "Shallowing", f"{ctx.distance_text(shallowing)} {direction}",
-            f"{pct(abs(shallowing))} of torso length vs your takeaway · {shallow_label.lower()} "
-            f"(green {pct(cfg['shallow_min'])} or more flatter, red past {pct(-cfg['shallow_watch_min'])} steeper)",
-            shallow_status))
+            "Vs your takeaway",
+            "Same line" if abs(ctx.cm(shallowing)) < 0.75 else f"{ctx.distance_text(shallowing)} {direction}",
+            shallow_label, shallow_status, good="the same line or flatter",
+            fix=f"more than {ctx.distance_text(cfg['shallow_watch_min'])} steeper"))
     else:
-        rows_extra.append(Row("Shallowing", "–", "mark the takeaway to compare coming down with going back", "error"))
+        rows_extra.append(Row("Vs your takeaway", "Not measured",
+                              "Mark the takeaway to compare the way down with the way back", "error"))
 
     statuses = [plane_status] + ([shallow_status] if shallow_status else [])
     status = max(statuses, key=ORDER.__getitem__)
@@ -103,13 +107,13 @@ def downswing(ctx: SwingContext) -> Verdict:
             clubhead_mark(take_ch, PAST_COLOR, show),
             # Label on the golfer's side of the point, clear of the club and hands.
             Overlay("text", [(float(take_ch[0]) + line.toward_golfer * 0.9 * s, float(take_ch[1]) - 0.1 * s)],
-                    PAST_COLOR, "clubhead at takeaway", show),
+                    PAST_COLOR, "Clubhead at takeaway", show),
         ]
 
     side = "under" if under >= 0 else "above"
     tips = []
     if plane_status != "ok":
-        tips.append("Start down with the lower body and let your trail elbow drop toward your hip, so the club falls under the plane."
+        tips.append("Start down with your lower body and let your back elbow drop toward your hip, so the club falls under the swing plane."
                     if under < cfg["under_min"] else
                     "Keep turning your chest through so the club can come out in front of you.")
     if shallow_status not in (None, "ok"):
@@ -138,10 +142,12 @@ def downswing(ctx: SwingContext) -> Verdict:
                      "(golfer's side), - = above it; shallowing: + = flatter coming down than at the takeaway",
         },
         rows=[
-            Row("Clubhead vs swing plane", f"{ctx.distance_text(under)} {side}",
-                f"{pct(abs(under))} of torso length · {plane_label.lower()} "
-                f"(green {pct(cfg['under_min'])}–{pct(cfg['under_max'])} under, "
-                f"red past {pct(-cfg['under_watch_min'])} above or {pct(cfg['under_watch_max'])} under)", plane_status),
+            Row("Clubhead vs swing plane",
+                "On the line" if abs(ctx.cm(under)) < 0.75 else f"{ctx.distance_text(under)} {side} the line",
+                plane_label.removeprefix("Clubhead ").capitalize(), plane_status,
+                good=f"on the line to {ctx.distance_text(cfg['under_max'])} under",
+                fix=f"more than {ctx.distance_text(cfg['under_watch_min'])} above or "
+                    f"{ctx.distance_text(cfg['under_watch_max'])} under"),
             *rows_extra,
             posture.row,
         ],

@@ -19,8 +19,8 @@ from __future__ import annotations
 import numpy as np
 
 from swingcheck import pose as pose_mod
-from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
-                                  pct, register)
+from swingcheck.analyzers import (MissingData, Overlay, REFERENCE_COLOR, Row, STATUS_COLORS, SwingContext, Verdict,
+                                  deg_text, grade, register)
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.geometry import tilt_from_vertical_deg
 
@@ -44,7 +44,7 @@ def back_edge_x(mask: np.ndarray, hip: np.ndarray, toward_back: float, half_heig
         if row.size:
             xs.append(lo + (row.min() if toward_back < 0 else row.max()))
     if not xs:
-        raise MissingData("couldn't find the outline of your hips")
+        raise MissingData("Couldn't find the outline of your hips.")
     return float(np.median(xs))
 
 
@@ -58,7 +58,7 @@ def impact(ctx: SwingContext) -> Verdict:
         hip = ctx.midpoint("left_hip", "right_hip")[frame]
         sh = ctx.midpoint("left_shoulder", "right_shoulder")[frame]
         if not (np.all(np.isfinite(hip)) and np.all(np.isfinite(sh))):
-            raise MissingData(f"hips or shoulders not tracked on frame {frame}")
+            raise MissingData(f"Your hips or shoulders weren't tracked on frame {frame}.")
         return hip, sh
 
     hip0, sh0 = centers(a)
@@ -75,11 +75,14 @@ def impact(ctx: SwingContext) -> Verdict:
     toward_ball = ctx.units((edges["impact"] - edges["address"]) * forward)  # + = hips moved toward the ball
     hips_status = grade(toward_ball, -np.inf, cfg["hips_forward_max"], -np.inf, cfg["hips_forward_watch"])
     if hips_status == "ok":
-        hips_label, hips_meaning = "Hips on the tush line", "your hips stay back on the line they set at address"
+        hips_label, hips_meaning = "Hips stay back", "your hips stay back where they were at address"
     elif hips_status == "warn":
-        hips_label, hips_meaning = "Hips slightly off the tush line", "your hips move a little toward the ball (slight early extension)"
+        hips_label, hips_meaning = ("Hips slightly toward the ball",
+                                    "your hips move a little toward the ball (slight early extension)")
     else:
-        hips_label, hips_meaning = "Early extension", "your hips thrust toward the ball, off the tush line (early extension)"
+        hips_label, hips_meaning = ("Hips toward the ball",
+                                    "your hips push toward the ball, off the line your backside set at address "
+                                    "(early extension)")
 
     # 2. Posture: spine bend kept from address.
     bend0 = tilt_from_vertical_deg(sh0 - hip0, forward, up=True)
@@ -113,18 +116,19 @@ def impact(ctx: SwingContext) -> Verdict:
                 hips_col, "", show, 4),
         Overlay("segment", [(edges["address"], float(hip1[1])), (edges["impact"], float(hip1[1]))], hips_col, "", show, 2),
         Overlay("text", [(edges["address"] + forward * 0.08 * s, y_top + 0.1 * s)], hips_col, hips_label, show),
-        Overlay("dashed", [tuple(hip1), tuple(hip1 + (sh0 - hip0))], REFERENCE_COLOR, "address spine", show, 2),
+        Overlay("dashed", [tuple(hip1), tuple(hip1 + (sh0 - hip0))], REFERENCE_COLOR, "Address spine", show, 2),
         Overlay("segment", [tuple(hip1), tuple(sh1)], posture_col, "", show, 3),
         Overlay("text", [tuple((hip1 + sh1) / 2 + forward * np.array([0.15 * s, 0.0]))], posture_col,
-                f"spine {bend1:.0f} deg (address {bend0:.0f})", show),
+                f"Spine {bend1:.0f} deg ({bend0:.0f} at address)", show),
     ]
 
-    moved = "toward the ball" if toward_ball >= 0 else "back"
+    moved = "toward the ball" if toward_ball >= 0 else "farther back"
     tips = []
     if hips_status != "ok":
-        tips.append("Keep your backside on the tush line: turn your hips back and around, not toward the ball.")
+        tips.append("Keep your backside back where it was at address: turn your hips back and around, "
+                    "not toward the ball.")
     if posture_status != "ok":
-        tips.append("Keep your chest over the ball through impact; stay in your posture." if lost > 0 else
+        tips.append("Keep your chest over the ball through impact and stay in your posture." if lost > 0 else
                     "Keep your head height steady through the ball instead of dropping down.")
     tip = " ".join(tips)
 
@@ -143,14 +147,16 @@ def impact(ctx: SwingContext) -> Verdict:
                      "posture: degrees of spine bend lost since address (+ = more upright)",
         },
         rows=[
-            Row("Hips vs tush line", f"{ctx.distance_text(toward_ball)} {moved}",
-                f"{pct(abs(toward_ball))} of torso length · {hips_label.lower()} "
-                f"(green up to {pct(cfg['hips_forward_max'])} toward the ball, red past {pct(cfg['hips_forward_watch'])})",
-                hips_status),
-            Row("Spine bend kept", f"{bend1:.0f}° (address {bend0:.0f}°)",
-                f"{abs(lost):.0f}° {'more upright' if lost >= 0 else 'more bent'} · {posture_label.lower()} "
-                f"(green up to {cfg['posture_loss_max']:g}° lost, red past {cfg['posture_loss_watch']:g}°)",
-                posture_status),
+            Row("Hips vs address", "Same place" if abs(ctx.cm(toward_ball)) < 0.75 else
+                f"{ctx.distance_text(toward_ball)} {moved}", hips_label.removeprefix("Hips ").capitalize(), hips_status,
+                good=f"up to {ctx.distance_text(cfg['hips_forward_max'])} toward the ball",
+                fix=f"more than {ctx.distance_text(cfg['hips_forward_watch'])} toward the ball"),
+            Row("Spine bend kept", f"{deg_text(bend1)} ({deg_text(bend0)} at address)",
+                posture_label + ("" if round(abs(lost)) == 0 else
+                                 f" ({round(abs(lost))}° {'more upright' if lost > 0 else 'more bent'})"),
+                posture_status,
+                good=f"up to {cfg['posture_loss_max']:g}° more upright or {cfg['posture_gain_max']:g}° more bent",
+                fix=f"more than {cfg['posture_loss_watch']:g}° more upright or {cfg['posture_gain_watch']:g}° more bent"),
         ],
         overlays=swing_plane_line(ctx, show) + overlays,
     )

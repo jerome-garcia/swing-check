@@ -10,13 +10,13 @@ const STEPS = {
     { key: "takeaway", title: "Takeaway", points: ["clubhead"], optional: true,
       intro: "Scrub to where the shaft is parallel to the target line (from behind, it points at the camera). Click the clubhead. This frame is the takeaway checkpoint." },
     { key: "halfway_back", title: "Halfway back", points: ["clubhead", "grip"], optional: true,
-      intro: "Scrub to where your lead arm is parallel to the ground (hands about level with your lead shoulder). Click the clubhead, then your hands. This frame is the halfway-back checkpoint." },
+      intro: "Scrub to where your front arm is parallel to the ground (hands about level with your front shoulder). Click the clubhead, then your hands. This frame is the halfway-back checkpoint." },
     { key: "top", title: "Top", points: ["clubhead", "grip"], optional: true,
       intro: "Scrub to the top of your backswing (the moment the club stops going back). Click the clubhead, then your hands. This frame is the top checkpoint." },
     { key: "downswing", title: "Downswing", points: ["clubhead"], optional: true,
       intro: "Scrub to where the shaft is parallel to the ground on the way down (hands about hip height). Click the clubhead. This frame is the downswing checkpoint." },
     { key: "follow_through", title: "Follow-through", points: ["clubhead", "grip"], optional: true,
-      intro: "Scrub to where your trail arm is parallel to the ground after impact (hands about shoulder height, the mirror of halfway back; if your arms are hidden, pick where the shaft looks about as steep as at halfway back). Click the clubhead, then your hands. This frame is the follow-through checkpoint." },
+      intro: "Scrub to where your back arm is parallel to the ground after impact (hands about shoulder height, the mirror of halfway back; if your arms are hidden, pick where the shaft looks about as steep as at halfway back). Click the clubhead, then your hands. This frame is the follow-through checkpoint." },
   ],
   fo: [
     { key: "address", title: "Address", points: ["ball"], optional: false,
@@ -28,7 +28,7 @@ const STEPS = {
 // outlines with a center dot, so you can still see exactly what you clicked.
 const POINT_INFO = {
   ball: { label: "Ball", hint: "Center of the ball", color: "#ffffff", shape: "ring", dx: 13, dy: 20 },
-  clubhead: { label: "Clubhead", hint: "The hosel, where the shaft meets the head", color: "#ffffff", shape: "circle", dx: -70, dy: -10 },
+  clubhead: { label: "Clubhead", hint: "Where the shaft meets the clubhead (the hosel)", color: "#ffffff", shape: "circle", dx: -70, dy: -10 },
   grip: { label: "Hands", hint: "Center of your hands on the shaft", color: "#ffffff", shape: "square", dx: 13, dy: -9 },
 };
 const PLANE_COLOR = "#ff00ff"; // the address shaft line is the swing plane, magenta as on the key frames

@@ -9,7 +9,7 @@ from swingcheck.analyzers import Verdict
 from swingcheck.ingest import VideoInfo
 from swingcheck.phases import Phases
 
-STATUS_TAGS = {"ok": "OK", "warn": "WATCH", "flag": "FLAG", "error": "ERROR"}
+STATUS_TAGS = {"ok": "GOOD", "warn": "WATCH", "flag": "FIX", "error": "NOT MEASURED"}
 
 
 def build_report(video: Path, view: str, info: VideoInfo, phases: Phases, verdicts: list[Verdict],
@@ -24,7 +24,7 @@ def build_report(video: Path, view: str, info: VideoInfo, phases: Phases, verdic
         f"{datetime.now():%Y-%m-%d %H:%M}   view: {view_name}",
         f"{info.width}x{info.height} @ {info.fps:g} fps, {info.frame_count} frames{trim}",
         f"Body scale: {scale_method.replace('_', ' ')} = {scale_px:.0f} px at address "
-        "(distances below are in multiples of this)",
+        "(distances are rough estimates in centimetres)",
     ]
     for w in info.warnings:
         out.append(f"Note: {w}")
@@ -41,12 +41,14 @@ def build_report(video: Path, view: str, info: VideoInfo, phases: Phases, verdic
     for v in verdicts:
         out.append(f"  [{STATUS_TAGS[v.status]}] {v.title}: {v.label}")
         out.append(f"      {v.summary}")
-        for key, value in v.measurements.items():
-            if key in ("units", "traceback"):
-                continue
-            out.append(f"      {key.replace('_', ' ')}: {value}")
-        if "units" in v.measurements:
-            out.append(f"      ({v.measurements['units']})")
+        for r in v.rows:
+            note = f" ({r.note})" if r.note else ""
+            out.append(f"      [{STATUS_TAGS.get(r.status, r.status.upper())}] {r.label}: {r.value}{note}")
+            ranges = " | ".join(t for t in (f"Good {r.good}" if r.good else "", f"Fix {r.fix}" if r.fix else "") if t)
+            if ranges:
+                out.append(f"          {ranges}")
+        if v.tip:
+            out.append(f"      How to fix: {v.tip}")
         out.append("")
 
     out.append("SUMMARY")

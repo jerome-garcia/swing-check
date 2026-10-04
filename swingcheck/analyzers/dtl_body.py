@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from swingcheck.analyzers import REFERENCE_COLOR, STATUS_COLORS, Grade, Overlay, Row, SwingContext, grade
+from swingcheck.analyzers import REFERENCE_COLOR, STATUS_COLORS, Grade, Overlay, Row, SwingContext, deg_text, grade
 from swingcheck.geometry import angle_between_deg, tilt_from_vertical_deg
 
 ORDER = {"ok": 0, "warn": 1, "flag": 2}
@@ -44,10 +44,11 @@ def with_body(status: str, label: str, meaning: str, tip: str, body: list["BodyC
     return status, label, meaning, tip
 
 
-def _limits(cfg: dict, lose_max: str, lose_watch: str, lose_word: str, gain_max: str, gain_watch: str,
-            gain_word: str) -> str:
-    return (f"green up to {cfg[lose_max]:g}° {lose_word} or {cfg[gain_max]:g}° {gain_word}, "
-            f"red past {cfg[lose_watch]:g}° {lose_word} or {cfg[gain_watch]:g}° {gain_word}")
+def _either_way(a: float, a_word: str, b: float, b_word: str, lead: str) -> str:
+    """'up to 6° more upright or 5° more bent'; 'more than 10° either way' when both match."""
+    if a == b:
+        return f"{lead} {a:g}° either way"
+    return f"{lead} {a:g}° {a_word} or {b:g}° {b_word}"
 
 
 def posture_kept(ctx: SwingContext, f: int, forward: float, show: tuple[int, int]) -> BodyCheck:
@@ -57,8 +58,8 @@ def posture_kept(ctx: SwingContext, f: int, forward: float, show: tuple[int, int
     hip0, sh0 = ctx.midpoint("left_hip", "right_hip")[a], ctx.midpoint("left_shoulder", "right_shoulder")[a]
     hip1, sh1 = ctx.midpoint("left_hip", "right_hip")[f], ctx.midpoint("left_shoulder", "right_shoulder")[f]
     if not all(np.all(np.isfinite(p)) for p in (hip0, sh0, hip1, sh1)):
-        return BodyCheck("ok", "", "", "", Row("Spine bend kept", "not measured",
-                         "hips or shoulders not tracked on the address or this frame", "error"), [])
+        return BodyCheck("ok", "", "", "", Row("Spine bend kept", "Not measured",
+                         "Hips or shoulders not tracked on the address frame or this one", "error"), [])
     bend0 = tilt_from_vertical_deg(sh0 - hip0, forward, up=True)
     bend1 = tilt_from_vertical_deg(sh1 - hip1, forward, up=True)
     lost = bend0 - bend1  # + = more upright
@@ -67,34 +68,36 @@ def posture_kept(ctx: SwingContext, f: int, forward: float, show: tuple[int, int
     soft = status == "warn"
     if status == "ok":
         label = meaning = tip = ""
-        word = "posture kept"
+        word = "Posture kept"
     elif lost > 0:
         label = "Slightly standing up" if soft else "Standing up"
         meaning = "spine is a little more upright than at address" if soft else "spine stands up from its address bend"
         tip = "Keep your spine angle: turn around it instead of standing up out of it."
-        word = label.lower()
+        word = label
     else:
         label = "Slightly bending over" if soft else "Bending over"
         meaning = "spine bends a little more than at address" if soft else "spine bends over more than at address"
         tip = "Keep your spine angle instead of dipping your chest toward the ball."
-        word = label.lower()
-    limits = _limits(cfg, "posture_loss_max", "posture_loss_watch", "lost",
-                     "posture_gain_max", "posture_gain_watch", "gained")
-    row = Row("Spine bend kept", f"{bend1:.0f}° (address {bend0:.0f}°)",
-              f"{abs(lost):.0f}° {'more upright' if lost >= 0 else 'more bent'} · {word} ({limits})", status)
+        word = label
+    change = round(abs(lost))
+    detail = "" if change == 0 else f" ({change}° {'more upright' if lost > 0 else 'more bent'})"
+    row = Row("Spine bend kept", f"{deg_text(bend1)} ({deg_text(bend0)} at address)", word + detail, status,
+              good=_either_way(cfg["posture_loss_max"], "more upright", cfg["posture_gain_max"], "more bent", "up to"),
+              fix=_either_way(cfg["posture_loss_watch"], "more upright", cfg["posture_gain_watch"], "more bent",
+                              "more than"))
     col = STATUS_COLORS[status]
     s = ctx.scale
     overlays = [
-        Overlay("dashed", [tuple(hip1), tuple(hip1 + (sh0 - hip0))], REFERENCE_COLOR, "address spine", show, 2),
+        Overlay("dashed", [tuple(hip1), tuple(hip1 + (sh0 - hip0))], REFERENCE_COLOR, "Address spine", show, 2),
         Overlay("segment", [tuple(hip1), tuple(sh1)], col, "", show, 2),
         Overlay("text", [tuple((hip1 + sh1) / 2 - forward * np.array([0.55 * s, 0.0]))], col,
-                f"spine {bend1:.0f} deg (address {bend0:.0f})", show),
+                f"Spine {bend1:.0f} deg ({bend0:.0f} at address)", show),
     ]
     return BodyCheck(status, label, meaning, tip, row, overlays)
 
 
 def trail_knee_kept(ctx: SwingContext, f: int, forward: float, show: tuple[int, int]) -> BodyCheck:
-    """Trail knee flex on frame f vs address; lost = the leg straightening.
+    """Trail (back) knee bend on frame f vs address; lost = the leg straightening.
 
     A watch item at most, never red: a trail leg that straightens early is a
     contributor (it makes losing posture easier) rather than a fault that costs
@@ -104,8 +107,8 @@ def trail_knee_kept(ctx: SwingContext, f: int, forward: float, show: tuple[int, 
     a = ctx.marks.address_frame
     hip, knee, ankle = (ctx.track(ctx.side(p, "trail")) for p in ("hip", "knee", "ankle"))
     if not all(np.all(np.isfinite(t[i])) for t in (hip, knee, ankle) for i in (a, f)):
-        return BodyCheck("ok", "", "", "", Row("Trail knee flex kept", "not measured",
-                         "trail leg not tracked on the address or this frame", "error"), [])
+        return BodyCheck("ok", "", "", "", Row("Back knee bend kept", "Not measured",
+                         "Back leg not tracked on the address frame or this one", "error"), [])
     flex0 = 180.0 - angle_between_deg(hip[a] - knee[a], ankle[a] - knee[a])
     flex1 = 180.0 - angle_between_deg(hip[f] - knee[f], ankle[f] - knee[f])
     lost = flex0 - flex1  # + = straighter
@@ -116,26 +119,28 @@ def trail_knee_kept(ctx: SwingContext, f: int, forward: float, show: tuple[int, 
         status = Grade("warn", 1.0)  # capped: see the docstring
     if status == "ok":
         label = meaning = tip = ""
-        word = "flex kept"
+        word = "Bend kept"
     elif lost > 0:
-        label = "Trail knee slightly straightening" if soft else "Trail knee straightening"
-        meaning = "trail knee straightens a little" if soft else "trail knee straightens, nearly locking the trail leg"
-        tip = "Keep the flex in your trail knee as you start back; let the hips turn without locking the leg."
-        word = "slightly straightening" if soft else "straightening"
+        label = "Back knee slightly straightening" if soft else "Back knee straightening"
+        meaning = ("back (trail) knee straightens a little" if soft else
+                   "back (trail) knee straightens, nearly locking the leg")
+        tip = "Keep the bend in your back knee as you start back: let your hips turn without locking the leg."
+        word = "Slightly straightening" if soft else "Straightening"
     else:
-        label = "Trail knee slightly sinking" if soft else "Trail knee sinking"
-        meaning = "trail knee bends a little more" if soft else "trail knee bends more, sinking down"
-        tip = "Keep your trail knee flex as at address instead of squatting as you start back."
-        word = "slightly sinking" if soft else "sinking"
-    limits = (f"green up to {cfg['knee_straighten_max']:g}° straighter or {cfg['knee_bend_max']:g}° more bent; "
-              f"yellow beyond, never red")
-    row = Row("Trail knee flex kept", f"{flex1:.0f}° (address {flex0:.0f}°)",
-              f"{abs(lost):.0f}° {'straighter' if lost >= 0 else 'more bent'} · {word} ({limits})", status)
+        label = "Back knee slightly sinking" if soft else "Back knee sinking"
+        meaning = "back (trail) knee bends a little more" if soft else "back (trail) knee bends more, sinking down"
+        tip = "Keep your back knee bent as at address instead of squatting as you start back."
+        word = "Slightly sinking" if soft else "Sinking"
+    change = round(abs(lost))
+    detail = "" if change == 0 else f" ({change}° {'straighter' if lost > 0 else 'more bent'})"
+    row = Row("Back knee bend kept", f"{deg_text(flex1)} ({deg_text(flex0)} at address)", word + detail, status,
+              good=_either_way(cfg["knee_straighten_max"], "straighter", cfg["knee_bend_max"], "more bent", "up to"),
+              fix="none (a watch item only)")
     col = STATUS_COLORS[status]
     s = ctx.scale
     overlays = [
         Overlay("polyline", [tuple(hip[f]), tuple(knee[f]), tuple(ankle[f])], col, "", show, 2),
         Overlay("text", [(float(knee[f][0]) - forward * 0.55 * s, float(knee[f][1]))], col,
-                f"knee {flex1:.0f} deg (address {flex0:.0f})", show),
+                f"Knee {flex1:.0f} deg ({flex0:.0f} at address)", show),
     ]
     return BodyCheck(status, label, meaning, tip, row, overlays)

@@ -72,16 +72,16 @@ def run(inside_by=None, mirror=False, config=None, spine_lost=0.0, knee_lost=0.0
 
 def test_clubhead_on_the_line_is_on_plane():
     v = run(inside_by=0.04)
-    assert v.status == "ok" and v.label == "Club on plane"
+    assert v.status == "ok" and v.label == "Clubhead on the swing plane"
     assert v.phase == "takeaway"
 
 
 @pytest.mark.parametrize("inside_by, status, label", [
-    (0.15, "ok", "Club on plane"),
-    (0.3, "warn", "Clubhead slightly inside the swing plane"),
-    (-0.45, "warn", "Clubhead slightly outside the swing plane"),
-    (0.6, "flag", "Clubhead well inside the swing plane"),
-    (-0.6, "flag", "Clubhead well outside the swing plane"),
+    (0.15, "ok", "Clubhead on the swing plane"),
+    (0.3, "warn", "Clubhead slightly toward you"),
+    (-0.45, "warn", "Clubhead slightly toward the ball"),
+    (0.6, "flag", "Clubhead too far toward you"),
+    (-0.6, "flag", "Clubhead too far toward the ball"),
 ])
 def test_inside_and_outside_tiers(inside_by, status, label):
     v = run(inside_by=inside_by)
@@ -91,15 +91,16 @@ def test_inside_and_outside_tiers(inside_by, status, label):
 
 def test_row_shows_offset_with_units():
     row = run(inside_by=0.3).rows[0]
-    assert row.value == "≈15 cm inside"  # 30% of the default 50 cm torso
-    assert row.note == "30% of torso length · slightly inside the swing plane (green within ±20%, red past 50%)"
-    assert run(inside_by=-0.6).rows[0].value == "≈30 cm outside"
+    assert row.value == "15 cm toward you"  # 30% of the default 50 cm torso
+    assert row.note == "Slightly toward you"
+    assert (row.good, row.fix) == ("within 10 cm of the line", "more than 25 cm off")
+    assert run(inside_by=-0.6).rows[0].value == "30 cm toward the ball"
 
 
 def test_only_the_clubhead_is_clicked():
     from swingcheck.models import CHECKPOINT_MARKS
     assert CHECKPOINT_MARKS["dtl"]["takeaway"] == ("clubhead",)
-    assert run(inside_by=0.6).label == "Clubhead well inside the swing plane"
+    assert run(inside_by=0.6).label == "Clubhead too far toward you"
 
 
 def test_tolerance_from_config():
@@ -109,7 +110,7 @@ def test_tolerance_from_config():
     assert run(inside_by=0.04, config=config).status == "warn"
     assert run(inside_by=0.3, config=config).status == "flag"
     config["golfer"]["torso_cm"] = 60
-    assert run(inside_by=0.3, config=config).rows[0].value == "≈18 cm inside"
+    assert run(inside_by=0.3, config=config).rows[0].value == "18 cm toward you"
 
 
 def test_left_handed_mirror_matches():
@@ -128,15 +129,15 @@ def test_not_marked_explains_how():
 
 def test_tip_only_when_off():
     assert run(inside_by=0.04).tip == ""
-    assert "outside your hands" in run(inside_by=0.6).tip
+    assert "in front of your hands" in run(inside_by=0.6).tip
     assert "turning your chest" in run(inside_by=-0.6).tip
 
 
 def test_body_rows_measure_from_address():
     v = run(inside_by=0.0)
-    assert [r.label for r in v.rows] == ["Clubhead vs swing plane", "Spine bend kept", "Trail knee flex kept"]
-    assert v.rows[1].value == "35° (address 35°)" and v.rows[2].value == "25° (address 25°)"
-    assert v.status == "ok" and v.label == "Club on plane" and v.tip == ""
+    assert [r.label for r in v.rows] == ["Clubhead vs swing plane", "Spine bend kept", "Back knee bend kept"]
+    assert v.rows[1].value == "35° (35° at address)" and v.rows[2].value == "25° (25° at address)"
+    assert v.status == "ok" and v.label == "Clubhead on the swing plane" and v.tip == ""
 
 
 @pytest.mark.parametrize("lost, status, label", [
@@ -152,42 +153,42 @@ def test_spine_bend_bands(lost, status, label):
         v = run(inside_by=0.0, spine_lost=lost, mirror=mirror)
         row = v.rows[1]
         assert row.status == status and v.status == status
-        assert "green up to 6° lost or 5° gained, red past 10° lost or 10° gained" in row.note
+        assert (row.good, row.fix) == ("up to 6° more upright or 5° more bent", "more than 10° either way")
         if label:
-            assert v.label == f"Club on plane, {label.lower()}" and v.tip
+            assert v.label == f"Clubhead on the swing plane, {label.lower()}" and v.tip
         else:
-            assert v.label == "Club on plane"
+            assert v.label == "Clubhead on the swing plane"
 
 
 @pytest.mark.parametrize("lost, status, label", [
     (3, "ok", None),            # McIlroy
     (-2, "ok", None),           # Tiger
-    (8, "warn", "Trail knee slightly straightening"),   # the user's indoor swing
-    (11, "warn", "Trail knee straightening"),           # the user's latest swing: never red
-    (-10, "warn", "Trail knee slightly sinking"),
-    (-18, "warn", "Trail knee sinking"),                # never red
+    (8, "warn", "Back knee slightly straightening"),   # the user's indoor swing
+    (11, "warn", "Back knee straightening"),           # the user's latest swing: never red
+    (-10, "warn", "Back knee slightly sinking"),
+    (-18, "warn", "Back knee sinking"),                # never red
 ])
 def test_trail_knee_bands(lost, status, label):
     for mirror in (False, True):
         v = run(inside_by=0.0, knee_lost=lost, mirror=mirror)
         row = v.rows[2]
         assert row.status == status and v.status == status
-        assert row.value.endswith(f"(address {KNEE_FLEX:.0f}°)")
+        assert row.value.endswith(f"({KNEE_FLEX:.0f}° at address)")
         if label:
-            assert v.label == f"Club on plane, {label[0].lower() + label[1:]}" and v.tip
+            assert v.label == f"Clubhead on the swing plane, {label[0].lower() + label[1:]}" and v.tip
         else:
-            assert v.label == "Club on plane"
+            assert v.label == "Clubhead on the swing plane"
 
 
 def test_worst_of_the_three_and_tips_combine():
     v = run(inside_by=0.3, spine_lost=14, knee_lost=8)
     assert v.status == "flag"
-    assert v.label == "Clubhead slightly inside the swing plane, standing up, trail knee slightly straightening"
+    assert v.label == "Clubhead slightly toward you, standing up, back knee slightly straightening"
     assert v.rows[0].status == "warn"  # the plane row keeps its own grade
     assert v.tip.count(".") >= 3
 
 
 def test_untracked_leg_is_not_measured():
     v = run(inside_by=0.0, legs=False)
-    assert v.rows[2].status == "error" and v.rows[2].value == "not measured"
+    assert v.rows[2].status == "error" and v.rows[2].value == "Not measured"
     assert v.status == "ok"
