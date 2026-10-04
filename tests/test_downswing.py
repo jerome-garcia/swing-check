@@ -64,6 +64,8 @@ def test_on_plane_and_shallowed():
 @pytest.mark.parametrize("under, status, label", [
     (0.2, "ok", "Club down the swing plane"),
     (-0.1, "warn", "Clubhead slightly above the swing plane"),
+    (-0.18, "warn", "Clubhead slightly above the swing plane"),  # inside the grey line
+    (-0.22, "flag", "Clubhead above the swing plane"),  # just past it
     (-0.3, "flag", "Clubhead above the swing plane"),
     (0.55, "warn", "Clubhead well under the swing plane"),
     (0.9, "flag", "Clubhead stuck under the swing plane"),

@@ -166,7 +166,7 @@ hip height; the mirror of the takeaway) and click the **clubhead** and your
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Clubhead vs swing plane** | the clubhead's distance from the swing plane line, square to it (as at the takeaway), as % of torso length | on the line to 40% under (behind the hands): **Club down the swing plane** | up to 15% above (*slightly steep*) or 40–70% under (*well under*) | more than 15% above: **over the top**; more than 70% under: **stuck** (too flat) |
+| **Clubhead vs swing plane** | the clubhead's distance from the swing plane line, square to it (as at the takeaway), as % of torso length | on the line to 40% under (behind the hands): **Club down the swing plane** | up to 20% above, the grey line (*slightly steep*) or 40–70% under (*well under*) | more than 20% above, past the grey line: **over the top**; more than 70% under: **stuck** (too flat) |
 | **Shallowing** | that distance minus the same one at your takeaway: + = the club comes down flatter than it went back | 0% or more flatter: **Shallowed** | up to 20% steeper | more than 20% steeper than going back: the over-the-top loop |
 
 Why compare with the takeaway and not shaft angles: at P6, like at the
