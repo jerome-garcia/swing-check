@@ -122,15 +122,3 @@ def test_overlapping_marks_are_an_error_not_a_crash():
     v = run(CLUBHEAD + (1, 1))
     assert v.status == "error"
 
-
-def test_plane_oval_drawn_along_the_line():
-    v = run(grip_for(0.3))
-    ovals = [o for o in v.overlays if o.kind == "polyline" and len(o.points) > 50]
-    assert len(ovals) == 1
-    ring = np.array(ovals[0].points)
-    assert np.allclose(ring[0], ring[-1])  # closed
-    # The bottom tip is the address clubhead; the long axis follows the shaft line.
-    assert np.min(np.linalg.norm(ring - CLUBHEAD, axis=1)) < 2
-    config = copy.deepcopy(CONFIG)
-    config["analyzers"]["swing_plane"]["draw_oval"] = False
-    assert not [o for o in run(grip_for(0.3), config=config).overlays if o.kind == "polyline" and len(o.points) > 50]

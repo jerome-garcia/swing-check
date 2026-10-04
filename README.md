@@ -28,7 +28,7 @@ of the swing.
 | 2 | **Swing plane** | At address, a line through the clubhead and shaft points you click is the swing plane; check that its angle is correct and that it points roughly at the belt buckle | ✅ Implemented |
 | 3 | **Takeaway** | When the club is parallel to the target line in the takeaway, the clubhead is still on the address shaft line (on plane) | ✅ Implemented |
 | 4 | **Backswing (halfway back)** | At lead arm parallel, the shaft points back at or just inside the golf ball ("hands split the biceps" was tried and dropped) | ✅ Implemented |
-| 5 | **Top of backswing** | The lead (left) arm matches the shoulders, 90° to the spine, and the hands are on plane | ✅ Implemented |
+| 5 | **Top of backswing** | The lead (left) arm matches the shoulders, 90° to the spine (hands-on-plane was tried and dropped) | ✅ Implemented |
 | 6 | **Downswing** | With the shaft parallel to the ground coming down, the club is back on plane and flatter than at the takeaway (shallowing) | ✅ Implemented |
 | 7 | **Impact** | The hips stay back on the "tush line" (no early extension) and the spine bend is kept | ✅ Implemented |
 | 8 | **Follow-through** | With the trail arm parallel after impact, the club exits on plane, on the same line as at halfway back | ✅ Implemented |
@@ -37,18 +37,9 @@ of the swing.
 checkpoint 2: your shaft at address (clubhead through grip), extended so it
 points at your belt buckle. It's drawn in orange and is the only line called
 "swing plane". Takeaway (3) and downswing (6) check that the **clubhead** stays
-on or near it. At the top (5) the hands are much higher and good players vary,
-so that check uses the **plane zone**: between the swing plane line and the
-**shoulder plane** (ball to your trail shoulder at address, drawn in blue).
-Halfway back (4) and follow-through (8) don't use these lines; they check where
-the shaft itself points at the ball's level.
-
-The key frames of checkpoints 2–8 (except impact) also draw the swing plane as
-a mint **oval**, like the classic swing-plane illustration: its long axis runs
-along the swing plane line from the clubhead at address up past you, centered
-where that line passes closest to your shoulders at address. It's a visual
-guide only; no measurement uses it. Turn it off or change its width with
-`draw_oval` / `oval_width` in `[analyzers.swing_plane]`.
+on or near it. Halfway back (4) and follow-through (8) check where the shaft
+itself points at the ball's level. The top (5) checks the lead arm against the
+spine.
 
 **Colors and units.** Every measurement is graded 🟢 green (good), 🟡 yellow
 (watch: just outside good) or 🔴 red (flag), and a checkpoint takes the worst
@@ -148,7 +139,6 @@ your **hands**. Body points come from tracking. Settings live in
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
 | **Lead arm vs spine** | angle between the lead arm (lead shoulder → hands) and the spine, drawn from the hip center through the head, on the top frame; 90° = the arm matches the shoulders | 75–105°: **Lead arm matches the shoulders** | 65–75° (*slightly above*) or 105–115° (*slightly below*) | under 65°: arm lifted **above the shoulders** (upright); over 115°: **below the shoulders** (flat, around the body) |
-| **Hands vs plane zone** | the hands vs two lines from the ball: the swing plane line (lower, orange) and the shoulder plane, to your trail shoulder at address (upper, blue); across, at the hands' height, as % of torso length | between the lines: **Hands in the plane zone** | up to 15% outside either line (*slightly above / below the plane zone*) | more than 15% above the upper line (too steep) or below the lower line (too flat) |
 
 The spine runs from the hips **through the head**, the way golf instruction
 draws the spine angle (it matched the coach's spine marker on the reference
@@ -157,9 +147,10 @@ upright at the top, because the turned shoulders' midpoint slides across the
 upper back: Tiger read 70° that way although his arm is visibly about square to
 his spine. Seen from behind the lead arm points partly at the camera, so green
 is 75–105°. Readings: McIlroy 91°, Tiger 77° (green); an amateur swing 73°
-(slightly lifted, yellow) with the hands 10% above the shoulder plane (yellow). The key frame shows both plane lines, the spine (white), the lead arm
-in its color, and a dashed green line square to the spine where the arm should
-be.
+(slightly lifted, yellow). A "hands in the plane zone" check (hands between the
+swing plane line and a shoulder plane) was tried here and dropped. The key
+frame shows the spine (white), the lead arm in its color, and a dashed green
+line square to the spine where the arm should be.
 
 **6. Downswing (implemented).** On the **Downswing** marking step, scrub to
 where the **shaft is parallel to the ground on the way down** (P6, hands about

@@ -63,10 +63,6 @@ def run(hands, mirror=False, config=None, marked=True, head=None):
     return v
 
 
-def plane_x(p, q, y):
-    return p[0] + (y - p[1]) * (q[0] - p[0]) / (q[1] - p[1])
-
-
 def test_helper_places_the_arm_angle():
     h = hands_at(90)
     assert angle_between_deg(h - LEAD_SHOULDER_TOP, SHOULDER_MID - HIP) == pytest.approx(90)
@@ -96,40 +92,8 @@ def test_arm_bands(arm, status, label):
     assert v.frame == 30
 
 
-def _hands_at_plane(offset):
-    """Hands at y=700: offset < 0 = that many torso lengths below the lower line, between 0 and 1 = between,
-    > 1 = (offset - 1) torso lengths above the upper line (toward the ball side, screen right)."""
-    y = 700.0
-    xl, xu = plane_x(ADDR_CLUBHEAD, ADDR_GRIP, y), plane_x(BALL, TRAIL_SHOULDER_ADDR, y)
-    if offset < 0:
-        x = xl + offset * SCALE
-    elif offset <= 1:
-        x = xl + offset * (xu - xl)
-    else:
-        x = xu + (offset - 1) * SCALE
-    return np.array([x, y])
-
-
-@pytest.mark.parametrize("offset, status, label", [
-    (0.5, "ok", "Hands in the plane zone"),
-    (1.1, "warn", "Hands slightly above the plane zone"),
-    (1.3, "flag", "Hands above the plane zone"),
-    (-0.1, "warn", "Hands slightly below the plane zone"),
-    (-0.3, "flag", "Hands below the plane zone"),
-])
-def test_plane_bands(offset, status, label):
-    v = run(_hands_at_plane(offset))
-    assert v.rows[1].status == status and label.lower() in v.rows[1].note
-
-
-def test_plane_row_units():
-    row = run(_hands_at_plane(1.1)).rows[1]
-    assert row.value == "≈5 cm above"
-    assert row.note.startswith("10% of torso length · hands slightly above the plane zone")
-
-
 def test_left_handed_mirror_matches():
-    for h in (hands_at(90), hands_at(60), _hands_at_plane(1.3), _hands_at_plane(-0.3)):
+    for h in (hands_at(90), hands_at(60), hands_at(120)):
         right, left = run(h), run(h, mirror=True)
         assert left.label == right.label
         assert left.measurements["arm_to_spine_deg"] == pytest.approx(right.measurements["arm_to_spine_deg"], abs=0.1)
@@ -138,3 +102,9 @@ def test_left_handed_mirror_matches():
 def test_not_marked_explains_how():
     v = run(hands_at(90), marked=False)
     assert v.status == "error" and "Top" in v.summary
+
+
+def test_judges_the_arm_only():
+    v = run(hands_at(90))
+    assert [r.label for r in v.rows] == ["Lead arm vs spine", "Top frame"]
+    assert v.label == "Lead arm matches the shoulders" and v.tip == ""

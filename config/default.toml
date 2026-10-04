@@ -148,12 +148,6 @@ angle_min = 45
 angle_max = 65
 angle_watch_min = 40
 angle_watch_max = 70
-# Draw the swing plane as an oval (like the classic illustration) on the key
-# frames and video of checkpoints 2-8: long axis along the swing plane line,
-# centered where it passes closest to your shoulders at address. Width as a
-# share of its length.
-draw_oval = true
-oval_width = 0.2
 
 [analyzers.takeaway]
 # DTL checkpoint 3, on the takeaway frame you mark (shaft parallel to the
@@ -186,10 +180,6 @@ arm_spine_min = 75
 arm_spine_max = 105
 arm_spine_watch_min = 65
 arm_spine_watch_max = 115
-# Hands vs the plane zone: they should sit between the swing plane line (lower)
-# and the shoulder plane, from the ball to your trail shoulder at address (upper). Up to
-# this far outside either line (share of torso length) is yellow; beyond, red.
-plane_watch = 0.15
 
 [analyzers.downswing]
 # DTL checkpoint 6, on the frame you mark where the shaft is parallel to the
