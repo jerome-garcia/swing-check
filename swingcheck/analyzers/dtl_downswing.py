@@ -21,9 +21,9 @@ import numpy as np
 
 from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
                                   pct, register)
+from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.analyzers.dtl_takeaway import address_line
 
-PLANE_COLOR = (0, 140, 255)
 BAND_COLOR = (150, 150, 150)
 HOLD_MS = 400
 ORDER = {"ok": 0, "warn": 1, "flag": 2}
@@ -90,12 +90,7 @@ def downswing(ctx: SwingContext) -> Verdict:
     show = (f, min(len(ctx.pose) - 1, f + int(round(HOLD_MS * ctx.fps / 1000))))
     col = STATUS_COLORS[plane_status]
     foot = clubhead - (under * s) * line.normal
-    overlays = [Overlay("line", [tuple(line.clubhead), tuple(line.grip)], PLANE_COLOR, "swing plane", show, 2)]
-    for edge in (cfg["under_min"], cfg["under_max"]):
-        if edge:
-            off = line.normal * edge * s
-            overlays.append(Overlay("line", [tuple(line.clubhead + off), tuple(line.grip + off)], BAND_COLOR, "", show, 1))
-    overlays += [
+    overlays = swing_plane_line(ctx, show) + [
         Overlay("segment", [tuple(clubhead), tuple(foot)], col, "", show, 2),
         Overlay("point", [tuple(hands)], REFERENCE_COLOR, "", show, 1),
         Overlay("point", [tuple(clubhead)], col, "", show, 2),

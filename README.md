@@ -41,7 +41,9 @@ on or near it. Halfway back (4) and follow-through (8) check where the shaft
 itself points at the ball's level. The top (5) checks the lead arm against the
 spine.
 
-The swing plane line is drawn across the whole frame on every checkpoint's key
+The swing plane line is drawn across the whole frame, with a grey boundary
+line either side marking the on-plane corridor (±20% of torso length, about
+±10 cm: the takeaway's green band, `line_tolerance`), on every checkpoint's key
 frame from 2 to 8, and it stays on screen for the whole annotated video, so you
 can follow the clubhead against it through the swing by eye.
 

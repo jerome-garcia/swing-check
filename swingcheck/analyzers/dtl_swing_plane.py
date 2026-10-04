@@ -42,15 +42,24 @@ def torso_crossing(clubhead, grip, hip, shoulder) -> float:
     return float(u)
 
 
+BAND_COLOR = (150, 150, 150)  # grey boundary lines either side of the swing plane line
+
+
 def swing_plane_line(ctx: SwingContext, show: tuple[int, int] | None) -> list[Overlay]:
     """The swing plane line (the address shaft line, clubhead through grip) across the
-    whole frame, labeled. Every checkpoint from 2 to 8 draws it on its key frame, so the
-    clubhead can be judged against it by eye."""
+    whole frame, labeled, with a grey boundary line either side marking the on-plane
+    corridor (the takeaway's green band, [analyzers.takeaway] line_tolerance). Every
+    checkpoint from 2 to 8 draws it on its key frame, so the clubhead can be judged
+    against it by eye."""
     pts = ctx.marks.points
     ch0, gr0 = np.asarray(pts["clubhead"], float), np.asarray(pts["grip"], float)
     if np.linalg.norm(gr0 - ch0) < 1:
         return []
-    return [Overlay("line", [tuple(ch0), tuple(gr0)], PLANE_COLOR, "swing plane", show, 2)]
+    d = (gr0 - ch0) / np.linalg.norm(gr0 - ch0)
+    off = np.array([-d[1], d[0]]) * ctx.config["analyzers"]["takeaway"]["line_tolerance"] * ctx.scale
+    return [Overlay("line", [tuple(ch0 + off), tuple(gr0 + off)], BAND_COLOR, "", show, 1),
+            Overlay("line", [tuple(ch0 - off), tuple(gr0 - off)], BAND_COLOR, "", show, 1),
+            Overlay("line", [tuple(ch0), tuple(gr0)], PLANE_COLOR, "swing plane", show, 2)]
 
 
 @register("swing_plane", view="dtl", title="Swing plane", phase="address")

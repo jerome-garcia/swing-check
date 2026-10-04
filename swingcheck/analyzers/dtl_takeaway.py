@@ -28,9 +28,8 @@ import numpy as np
 
 from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, pct,
                                   register)
+from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 
-PLANE_COLOR = (0, 140, 255)
-BAND_COLOR = (150, 150, 150)
 HOLD_MS = 400  # how long the takeaway overlays stay up in the annotated video
 
 
@@ -105,11 +104,7 @@ def takeaway(ctx: SwingContext) -> Verdict:
     show = (f, min(len(ctx.pose) - 1, f + int(round(HOLD_MS * ctx.fps / 1000))))
     color = STATUS_COLORS[status]
     foot = clubhead - np.dot(clubhead - ch0, normal) * normal
-    overlays = [Overlay("line", [tuple(ch0), tuple(gr0)], PLANE_COLOR, "swing plane", show, 2)]
-    for edge in (-tol, tol):
-        off = normal * edge * s
-        overlays.append(Overlay("line", [tuple(ch0 + off), tuple(gr0 + off)], BAND_COLOR, "", show, 1))
-    overlays += [
+    overlays = swing_plane_line(ctx, show) + [
         Overlay("segment", [tuple(clubhead), tuple(foot)], color, "", show, 2),
         Overlay("point", [tuple(hands)], REFERENCE_COLOR, "", show, 1),
         Overlay("point", [tuple(clubhead)], color, "", show, 2),

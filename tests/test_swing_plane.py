@@ -129,4 +129,9 @@ def test_swing_plane_line_spans_the_frame_and_the_whole_video():
     lines = [o for o in v.overlays if o.kind == "line" and o.label == "swing plane"]
     assert len(lines) == 1
     assert lines[0].frames == (0, 39)  # the whole clip, so the clubhead can be followed against it
+    bounds = [o for o in v.overlays if o.kind == "line" and o.label == ""]
+    assert len(bounds) == 2 and all(b.frames == (0, 39) for b in bounds)  # grey on-plane boundaries
+    # ±20% of torso either side, square to the line.
+    p0, p1 = np.array(bounds[0].points[0]), np.array(bounds[1].points[0])
+    assert np.linalg.norm(p0 - p1) == pytest.approx(2 * 0.20 * 260.0, abs=0.5)
     assert [o.label for o in v.overlays if o.kind == "text"] == ["Points at belt buckle"]
