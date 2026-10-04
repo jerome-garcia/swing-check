@@ -491,7 +491,7 @@ button.score-item:hover { background: var(--surface-2); }
 .suggested-tag[hidden] { display: none; }
 .linkish { background: none; border: 0; padding: 0; color: var(--accent, var(--ok)); text-decoration: underline; cursor: pointer; font: inherit; }
 .linkish[hidden] { display: none; }
-.ref-frame { margin: 0; }
+.ref-frame { margin: 4px 0 0; padding-top: 12px; border-top: 1px solid var(--border); }
 .ref-frame[hidden] { display: none; }
 .ref-frame a { display: block; max-width: 220px; border-radius: var(--radius-sm); overflow: hidden; background: #000; }
 .ref-frame svg { display: block; width: 100%; height: auto; }

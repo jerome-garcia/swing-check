@@ -452,7 +452,8 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
 
    A magnifier follows the cursor; on a phone, touch and hold, slide to aim with
    the magnifier above your finger, and let go to place the point. **Undo**
-   removes the last point. **The frame you mark on is your address frame**:
+   (above the frame) removes the last point, and **Clear step** removes all of
+   this step's points. **The frame you mark on is your address frame**:
    the address checks are measured on it, so pick a frame where you're fully set
    up and still. If a swing was saved with the wrong camera view, switch it
    under **Camera view** at the top of this screen.
@@ -477,8 +478,9 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    the **clubhead** and then your **hands** (or the lowest point of the shaft
    you can see, if your hands are hidden).
 
-   **Example to follow.** Under each step's instructions, Rory McIlroy is shown
-   in the same position with that step's marks, so you can see what to look for
+   **Example to follow.** Below the points to click (so they and **Save and
+   analyze** stay in view), Rory McIlroy is shown in the same position with that
+   step's marks, so you can see what to look for
    and where to click. The frames ship with the app
    (`swingcheck/app/static/reference/`); rebuild them from any fully marked
    swing with `python -m swingcheck.app.make_reference runs/<swing-folder> "Name"`.
