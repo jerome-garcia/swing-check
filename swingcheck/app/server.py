@@ -53,10 +53,6 @@ class TrimIn(BaseModel):
     end: float | None = None
 
 
-class ReferenceIn(BaseModel):
-    id: str | None = None  # None stops using a reference
-
-
 class AnalyzeIn(BaseModel):
     phases: dict[str, int] = {}  # manual phase frames, e.g. {"impact": 412}; saved for later runs
     reset_phases: bool = False   # drop saved manual phases and use detection
@@ -195,28 +191,6 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
 
         job = jobs.submit(swing_id, "analyze", run)
         return {"job": job.to_json()}
-
-    @app.get("/api/reference")
-    def get_reference() -> dict[str, Any]:
-        """The marking reference: its frame and marks for each step, or {"id": None}."""
-        ref = store.reference_id()
-        if ref is None or store.status(ref) not in ("marked", "analyzed"):
-            return {"id": None}
-        folder = store.path(ref)
-        info = VideoInfo.load(folder / "video.json")
-        marks = json.loads((folder / "marks.json").read_text())
-        steps = {"address": {"frame": marks["address_frame"], "points": marks["points"]}}
-        steps.update(marks.get("checkpoints") or {})
-        return {"id": ref, "name": store.meta(ref).name, "width": info.width, "height": info.height, "steps": steps}
-
-    @app.put("/api/reference")
-    def set_reference(body: ReferenceIn) -> dict[str, Any]:
-        if body.id is not None:
-            swing_or_404(body.id)
-            if store.status(body.id) not in ("marked", "analyzed"):
-                raise HTTPException(409, "Mark this swing first, then use it as the reference.")
-        store.set_reference(body.id)
-        return get_reference()
 
     @app.get("/api/jobs/{job_id}")
     def get_job(job_id: str) -> dict[str, Any]:

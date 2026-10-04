@@ -470,12 +470,11 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    the **clubhead** and then your **hands** (or the lowest point of the shaft
    you can see, if your hands are hidden).
 
-   **Compare with.** Pick one of your other marked swings (a pro's clip, say)
-   under the step's instructions, and every marking step shows that swing in the
-   same position, with its marks, as an example to follow. The choice is
-   remembered for every swing you mark; you can also set it from a swing's page
-   (**⋯ → Use as marking reference**), and it's labelled *Marking reference* in
-   your swings list.
+   **Example to follow.** Under each step's instructions, Rory McIlroy is shown
+   in the same position with that step's marks, so you can see what to look for
+   and where to click. The frames ship with the app (`swingcheck/app/static/reference/`);
+   rebuild them from any fully marked swing with
+   `python -m swingcheck.app.make_reference runs/<swing-folder> "Name"`.
 
    **Mark checks.** Marks that look wrong get a yellow note under the points and
    a **!** on the step: hands below the club neck at address, the club neck far
@@ -515,8 +514,7 @@ other checkpoint uses the frame you marked; change those with **Edit marks**.
 
 Each swing is a folder in `runs/` in the project. It holds the original upload,
 the converted video, your marks, the analysis, `annotated.mp4`, the key frame
-images and `report.txt`. `runs/settings.json` remembers which swing is the
-marking reference. Back up or delete that folder like any other files.
+images and `report.txt`. Back up or delete that folder like any other files.
 
 ---
 

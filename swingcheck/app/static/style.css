@@ -429,7 +429,6 @@ button.score-item:hover { background: var(--surface-2); }
 .choice:disabled { cursor: not-allowed; opacity: 0.6; }
 .choice:disabled:hover { border-color: var(--border); }
 .badge.soon { margin-top: 6px; }
-.ref-badge { margin-left: 6px; vertical-align: middle; }
 
 .progress-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; max-width: 560px; box-shadow: var(--shadow); }
 .bar { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin: 8px 0 10px; }
@@ -491,12 +490,8 @@ button.score-item:hover { background: var(--surface-2); }
 .suggested-tag[hidden] { display: none; }
 .linkish { background: none; border: 0; padding: 0; color: var(--accent, var(--ok)); text-decoration: underline; cursor: pointer; font: inherit; }
 .linkish[hidden] { display: none; }
-.ref-box { display: grid; gap: 6px; }
-.ref-box[hidden] { display: none; }
-.ref-pick { display: flex; align-items: center; gap: 6px; }
-.ref-select { flex: 1; min-width: 0; font: inherit; padding: 4px 6px; border-radius: var(--radius-sm);
-  border: 1px solid var(--border); background: var(--surface); color: var(--text); }
 .ref-frame { margin: 0; }
+.ref-frame[hidden] { display: none; }
 .ref-frame a { display: block; max-width: 220px; border-radius: var(--radius-sm); overflow: hidden; background: #000; }
 .ref-frame svg { display: block; width: 100%; height: auto; }
 .ref-frame figcaption { margin-top: 4px; }

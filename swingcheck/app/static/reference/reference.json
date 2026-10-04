@@ -1,0 +1,89 @@
+{
+  "name": "Rory McIlroy",
+  "width": 480,
+  "height": 853,
+  "steps": {
+    "address": {
+      "image": "address.jpg",
+      "points": {
+        "ball": [
+          388.5,
+          719.0
+        ],
+        "clubhead": [
+          373.5,
+          710.1
+        ],
+        "grip": [
+          242.4,
+          501.6
+        ]
+      }
+    },
+    "takeaway": {
+      "image": "takeaway.jpg",
+      "points": {
+        "clubhead": [
+          225.3,
+          462.0
+        ],
+        "grip": [
+          226.7,
+          444.7
+        ]
+      }
+    },
+    "halfway_back": {
+      "image": "halfway_back.jpg",
+      "points": {
+        "clubhead": [
+          63.3,
+          3.3
+        ],
+        "grip": [
+          178.7,
+          306.7
+        ]
+      }
+    },
+    "top": {
+      "image": "top.jpg",
+      "points": {
+        "clubhead": [
+          182.0,
+          77.3
+        ],
+        "grip": [
+          146.0,
+          174.7
+        ]
+      }
+    },
+    "downswing": {
+      "image": "downswing.jpg",
+      "points": {
+        "clubhead": [
+          210.0,
+          492.7
+        ],
+        "grip": [
+          256.7,
+          497.3
+        ]
+      }
+    },
+    "follow_through": {
+      "image": "follow_through.jpg",
+      "points": {
+        "clubhead": [
+          108.0,
+          79.3
+        ],
+        "grip": [
+          158.7,
+          244.7
+        ]
+      }
+    }
+  }
+}

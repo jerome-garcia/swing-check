@@ -1,4 +1,4 @@
-import { api, el, features, formatDate, pollJob, postJSON, progressBlock, putJSON, swingUrl } from "./util.js";
+import { api, el, features, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
 import { swingHeader } from "./swing.js";
 
 // Marking steps per view. Address is required; later checkpoints are optional and
@@ -32,6 +32,7 @@ const POINT_INFO = {
   clubhead: { label: "Club neck", hint: "Where the shaft goes into the clubhead (the hosel)", color: "#ffffff", shape: "circle", dx: -70, dy: -10 },
   grip: { label: "Hands", hint: "Middle of your grip, between your two hands", color: "#ffffff", shape: "square", dx: 13, dy: -9 },
 };
+const REFERENCE_DIR = "reference"; // static/reference: the example swing shown beside each step
 const PLANE_COLOR = "#ff00ff"; // the address shaft line is the swing plane, magenta as on the key frames
 // Wording for points on a later checkpoint frame.
 const STEP_POINT_INFO = {
@@ -69,12 +70,10 @@ const LOUPE_SIZE = 150;
 const LOUPE_ZOOM = 4;
 
 export async function renderMark(view, id, isCurrent) {
-  const [s, firstReference, allSwings] = await Promise.all([
+  const [s, reference] = await Promise.all([
     api(`/api/swings/${encodeURIComponent(id)}`),
-    api("/api/reference").catch(() => ({ id: null })),
-    api("/api/swings").catch(() => []),
+    api(`${REFERENCE_DIR}/reference.json`).catch(() => null),
   ]);
-  let reference = firstReference;
   if (!isCurrent()) return;
   if (!s.video || (s.job && ["queued", "running"].includes(s.job.state))) {
     location.replace(swingUrl(id));
@@ -338,57 +337,20 @@ export async function renderMark(view, id, isCurrent) {
   n === -10 ? "«" : n === -1 ? "‹" : n === 1 ? "›" : "»");
 
   // --- Reference swing ------------------------------------------------------
-  // Another marked swing to compare with (a pro's clip, say): its frame for this step, with
-  // its marks, next to the step's instructions. One choice for the whole app, also set from
-  // a swing's ⋯ menu (Use as marking reference).
-  const candidates = s.view === "dtl"
-    ? allSwings.filter(o => o.id !== id && o.view === "dtl" && ["marked", "analyzed"].includes(o.status)) : [];
-  const refSelect = el("select", { class: "ref-select", "aria-label": "Compare with" },
-    el("option", { value: "" }, "None"),
-    candidates.map(o => el("option", { value: o.id, selected: o.id === reference.id || null }, `${o.name} · ${formatDate(o.created)}`)));
-  refSelect.addEventListener("change", async () => {
-    refSelect.disabled = true;
-    try {
-      reference = await putJSON("/api/reference", { id: refSelect.value || null });
-    } catch (err) {
-      alert(err.message);
-    }
-    refSelect.disabled = false;
-    refShown = null;
-    renderRef();
-  });
-  const refPicture = el("figure", { class: "ref-frame" });
-  const refBox = el("div", { class: "ref-box" },
-    el("label", { class: "ref-pick small" }, el("strong", {}, "Compare with "), refSelect),
-    refPicture);
-  let refShown = null; // the step it's showing; frames aren't cached, so redraw only on a step change
+  // Rory McIlroy in the same position, with his marks, next to the step's instructions
+  // (frames built by swingcheck/app/make_reference.py).
+  const refBox = el("figure", { class: "ref-frame" });
+  let refShown = null; // the step it's showing; redraw only on a step change
   function renderRef() {
     if (refShown === state.active) return;
     refShown = state.active;
-    if (s.view !== "dtl") { refBox.hidden = true; return; }
-    refBox.hidden = false;
-    if (!candidates.length) {
-      refBox.replaceChildren(el("p", { class: "subtle small" },
-        "Once you've marked another swing (a pro's clip, say), you can show it here in the same position "
-        + "as an example to follow."));
-      return;
-    }
-    const showing = reference.id && reference.id !== id;
-    if (!showing) {
-      refPicture.replaceChildren(el("figcaption", { class: "subtle small" },
-        "Pick one of your marked swings to see it in the same position while you mark."));
-      return;
-    }
-    const st = reference.steps[state.active];
-    if (!st) {
-      refPicture.replaceChildren(el("figcaption", { class: "subtle small" },
-        `${reference.name} has no ${stepDef().title.toLowerCase()} marks.`));
-      return;
-    }
-    const url = `/api/swings/${encodeURIComponent(reference.id)}/frames/${st.frame}.jpg`;
+    const st = s.view === "dtl" && reference ? reference.steps[state.active] : null;
+    refBox.hidden = !st;
+    if (!st) return;
+    const url = `${REFERENCE_DIR}/${st.image}`;
     const { width: w, height: h } = reference;
     const r = Math.max(w, h) / 55;
-    const p = st.points;
+    const p = pick(st.points, stepDef().points); // only what this step asks you to click
     const shaft = p.clubhead && p.grip
       ? `<line x1="${p.clubhead[0]}" y1="${p.clubhead[1]}" x2="${p.grip[0]}" y2="${p.grip[1]}" stroke="${state.active === "address" ? PLANE_COLOR : "#fff"}" stroke-width="${r / 4}"/>` : "";
     const mark = (name, [x, y]) => {
@@ -399,9 +361,9 @@ export async function renderMark(view, id, isCurrent) {
     };
     const link = el("a", { href: url, target: "_blank", rel: "noopener", title: "Open full size" });
     link.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Reference frame">`
-      + `<image href="${url}?w=360" width="${w}" height="${h}"/>${shaft}`
+      + `<image href="${url}" width="${w}" height="${h}"/>${shaft}`
       + Object.entries(p).filter(([n]) => POINT_INFO[n]).map(([n, pt]) => mark(n, pt)).join("") + "</svg>";
-    refPicture.replaceChildren(link, el("figcaption", { class: "subtle small" }, `${reference.name} at ${stepDef().title.toLowerCase()}`));
+    refBox.replaceChildren(link, el("figcaption", { class: "subtle small" }, `${reference.name} at ${stepDef().title.toLowerCase()}`));
   }
 
   // --- Mark checks ----------------------------------------------------------

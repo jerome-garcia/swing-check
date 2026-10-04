@@ -27,7 +27,7 @@ swingcheck = "swingcheck.app.__main__:main"
 include = ["swingcheck*"]
 
 [tool.setuptools.package-data]
-"swingcheck.app" = ["static/*"]
+"swingcheck.app" = ["static/*", "static/reference/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
