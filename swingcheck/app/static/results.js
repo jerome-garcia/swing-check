@@ -82,8 +82,9 @@ function summaryPanel(s, states, focusPick, onSelect) {
     focusBox = el("div", { class: `focus ${focus.state}` },
       el("div", { class: "focus-kicker" }, focusPick.status === "flag" ? "Work on first" : "Worth a look"),
       el("div", { class: "focus-title" }, `${focus.cp.number}. ${focus.cp.title}: ${v.label}`),
-      focusRow ? el("p", { class: "focus-row small" }, `Biggest issue: ${focusRow.label}, ${focusRow.value}`) : null,
-      v.tip ? el("p", { class: "focus-tip" }, v.tip) : null,
+      // Same size for both lines, each led by a bold label, like the checkpoint cards.
+      focusRow ? el("p", { class: "focus-line" }, el("strong", {}, "Biggest issue "), `${focusRow.label}: ${focusRow.value}`) : null,
+      v.tip ? el("p", { class: "focus-line" }, el("strong", {}, "How to fix "), v.tip) : null,
       el("button", { class: "btn small", type: "button", onclick: () => onSelect(focusIndex) }, "See this checkpoint →"));
   } else if (counts.ok) {
     focusBox = el("div", { class: "focus ok" },
