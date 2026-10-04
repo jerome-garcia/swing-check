@@ -152,7 +152,10 @@ export async function renderMark(view, id, isCurrent) {
     const maxW = stage.clientWidth;
     // Leave room below the frame for the scrubber and its caption.
     const top = stage.getBoundingClientRect().top + window.scrollY;
-    const maxH = Math.max(260, window.innerHeight - top - 90);
+    // Desktop: fit below the header so the scrubber stays in view. Phones (one column, the
+    // page scrolls anyway): use most of the screen height so points are easier to hit.
+    const narrow = window.matchMedia("(max-width: 820px)").matches;
+    const maxH = narrow ? Math.max(320, window.innerHeight * 0.68) : Math.max(260, window.innerHeight - top - 100);
     const scale = Math.min(maxW / v.width, maxH / v.height);
     const cssW = Math.floor(v.width * scale);
     const cssH = Math.floor(v.height * scale);
@@ -302,6 +305,8 @@ export async function renderMark(view, id, isCurrent) {
   const stepTabs = el("div", { class: "step-tabs", role: "tablist" });
   const saveBtn = el("button", { class: "btn primary block", type: "button", onclick: save }, "Save marks");
   const saveError = el("div", { class: "notice error", hidden: true });
+  // Instruction bar over the frame: which step, what to click next, and what comes after.
+  const hud = el("div", { class: "mark-hud", "aria-live": "polite" });
 
   function selectStep(key) {
     state.active = key;
@@ -310,15 +315,32 @@ export async function renderMark(view, id, isCurrent) {
     refresh();
   }
 
+  function renderHud(next) {
+    const i = steps.findIndex(st => st.key === state.active);
+    const after = steps[i + 1];
+    const info = next ? pointInfo(state.active, next) : null;
+    hud.replaceChildren(
+      el("div", { class: "hud-text" },
+        el("span", { class: "hud-step" }, steps.length > 1 ? `${i + 1}/${steps.length} · ${stepDef().title}` : stepDef().title),
+        info
+          ? el("span", { class: "hud-next" }, el("span", { class: "swatch", style: { background: info.color } }), `Click the ${info.label.toLowerCase()}`)
+          : el("span", { class: "hud-next done" }, "✓ Done")),
+      el("div", { class: "actions" },
+        el("button", { class: "btn small", type: "button", onclick: undo, disabled: !started(state.active) }, "Undo"),
+        !next && after ? el("button", { class: "btn small primary", type: "button", onclick: () => selectStep(after.key) }, `Next: ${after.title} ›`) : null,
+        !next && !after && complete("address") ? el("button", { class: "btn small primary", type: "button", onclick: save }, "Save marks") : null));
+  }
+
   function refresh() {
     const next = nextPoint();
+    renderHud(next);
     stepTabs.replaceChildren(...steps.map(st => el("button", {
-      type: "button", role: "tab", class: `step-tab ${st.key === state.active ? "selected" : ""}`,
+      type: "button", role: "tab", class: `step-tab ${st.key === state.active ? "selected" : ""} ${complete(st.key) ? "complete" : ""}`,
       "aria-selected": String(st.key === state.active), onclick: () => selectStep(st.key),
+      title: st.optional ? "Optional" : "Required",
     },
-    el("span", {}, st.title),
-    el("span", { class: "step-tab-state" },
-      complete(st.key) ? "✓" : started(st.key) ? "…" : st.optional ? "optional" : ""))));
+    el("span", { class: "step-tab-state" }, complete(st.key) ? "✓" : started(st.key) ? "…" : st.optional ? "" : "•"),
+    el("span", {}, st.title))));
     stepIntro.textContent = stepDef().intro;
     pointList.replaceChildren(...stepDef().points.map(name => {
       const done = Boolean(cur().points[name]);
@@ -428,31 +450,33 @@ export async function renderMark(view, id, isCurrent) {
 
   // --- Render ---------------------------------------------------------------
   view.replaceChildren(
-    swingHeader(s),
+    swingHeader(s, s.status === "analyzed" ? [el("a", { class: "btn", href: swingUrl(id) }, "Back to results")] : []),
     el("div", { class: "mark-layout" },
       el("div", { class: "mark-main" },
+        hud,
         el("div", { class: "stage" }, canvas),
         el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),
-        el("div", { class: "subtle small center" }, frameLabel, " · ← → step, Shift = 10 frames")),
+        el("div", { class: "subtle small center frame-caption" }, frameLabel, el("span", { class: "keys-hint" }, " · ← → step, Shift = 10 frames"))),
       el("aside", { class: "mark-side stack" },
         el("section", { class: "panel" },
-          el("h2", {}, "Camera view"),
-          el("div", { class: "actions" }, viewButtons),
-          !faceOn ? el("p", { class: "subtle small" }, faceOnMessage) : null,
-          viewError),
-        el("section", { class: "panel" },
           el("h2", {}, steps.length > 1 ? "Mark your swing" : "Mark your address"),
+          steps.length > 1 ? el("p", { class: "subtle small" }, "Address is required (•); the other steps are optional, one per checkpoint.") : null,
           steps.length > 1 ? stepTabs : null,
           stepIntro,
           pointList,
           el("div", { class: "actions" },
             el("button", { class: "btn small", type: "button", onclick: undo }, "Undo"),
-            el("button", { class: "btn small", type: "button", onclick: () => { cur().points = {}; refresh(); } }, "Clear")),
+            el("button", { class: "btn small", type: "button", onclick: () => { cur().points = {}; refresh(); } }, "Clear step")),
           saveError, saveBtn),
         el("details", { class: "panel" },
           el("summary", {}, el("strong", {}, "Trim the clip")),
           el("p", { class: "subtle small" }, "Cut out practice swings or idle time. Scrub to a frame and set the start or end there."),
-          trimBody))));
+          trimBody),
+        el("details", { class: "panel" },
+          el("summary", {}, el("strong", {}, "Camera view"), el("span", { class: "subtle small" }, ` · ${s.view === "fo" ? "Face-on" : "Down-the-line"}`)),
+          el("div", { class: "actions" }, viewButtons),
+          !faceOn ? el("p", { class: "subtle small" }, faceOnMessage) : null,
+          viewError))));
   setFrame(cur().frame);
   refresh();
   requestAnimationFrame(fitCanvas);

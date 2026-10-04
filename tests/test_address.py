@@ -151,7 +151,7 @@ def test_rows_say_how_much_to_adjust():
     assert notes["Spine bend"] == "bend 2° more (green 30–45°, red outside 25–50°)"
     assert notes["Knee flex"] == "straighten 5° (green 15–35°, red outside 10–40°)"
     assert notes["Arms"] == "hands 2° too far out (green within ±10°, red past ±15°)"
-    assert "Hinge more from the hips" in v.summary
+    assert "Hinge more from the hips" in v.tip
     good = run_address(dtl_address_pose())
     assert {r.label: r.note for r in good.rows}["Spine bend"] == "good bend (green 30–45°, red outside 25–50°)"
 

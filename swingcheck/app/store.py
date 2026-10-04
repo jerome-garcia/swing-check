@@ -132,7 +132,7 @@ class Store:
         verdicts = []
         if status == "analyzed":
             analysis = _read_json(folder / "analysis.json") or {}
-            verdicts = [{"title": v.get("title"), "status": v.get("status"), "label": v.get("label")}
+            verdicts = [{"name": v.get("name"), "title": v.get("title"), "status": v.get("status"), "label": v.get("label")}
                         for v in analysis.get("verdicts", [])]
         thumb = next((n for n in ("address.png", "top.png") if (folder / n).exists()), None)
         return {**asdict(meta), "status": status, "verdicts": verdicts, "thumbnail": thumb}

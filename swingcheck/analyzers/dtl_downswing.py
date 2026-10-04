@@ -106,10 +106,20 @@ def downswing(ctx: SwingContext) -> Verdict:
         overlays.append(Overlay("point", [tuple(take.points["clubhead"])], BAND_COLOR, "clubhead at takeaway", show, 1))
 
     side = "under" if under >= 0 else "above"
+    tips = []
+    if plane_status != "ok":
+        tips.append("Start down with the lower body and let your trail elbow drop toward your hip, so the club falls under the plane."
+                    if under < cfg["under_min"] else
+                    "Keep turning your chest through so the club can come out in front of you.")
+    if shallow_status not in (None, "ok"):
+        tips.append("Come down flatter than you went back: take it back less inside, or let the club drop behind you on the way down.")
+    tip = " ".join(tips)
+
     return Verdict(
         status=status,
         label=label,
         summary=summary,
+        tip=tip,
         frame=f,
         measurements={
             "clubhead_under_line": round(under, 3),

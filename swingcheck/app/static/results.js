@@ -1,6 +1,7 @@
-import { el, features, fileUrl, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
+import {
+  checkpointStates, el, features, fileUrl, pollJob, postJSON, progressBlock, scorecard, STATUS_WORD, swingUrl,
+} from "./util.js";
 
-const STATUS_WORD = { ok: "OK", warn: "Watch", flag: "Flag", error: "No data" };
 const PHASE_LABELS = {
   address: "Address", takeaway: "Takeaway", top: "Top", early_downswing: "Early downswing", impact: "Impact",
 };
@@ -19,7 +20,7 @@ function prettyValue(v) {
   return String(v);
 }
 
-// One compact line per measurement: status dot, name, value, short verdict.
+// One compact line per measurement: status dot, name, value, and what it means underneath.
 // Checks that don't supply rows (older analyses, face-on) fall back to their raw measurements.
 function measurementRows(v) {
   if (v.rows && v.rows.length) return v.rows;
@@ -29,12 +30,14 @@ function measurementRows(v) {
 
 function verdictCard(v) {
   const rows = measurementRows(v);
+  const showTip = v.tip && (v.status === "warn" || v.status === "flag");
   return el("article", { class: `verdict ${v.status}` },
     el("div", { class: "verdict-head" },
       el("h3", {}, v.title),
       el("span", { class: `status-pill ${v.status}` }, STATUS_WORD[v.status] || v.status)),
-    el("div", { class: "verdict-label" }, v.label),
+    el("div", { class: "verdict-label" }, v.status === "error" ? "Not measured" : v.label),
     el("p", { class: "verdict-summary" }, v.summary),
+    showTip ? el("div", { class: "tip" }, el("strong", {}, "How to fix "), v.tip) : null,
     rows.length ? el("ul", { class: "rows" }, rows.map(r => el("li", {},
       r.status ? el("span", { class: `dot ${r.status}`, title: STATUS_WORD[r.status] }) : el("span", {}),
       el("span", { class: "row-label" }, r.label),
@@ -42,63 +45,86 @@ function verdictCard(v) {
       el("span", { class: "row-note" }, r.note)))) : null);
 }
 
-// --- Checkpoint stepper (down-the-line) ---------------------------------------
-function checkpointStepper(s, checkpoints) {
-  const verdicts = Object.fromEntries(((s.analysis && s.analysis.verdicts) || []).map(v => [v.name, v]));
-  const stateOf = cp => (!cp.built ? "soon" : verdicts[cp.analyzer] ? verdicts[cp.analyzer].status : "missing");
-  const STATE_WORD = { soon: "coming soon", missing: "not run yet", ...STATUS_WORD };
-  // Start on the first flagged checkpoint, else the first one that has a result.
-  let index = Math.max(0, checkpoints.findIndex(cp => stateOf(cp) === "flag"));
-  if (stateOf(checkpoints[index]) !== "flag") index = Math.max(0, checkpoints.findIndex(cp => verdicts[cp.analyzer]));
+// --- Summary: the whole swing at a glance ------------------------------------
+function summaryPanel(s, states, onSelect) {
+  const counts = { ok: 0, warn: 0, flag: 0 };
+  for (const { state } of states) if (state in counts) counts[state] += 1;
+  const notMarked = states.filter(({ state }) => state === "error" || state === "missing");
+  // The first red checkpoint in swing order, else the first yellow: the one thing to work on.
+  const focusIndex = ["flag", "warn"].map(st => states.findIndex(x => x.state === st)).find(i => i >= 0);
+  const focus = focusIndex !== undefined ? states[focusIndex] : null;
 
-  const chips = checkpoints.map((cp, i) => el("button", {
-    type: "button", class: `step ${stateOf(cp)}`, title: `${cp.title}: ${STATE_WORD[stateOf(cp)]}`,
-    onclick: () => select(i),
-  }, el("span", { class: "step-num" }, cp.number), el("span", { class: "step-title" }, cp.title)));
+  const tally = el("div", { class: "tally" },
+    ...[["ok", "good"], ["warn", "to watch"], ["flag", "to fix"]].map(([st, word]) =>
+      el("span", { class: `tally-item ${st}` }, el("span", { class: `dot ${st}` }), el("strong", {}, counts[st]), ` ${word}`)));
+
+  let focusBox;
+  if (focus) {
+    const v = focus.verdict;
+    focusBox = el("div", { class: `focus ${focus.state}` },
+      el("div", { class: "focus-kicker" }, focus.state === "flag" ? "Work on first" : "Worth a look"),
+      el("div", { class: "focus-title" }, `${focus.cp.number}. ${focus.cp.title}: ${v.label}`),
+      v.tip ? el("p", { class: "focus-tip" }, v.tip) : null,
+      el("button", { class: "btn small", type: "button", onclick: () => onSelect(focusIndex) }, "See this checkpoint →"));
+  } else if (counts.ok) {
+    focusBox = el("div", { class: "focus ok" },
+      el("div", { class: "focus-kicker" }, "Looking good"),
+      el("div", { class: "focus-title" }, "Every checkpoint that was measured is in the green."));
+  }
+
+  return el("section", { class: "panel summary" },
+    el("div", { class: "panel-head" }, el("h2", {}, "Swing summary"), tally),
+    scorecard(states, { onSelect, labels: true }),
+    focusBox || null,
+    notMarked.length ? el("p", { class: "subtle small not-marked" },
+      `${notMarked.map(x => x.cp.title).join(", ")} ${notMarked.length === 1 ? "isn't" : "aren't"} measured yet. `,
+      el("a", { href: swingUrl(s.id, "mark") }, "Add the marks"), " to check them.") : null);
+}
+
+// --- Checkpoint stepper (down-the-line) ---------------------------------------
+function checkpointStepper(s, states) {
+  // Start on the first red checkpoint, else the first one with a result.
+  let index = states.findIndex(x => x.state === "flag");
+  if (index < 0) index = Math.max(0, states.findIndex(x => x.verdict));
   const prev = el("button", { class: "btn small", type: "button", "aria-label": "Previous checkpoint", onclick: () => select(index - 1) }, "‹");
   const next = el("button", { class: "btn small", type: "button", "aria-label": "Next checkpoint", onclick: () => select(index + 1) }, "›");
   const heading = el("div", { class: "step-heading" });
   const body = el("div", { class: "step-body" });
+  const listeners = [];
 
   function keyFrame(cp) {
     // This check's own annotated frame; else the phase's freeze frame; else the plain video
-    // frame where that phase was detected (for checkpoints not built yet).
+    // frame where that phase was detected.
     const name = [`check_${cp.analyzer}.png`, cp.phase ? `${cp.phase}.png` : null].find(f => f && s.files.includes(f));
     const frame = cp.phase && s.analysis && s.analysis.phases ? s.analysis.phases[cp.phase] : undefined;
     let url = null;
     if (name) url = fileUrl(s.id, name);
     else if (frame !== undefined && s.video) url = `/api/swings/${encodeURIComponent(s.id)}/frames/${frame}.jpg?w=720`;
-    if (!url) return el("div", { class: "step-frame empty-frame" }, "This moment isn't detected yet");
+    if (!url) return el("div", { class: "step-frame empty-frame" }, "Mark this checkpoint to see its frame");
     return el("a", { class: "step-frame", href: url, target: "_blank", rel: "noopener", title: "Open full size" },
       el("img", { src: url, alt: `${cp.title} frame` }));
   }
 
-  function card(cp) {
-    const v = verdicts[cp.analyzer];
-    if (v) return verdictCard(v);
-    const missing = cp.built;
+  function card({ cp, verdict, state }) {
+    if (verdict) return verdictCard(verdict);
     return el("article", { class: "verdict soon" },
       el("div", { class: "verdict-head" }, el("h3", {}, cp.title),
-        el("span", { class: "status-pill soon" }, missing ? "Not run" : "Coming soon")),
+        el("span", { class: "status-pill soon" }, STATUS_WORD[state])),
       el("p", { class: "verdict-summary" }, cp.description),
-      missing ? el("p", { class: "small" }, "Press Re-analyze to run this check on this swing.") : null);
+      state === "missing" ? el("p", { class: "small" }, "Press Re-analyze to run this check on this swing.") : null);
   }
 
   function select(i) {
-    index = Math.max(0, Math.min(checkpoints.length - 1, i));
-    const cp = checkpoints[index];
-    chips.forEach((c, j) => { c.classList.toggle("current", j === index); c.setAttribute("aria-current", j === index ? "step" : "false"); });
+    index = Math.max(0, Math.min(states.length - 1, i));
+    const { cp } = states[index];
     prev.disabled = index === 0;
-    next.disabled = index === checkpoints.length - 1;
-    heading.replaceChildren(el("span", { class: "subtle" }, `${cp.number} / ${checkpoints.length}`), el("strong", {}, cp.title));
-    body.replaceChildren(keyFrame(cp), card(cp));
+    next.disabled = index === states.length - 1;
+    heading.replaceChildren(el("span", { class: "subtle" }, `${cp.number} / ${states.length}`), el("strong", {}, cp.title));
+    body.replaceChildren(keyFrame(cp), card(states[index]));
+    listeners.forEach(fn => fn(index));
   }
 
   const node = el("section", { class: "panel stepper", tabindex: "-1" },
-    el("div", { class: "panel-head" }, el("h2", {}, "Checkpoints"),
-      el("div", { class: "legend small subtle" },
-        ...["ok", "warn", "flag", "soon"].map(st => el("span", {}, el("span", { class: `dot ${st}` }), STATE_WORD[st])))),
-    el("div", { class: "steps" }, chips),
     el("div", { class: "step-nav" }, prev, heading, next),
     body);
   node.addEventListener("keydown", e => {
@@ -106,8 +132,7 @@ function checkpointStepper(s, checkpoints) {
     if (e.key === "ArrowLeft") { e.preventDefault(); select(index - 1); }
     if (e.key === "ArrowRight") { e.preventDefault(); select(index + 1); }
   });
-  select(index);
-  return node;
+  return { node, select, onChange: fn => listeners.push(fn), start: () => select(index) };
 }
 
 function videoPlayer(s) {
@@ -119,9 +144,9 @@ function videoPlayer(s) {
       video.playbackRate = rate;
       for (const b of e.target.parentElement.children) b.classList.toggle("selected", b === e.target);
     },
-  }, rate === 1 ? "Normal" : `${rate}×`));
+  }, rate === 1 ? "1×" : `${rate}×`));
   return el("section", { class: "panel" },
-    el("div", { class: "panel-head" }, el("h2", {}, "Annotated swing"), el("div", { class: "actions" }, speeds)),
+    el("div", { class: "panel-head" }, el("h2", {}, "Annotated swing"), el("div", { class: "actions segmented" }, speeds)),
     video);
 }
 
@@ -183,7 +208,7 @@ function phasesPanel(s, startAnalysis) {
             ? el("button", { class: "btn small", type: "button", onclick: () => adjust(name, frame) }, "Adjust") : ""))))),
       [...manual].some(n => adjustable.includes(n))
         ? el("button", { class: "btn small", type: "button", onclick: () => startAnalysis({ reset_phases: true }) }, "Reset to automatic") : null,
-      s.view === "dtl" ? el("p", { class: "subtle small" }, "Address is the frame you marked on; change it with Edit marks.") : null);
+      s.view === "dtl" ? el("p", { class: "subtle small" }, "Address and the marked checkpoints use the frames you marked; change them with Edit marks.") : null);
   }
 
   function adjust(name, frame) {
@@ -195,8 +220,16 @@ function phasesPanel(s, startAnalysis) {
   list();
   // Collapsed by default: it's only needed when a detected phase is wrong.
   return el("details", { class: "panel phases-panel" },
-    el("summary", {}, el("strong", {}, "Phases"), el("span", { class: "subtle small" }, " · adjust if a frame is wrong")),
+    el("summary", {}, el("strong", {}, "Detected phases"), el("span", { class: "subtle small" }, " · adjust if impact or the top is off")),
     body);
+}
+
+// Warnings about the clip (low frame rate, missing frames): folded away once read.
+function clipNotes(warnings) {
+  if (!warnings.length) return null;
+  return el("details", { class: "notice clip-notes" },
+    el("summary", {}, `About this clip (${warnings.length} note${warnings.length > 1 ? "s" : ""})`),
+    el("ul", {}, warnings.map(w => el("li", {}, w))));
 }
 
 export async function renderResults(view, s, header, isCurrent, rerender) {
@@ -231,16 +264,30 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
   const warnings = (a && a.warnings) || [];
   const checkpoints = ((await features()).checkpoints || {})[s.view] || [];
   if (!isCurrent()) return;
-  // Down-the-line: one checkpoint at a time. Other views (older face-on swings): all cards in a list.
-  const checks = checkpoints.length
-    ? checkpointStepper(s, checkpoints)
-    : el("div", { class: "stack" }, el("section", { class: "stack-sm" }, (a.verdicts || []).map(verdictCard)), freezeFrames(s));
-  const phases = phasesPanel(s, startAnalysis);
+  const reanalyze = el("button", { class: "btn primary", type: "button", onclick: () => startAnalysis() }, "Re-analyze");
+  const report = { label: "Text report", href: fileUrl(s.id, "report.txt"), newTab: true };
+
+  let main;
+  if (checkpoints.length) {
+    // Down-the-line: summary on top, then one checkpoint at a time.
+    const states = checkpointStates(checkpoints, a.verdicts);
+    const stepper = checkpointStepper(s, states);
+    const summary = summaryPanel(s, states, i => {
+      stepper.select(i);
+      stepper.node.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    // Highlight the checkpoint being shown in the summary's scorecard.
+    stepper.onChange(i => summary.querySelectorAll(".score-item").forEach((b, j) => b.classList.toggle("current", i === j)));
+    stepper.start();
+    main = [summary, stepper.node];
+  } else {
+    // Other views (older face-on swings): all cards in a list.
+    main = [el("section", { class: "stack-sm" }, (a.verdicts || []).map(verdictCard)), freezeFrames(s)];
+  }
   view.replaceChildren(
-    header([el("a", { class: "btn", href: fileUrl(s.id, "report.txt"), target: "_blank", rel: "noopener" }, "Report"),
-      el("button", { class: "btn", type: "button", onclick: () => startAnalysis() }, "Re-analyze")]),
-    ...warnings.map(w => el("div", { class: "notice" }, w)),
+    header([reanalyze], [report]),
+    clipNotes(warnings) || "",
     el("div", { class: "results-layout" },
-      el("div", { class: "stack video-col" }, videoPlayer(s)),
-      el("div", { class: "stack" }, checks, phases)));
+      el("div", { class: "stack main-col" }, ...main),
+      el("div", { class: "stack side-col" }, videoPlayer(s), phasesPanel(s, startAnalysis))));
 }

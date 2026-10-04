@@ -110,10 +110,20 @@ def swing_plane(ctx: SwingContext) -> Verdict:
         Overlay("text", [tuple((clubhead + grip) / 2 - np.array([toward_golfer * 0.1 * s, 0.0]))],
                 PLANE_COLOR, f"plane {angle:.0f} deg", show),
     ]
+    tips = []
+    if aim_status != "ok":
+        tips.append("Stand a touch closer to the ball or raise your hands slightly, so the shaft points at your belt buckle."
+                    if u < cfg["belt_min"] else
+                    "Stand a touch farther from the ball or let your hands hang lower, so the shaft points at your belt buckle.")
+    if angle_status != "ok":
+        tips.append("Check the club and the camera height (about hand height) before changing your setup.")
+    fix_tip = " ".join(tips)
+
     return Verdict(
         status=status,
         label=label,
         summary=summary,
+        tip=fix_tip,
         measurements={
             "shaft_angle_deg": round(angle, 1),
             "angle": angle_text,

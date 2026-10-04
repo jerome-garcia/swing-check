@@ -451,6 +451,21 @@ images and `report.txt`. Back up or delete that folder like any other files.
 
 ## Reading the results
 
+The results page opens with a **swing summary**: one numbered dot per
+checkpoint (green, yellow, red; dashed = not measured yet), how many are good /
+to watch / to fix, and **Work on first**: the first red checkpoint in swing
+order (or the first yellow) with a one-line fix. Tap a dot to jump to that
+checkpoint. Below it, the checkpoints go one at a time (‹ › or the arrow keys):
+the checkpoint's key frame next to its card, which gives the result, what it
+means, **How to fix** when it's yellow or red, and each measurement with its
+limits. The annotated video and the detected phases sit beside it on a wide
+screen and below it on a phone. **Re-analyze** is the main button; **Edit marks**,
+the text report and **Delete** are in the ⋯ menu. In the annotated video, the
+header names only the checkpoint whose lines are on screen.
+
+On the swing list, each analyzed swing shows the same 8 dots under its
+thumbnail; swings still to mark or analyze say what's next.
+
 Every measurement is 🟢 **OK**, 🟡 **Watch** (just outside good, worth a look)
 or 🔴 **Flag**, and each card row says the green and red limits it was judged
 against. Angles are in degrees. Distances are a **percent of your torso

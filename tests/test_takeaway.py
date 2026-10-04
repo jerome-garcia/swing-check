@@ -112,3 +112,9 @@ def test_not_marked_explains_how():
     v = run(inside_by=None)
     assert v.status == "error"
     assert "Takeaway" in v.summary
+
+
+def test_tip_only_when_off():
+    assert run(inside_by=0.04).tip == ""
+    assert "outside your hands" in run(inside_by=0.6).tip
+    assert "turning your chest" in run(inside_by=-0.6).tip

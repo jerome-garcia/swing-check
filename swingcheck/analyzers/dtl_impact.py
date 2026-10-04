@@ -119,10 +119,19 @@ def impact(ctx: SwingContext) -> Verdict:
     ]
 
     moved = "toward the ball" if toward_ball >= 0 else "back"
+    tips = []
+    if hips_status != "ok":
+        tips.append("Keep your backside on the tush line: turn your hips back and around, not toward the ball.")
+    if posture_status != "ok":
+        tips.append("Keep your chest over the ball through impact; stay in your posture." if lost > 0 else
+                    "Keep your head height steady through the ball instead of dropping down.")
+    tip = " ".join(tips)
+
     return Verdict(
         status=status,
         label=label,
         summary=summary,
+        tip=tip,
         measurements={
             "hips_toward_ball": round(toward_ball, 3),
             "spine_bend_address_deg": round(bend0, 1),

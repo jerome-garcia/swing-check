@@ -136,8 +136,9 @@ def address(ctx: SwingContext) -> Verdict:
     tips = [WORDING[(name, off[name][2])][2] for name in ("spine", "knees", "arms", "back") if name in off]
     summary = (
         "Address posture looks good: arms hanging, spine bent, knees flexed, back straight."
-        if not problems else " ".join(tips)
+        if not problems else "Address: " + "; ".join(problems) + "."
     )
+    fix_tip = " ".join(tips)
 
     measurements = {
         "arm_from_vertical_deg": round(arm, 1),
@@ -211,7 +212,7 @@ def address(ctx: SwingContext) -> Verdict:
             + f" ({knee_bands})", items["knees"][0]),
         Row("Back", ctx.distance_text(bulge) if bulge is not None else "–", back_note, items["back"][0]),
     ]
-    return Verdict(status=status, label=label, summary=summary, measurements=measurements, overlays=overlays,
+    return Verdict(status=status, label=label, summary=summary, tip=fix_tip, measurements=measurements, overlays=overlays,
                    rows=rows)
 
 

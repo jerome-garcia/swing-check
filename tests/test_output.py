@@ -128,3 +128,16 @@ def test_write_outputs_end_to_end(tmp_path):
     assert set(written) == {"video", "address", "top", "impact", "summary"}
     for path in written.values():
         assert path.exists() and path.stat().st_size > 0
+
+
+def test_video_header_names_only_checks_on_screen():
+    early = Verdict(status="ok", label="a", summary="", name="early", title="Early",
+                    overlays=[Overlay("point", [(10.0, 10.0)], frames=(0, 20))])
+    late = Verdict(status="flag", label="b", summary="", name="late", title="Late",
+                   overlays=[Overlay("point", [(10.0, 10.0)], frames=(50, 60))])
+    broken = Verdict(status="error", label="no data", summary="", name="broken", title="Broken")
+    ann = Annotator([early, late, broken], PHASES, np.zeros((100, 2)), 240.0, 100, 100, CONFIG)
+    assert [v.name for v in ann._active(10)] == ["early"]
+    assert [v.name for v in ann._active(55)] == ["late"]
+    assert ann._active(35) == []
+    assert [v.name for v in ann.only(late)._active(10)] == ["late"]  # a key frame always names its check

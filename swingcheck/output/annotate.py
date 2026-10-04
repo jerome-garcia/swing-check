@@ -90,7 +90,8 @@ class Annotator:
             draw_line_overlay(img, o.kind, o.points, o.color, max(1, int(round(o.thickness * s))), o.label, s, slot,
                               ring=o.thickness <= 1)
 
-        self._header(img)
+        active = self._active(i)
+        self._header(img, active)
         label = big_label or self._phase_flash(i)
         if label:
             # Upper-right under the verdict header: clear of the golfer's head, and
@@ -98,7 +99,7 @@ class Annotator:
             scale = 1.1 * s
             tw, th = text_size(label, scale, 2)
             x = img.shape[1] - tw - int(16 * s)
-            y = header_clearance(s, len(self.verdicts)) + th
+            y = header_clearance(s, max(1, len(active))) + th
             panel(img, (x - 12, y - th - 12), (x + tw + 12, y + 12), 0.5)
             draw_text(img, label, (x, y), scale, (255, 255, 255), 2)
         if footer:
@@ -115,10 +116,18 @@ class Annotator:
                 return name.upper()
         return None
 
-    def _header(self, img: np.ndarray) -> None:
+    def _active(self, i: int) -> list[Verdict]:
+        """Checks to name in the header on frame i: the one this annotator draws (a key frame),
+        or, in the full video, those whose lines are on screen right now."""
+        if len(self.verdicts) == 1:
+            return list(self.verdicts)
+        return [v for v in self.verdicts
+                if any(o.kind != "path" and (o.frames is None or o.frames[0] <= i <= o.frames[1]) for o in v.overlays)]
+
+    def _header(self, img: np.ndarray, verdicts: list[Verdict]) -> None:
         s = self.s
         line_h = int(24 * s)
-        lines = [(f"{v.title}: {v.label}", STATUS_COLORS[v.status]) for v in self.verdicts]
+        lines = [(f"{v.title}: {v.label}", STATUS_COLORS[v.status]) for v in verdicts]
         if not lines:
             return
         panel(img, (0, 0), (img.shape[1], line_h * len(lines) + int(10 * s)), 0.55)

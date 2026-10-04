@@ -44,7 +44,7 @@ def test_lists_existing_runs(client):
     s = swings[0]
     assert s["id"] == "old_swing" and s["name"] == "old swing"
     assert s["view"] == "dtl" and s["status"] == "analyzed"
-    assert s["verdicts"] == [{"title": "Address posture", "status": "ok", "label": "good"}]
+    assert s["verdicts"] == [{"name": None, "title": "Address posture", "status": "ok", "label": "good"}]
     assert s["thumbnail"] == "address.png"
 
 

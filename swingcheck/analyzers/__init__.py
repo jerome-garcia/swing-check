@@ -101,6 +101,7 @@ class Verdict:
     measurements: dict[str, Any] = field(default_factory=dict)
     overlays: list[Overlay] = field(default_factory=list)
     rows: list[Row] = field(default_factory=list)  # compact display; falls back to measurements if empty
+    tip: str = ""  # one-line "how to fix" for a yellow or red result
     name: str = ""
     view: str = ""
     title: str = ""

@@ -79,6 +79,45 @@ export function verdictChips(verdicts) {
       el("span", { class: `dot ${v.status}` }), `${v.title}: ${v.label}`)));
 }
 
+export const STATUS_WORD = { ok: "Good", warn: "Watch", flag: "Fix", error: "Not marked", missing: "Not run", soon: "Coming soon" };
+
+// Status of each checkpoint, in swing order: "ok" | "warn" | "flag" | "error" (no data,
+// usually not marked) | "missing" (not run on this swing) | "soon" (not built).
+export function checkpointStates(checkpoints, verdicts) {
+  const byName = Object.fromEntries((verdicts || []).map(v => [v.name, v]));
+  return checkpoints.map(cp => {
+    const v = byName[cp.analyzer];
+    return { cp, verdict: v || null, state: !cp.built ? "soon" : v ? v.status : "missing" };
+  });
+}
+
+// Row of numbered status dots, one per checkpoint. `onSelect(i)` makes them buttons;
+// `labels` adds each checkpoint's name under its dot.
+export function scorecard(states, { onSelect = null, labels = false, size = "" } = {}) {
+  return el("div", { class: `scorecard ${labels ? "labeled" : ""} ${size}` }, states.map(({ cp, state, verdict }, i) => {
+    const title = `${cp.number}. ${cp.title}: ${verdict && verdict.status !== "error" ? verdict.label : STATUS_WORD[state]}`;
+    const inner = [el("span", { class: `score-dot ${state}` }, cp.number),
+      labels ? el("span", { class: "score-label" }, cp.title) : null];
+    return onSelect
+      ? el("button", { type: "button", class: "score-item", title, "data-index": i, onclick: () => onSelect(i) }, ...inner)
+      : el("span", { class: "score-item", title }, ...inner);
+  }));
+}
+
+// "⋯" menu of secondary actions. Items: {label, href?, onclick?, danger?}.
+export function moreMenu(items) {
+  const menu = el("details", { class: "menu" },
+    el("summary", { class: "btn", "aria-label": "More actions", title: "More actions" }, "⋯"),
+    el("div", { class: "menu-list", role: "menu" }, items.filter(Boolean).map(it => it.href
+      ? el("a", { class: `menu-item ${it.danger ? "danger" : ""}`, role: "menuitem", href: it.href,
+        target: it.newTab ? "_blank" : null, rel: it.newTab ? "noopener" : null }, it.label)
+      : el("button", { type: "button", class: `menu-item ${it.danger ? "danger" : ""}`, role: "menuitem",
+        onclick: e => { menu.open = false; it.onclick(e); } }, it.label))));
+  // Close when clicking anywhere else.
+  document.addEventListener("click", e => { if (menu.open && !menu.contains(e.target)) menu.open = false; });
+  return menu;
+}
+
 // Poll a job until it finishes; onUpdate(job) is called on every poll.
 // Resolves with the finished job; stops (resolving null) if `isCurrent()` turns false,
 // e.g. after the user navigated away.

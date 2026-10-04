@@ -102,10 +102,20 @@ def follow_through(ctx: SwingContext) -> Verdict:
         ]
 
     side = "inside" if inside_by >= 0 else "outside"
+    tips = []
+    if shaft_status != "ok":
+        tips.append("Turn your chest through to the target and let the arms swing around you."
+                    if inside_by > cfg["inside_max"] else
+                    "Extend your arms up and out toward the target after impact.")
+    if same_status not in (None, "ok"):
+        tips.append("Match the way through to the way back: after impact the shaft should point where it did halfway back.")
+    tip = " ".join(tips)
+
     return Verdict(
         status=status,
         label=label,
         summary=summary,
+        tip=tip,
         frame=f,
         measurements={
             "shaft_inside_ball": round(inside_by, 3),

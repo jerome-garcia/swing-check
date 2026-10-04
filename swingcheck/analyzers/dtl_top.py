@@ -128,10 +128,21 @@ def top(ctx: SwingContext) -> Verdict:
         Overlay("text", [(float(hands[0]) - toward_golfer * 0.15 * s, float(hands[1]) - 0.2 * s)], plane_col, plane_label, show),
     ]
 
+    tips = []
+    if arm_status != "ok":
+        tips.append("Turn your shoulders more and keep the lead arm across your chest instead of lifting it."
+                    if arm_angle < cfg["arm_spine_min"] else
+                    "Swing the lead arm a little higher so it matches your shoulder turn.")
+    if plane_status != "ok":
+        tips.append("Less arm lift at the top: let the shoulder turn carry the club." if above_upper > 0 else
+                    "Swing the hands a little higher, less around your body.")
+    tip = " ".join(tips)
+
     return Verdict(
         status=status,
         label=label,
         summary=summary,
+        tip=tip,
         frame=f,
         measurements={
             "arm_to_spine_deg": round(arm_angle, 1),

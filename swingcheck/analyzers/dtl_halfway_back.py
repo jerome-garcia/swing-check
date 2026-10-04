@@ -117,10 +117,22 @@ def halfway_back(ctx: SwingContext) -> Verdict:
 
     shaft_side = "inside" if inside_by >= 0 else "outside"
     hands_side = "in front" if out_by >= 0 else "behind"
+    tips = []
+    if shaft_status != "ok":
+        tips.append("Turn your chest more and let the club set a little more around you."
+                    if inside_by > cfg["inside_max"] else
+                    "Hinge your wrists more upward so the butt of the club points at the ball line.")
+    if hands_status != "ok":
+        tips.append("Keep your hands closer to your body, over your trail biceps."
+                    if out_by > 0 else
+                    "Keep your hands in front of your chest instead of pulling them in behind you.")
+    tip = " ".join(tips)
+
     return Verdict(
         status=status,
         label=label,
         summary=summary,
+        tip=tip,
         frame=f,
         measurements={
             "shaft_inside_ball": round(inside_by, 3),

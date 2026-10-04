@@ -117,10 +117,16 @@ def takeaway(ctx: SwingContext) -> Verdict:
         Overlay("text", [(float(clubhead[0]) - toward_golfer * 0.15 * s, float(clubhead[1]) + 0.25 * s)], color, label, show),
     ]
 
+    tip = "" if status == "ok" else (
+        "Keep the clubhead outside your hands early: move the club, hands and chest back together."
+        if inside_by > 0 else
+        "Start the takeaway by turning your chest, without pushing your hands out toward the ball.")
+
     return Verdict(
         status=status,
         label=label,
         summary=meaning,
+        tip=tip,
         measurements={
             "clubhead_inside_line": round(inside_by, 3),
             "line_tolerance": tol,
