@@ -108,7 +108,7 @@ def swing_plane(ctx: SwingContext) -> Verdict:
         Overlay("point", [tuple(cross)], color, "", show, 2),
         Overlay("text", [(float(cross[0]) + 0.12 * s, float(cross[1]))], color, aim, show),
         Overlay("text", [tuple((clubhead + grip) / 2 - np.array([toward_golfer * 0.1 * s, 0.0]))],
-                PLANE_COLOR, f"plane {angle:.0f} deg", show),
+                PLANE_COLOR, f"swing plane {angle:.0f} deg", show),
     ]
     tips = []
     if aim_status != "ok":

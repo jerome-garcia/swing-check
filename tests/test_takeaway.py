@@ -67,10 +67,10 @@ def test_clubhead_on_the_line_is_on_plane():
 
 @pytest.mark.parametrize("inside_by, status, label", [
     (0.15, "ok", "Club on plane"),
-    (0.3, "warn", "Clubhead slightly inside the line"),
-    (-0.45, "warn", "Clubhead slightly outside the line"),
-    (0.6, "flag", "Clubhead well inside the line"),
-    (-0.6, "flag", "Clubhead well outside the line"),
+    (0.3, "warn", "Clubhead slightly inside the swing plane"),
+    (-0.45, "warn", "Clubhead slightly outside the swing plane"),
+    (0.6, "flag", "Clubhead well inside the swing plane"),
+    (-0.6, "flag", "Clubhead well outside the swing plane"),
 ])
 def test_inside_and_outside_tiers(inside_by, status, label):
     v = run(inside_by=inside_by)
@@ -81,13 +81,13 @@ def test_inside_and_outside_tiers(inside_by, status, label):
 def test_row_shows_offset_with_units():
     row = run(inside_by=0.3).rows[0]
     assert row.value == "≈15 cm inside"  # 30% of the default 50 cm torso
-    assert row.note == "30% of torso length · slightly inside the line (green within ±20%, red past 50%)"
+    assert row.note == "30% of torso length · slightly inside the swing plane (green within ±20%, red past 50%)"
     assert run(inside_by=-0.6).rows[0].value == "≈30 cm outside"
 
 
 def test_hands_position_doesnt_matter():
     # Clubhead right over the hands but well inside the line: still inside.
-    assert run(inside_by=0.6, hands=on_line(0.6)).label == "Clubhead well inside the line"
+    assert run(inside_by=0.6, hands=on_line(0.6)).label == "Clubhead well inside the swing plane"
 
 
 def test_tolerance_from_config():

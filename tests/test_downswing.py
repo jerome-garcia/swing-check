@@ -56,17 +56,17 @@ def run(under=0.15, takeaway=0.0, mirror=False, config=None, marked=True):
 
 def test_on_plane_and_shallowed():
     v = run(under=0.15, takeaway=-0.04)  # McIlroy-like
-    assert v.status == "ok" and v.label == "Club down the plane, shallowed"
+    assert v.status == "ok" and v.label == "Club down the swing plane, shallowed"
     assert v.measurements["shallowing_vs_takeaway"] == pytest.approx(0.19, abs=1e-3)
     assert v.frame == 55
 
 
 @pytest.mark.parametrize("under, status, label", [
-    (0.2, "ok", "Club down the plane"),
-    (-0.1, "warn", "Clubhead slightly above the plane"),
-    (-0.3, "flag", "Clubhead above the plane"),
-    (0.55, "warn", "Clubhead well under the plane"),
-    (0.9, "flag", "Clubhead stuck under the plane"),
+    (0.2, "ok", "Club down the swing plane"),
+    (-0.1, "warn", "Clubhead slightly above the swing plane"),
+    (-0.3, "flag", "Clubhead above the swing plane"),
+    (0.55, "warn", "Clubhead well under the swing plane"),
+    (0.9, "flag", "Clubhead stuck under the swing plane"),
 ])
 def test_plane_bands(under, status, label):
     v = run(under=under, takeaway=None)

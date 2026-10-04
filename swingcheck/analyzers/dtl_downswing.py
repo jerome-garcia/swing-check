@@ -45,15 +45,15 @@ def downswing(ctx: SwingContext) -> Verdict:
     plane_status = grade(under, cfg["under_min"], cfg["under_max"], cfg["under_watch_min"], cfg["under_watch_max"])
     soft = plane_status == "warn"
     if plane_status == "ok":
-        plane_label, plane_meaning = "Club down the plane", "the club is on plane, clubhead just behind your hands"
+        plane_label, plane_meaning = "Club down the swing plane", "the club is back on your swing plane line, clubhead just behind your hands"
     elif under < cfg["under_min"]:
-        plane_label = "Clubhead slightly above the plane" if soft else "Clubhead above the plane"
-        plane_meaning = ("the clubhead is a little above your address shaft line (steep)" if soft else
-                         "the clubhead is well above your address shaft line: over the top")
+        plane_label = "Clubhead slightly above the swing plane" if soft else "Clubhead above the swing plane"
+        plane_meaning = ("the clubhead is a little above your swing plane line (steep)" if soft else
+                         "the clubhead is well above your swing plane line: over the top")
     else:
-        plane_label = "Clubhead well under the plane" if soft else "Clubhead stuck under the plane"
-        plane_meaning = ("the clubhead is well behind your address shaft line (very shallow)" if soft else
-                         "the clubhead is far behind your address shaft line: stuck, too flat")
+        plane_label = "Clubhead well under the swing plane" if soft else "Clubhead stuck under the swing plane"
+        plane_meaning = ("the clubhead is well behind your swing plane line (very shallow)" if soft else
+                         "the clubhead is far behind your swing plane line: stuck, too flat")
 
     # 2. Shallowing vs the takeaway (same measure, going back).
     rows_extra: list[Row] = []
@@ -90,7 +90,7 @@ def downswing(ctx: SwingContext) -> Verdict:
     show = (f, min(len(ctx.pose) - 1, f + int(round(HOLD_MS * ctx.fps / 1000))))
     col = STATUS_COLORS[plane_status]
     foot = clubhead - (under * s) * line.normal
-    overlays = [Overlay("line", [tuple(line.clubhead), tuple(line.grip)], PLANE_COLOR, "", show, 2)]
+    overlays = [Overlay("line", [tuple(line.clubhead), tuple(line.grip)], PLANE_COLOR, "swing plane", show, 2)]
     for edge in (cfg["under_min"], cfg["under_max"]):
         if edge:
             off = line.normal * edge * s
@@ -129,7 +129,7 @@ def downswing(ctx: SwingContext) -> Verdict:
                      "(golfer's side), - = above it; shallowing: + = flatter coming down than at the takeaway",
         },
         rows=[
-            Row("Clubhead vs shaft line", f"{ctx.distance_text(under)} {side}",
+            Row("Clubhead vs swing plane", f"{ctx.distance_text(under)} {side}",
                 f"{pct(abs(under))} of torso length · {plane_label.lower()} "
                 f"(green {pct(cfg['under_min'])}–{pct(cfg['under_max'])} under, "
                 f"red past {pct(-cfg['under_watch_min'])} above or {pct(cfg['under_watch_max'])} under)", plane_status),

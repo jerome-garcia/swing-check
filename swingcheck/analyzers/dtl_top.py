@@ -84,15 +84,15 @@ def top(ctx: SwingContext) -> Verdict:
     plane_status = "ok" if outside == 0 else ("warn" if outside <= cfg["plane_watch"] else "flag")
     soft = plane_status == "warn"
     if plane_status == "ok":
-        plane_label, plane_meaning = "Hands on plane", "your hands are between the plane lines"
+        plane_label, plane_meaning = "Hands in the plane zone", "your hands are between your swing plane line and your shoulder line"
         plane_value = "between the lines"
     elif above_upper > 0:
-        plane_label = "Hands slightly above the plane" if soft else "Hands above the plane"
-        plane_meaning = "your hands are above the upper plane line (steep / upright)"
+        plane_label = "Hands slightly above the plane zone" if soft else "Hands above the plane zone"
+        plane_meaning = "your hands are above your shoulder line (steep / upright)"
         plane_value = f"{ctx.distance_text(above_upper)} above"
     else:
-        plane_label = "Hands slightly below the plane" if soft else "Hands below the plane"
-        plane_meaning = "your hands are below the address shaft line (flat / around)"
+        plane_label = "Hands slightly below the plane zone" if soft else "Hands below the plane zone"
+        plane_meaning = "your hands are below your swing plane line (flat / around)"
         plane_value = f"{ctx.distance_text(below_lower)} below"
 
     status = max(arm_status, plane_status, key=ORDER.__getitem__)
@@ -117,6 +117,8 @@ def top(ctx: SwingContext) -> Verdict:
     overlays = [
         Overlay("segment", [tuple(ch0), up_to(ch0, gr0)], PLANE_COLOR, "", show, 2),
         Overlay("segment", [tuple(ball), up_to(ball, trail_shoulder0)], UPPER_COLOR, "", show, 2),
+        Overlay("text", [(up_to(ch0, gr0)[0] - toward_golfer * 0.05 * s, reach_y - 0.06 * s)], PLANE_COLOR, "swing plane", show),
+        Overlay("text", [(up_to(ball, trail_shoulder0)[0] + 0.03 * s, reach_y - 0.06 * s)], UPPER_COLOR, "shoulder line", show),
         Overlay("segment", [tuple(hip_mid), tuple(sh_mid)], REFERENCE_COLOR, "", show, 2),
         Overlay("segment", [tuple(lead_shoulder), tuple(hands)], arm_col, "", show, 3),
         Overlay("dashed", [tuple(lead_shoulder), tuple(target)], STATUS_COLORS["ok"], "90 deg" if arm_status != "ok" else "",
@@ -156,9 +158,9 @@ def top(ctx: SwingContext) -> Verdict:
             Row("Lead arm vs spine", f"{arm_angle:.0f}°",
                 f"{arm_label.lower()} (green {cfg['arm_spine_min']:g}–{cfg['arm_spine_max']:g}°, "
                 f"red outside {cfg['arm_spine_watch_min']:g}–{cfg['arm_spine_watch_max']:g}°)", arm_status),
-            Row("Hands vs plane", plane_value,
+            Row("Hands vs plane zone", plane_value,
                 (f"{pct(outside)} of torso length · " if outside else "") +
-                f"{plane_label.lower()} (green between the lines, red past {pct(cfg['plane_watch'])} outside)",
+                f"{plane_label.lower()} (green between the swing plane and shoulder lines, red past {pct(cfg['plane_watch'])} outside)",
                 plane_status),
             Row("Top frame", str(f), "marked by you", "ok"),
         ],

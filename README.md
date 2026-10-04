@@ -33,6 +33,16 @@ of the swing.
 | 7 | **Impact** | The hips stay back on the "tush line" (no early extension) and the spine bend is kept | ✅ Implemented |
 | 8 | **Follow-through** | With the trail arm parallel after impact, the club exits on plane, on the same line as at halfway back | ✅ Implemented |
 
+**What "plane" means here.** The **swing plane line** is the one from
+checkpoint 2: your shaft at address (clubhead through grip), extended so it
+points at your belt buckle. It's drawn in orange and is the only line called
+"swing plane". Takeaway (3) and downswing (6) check that the **clubhead** stays
+on or near it. At the top (5) the hands are much higher and good players vary,
+so that check uses the **plane zone**: between the swing plane line and the
+**shoulder line** (ball to your trail shoulder at address, drawn in blue).
+Halfway back (4) and follow-through (8) don't use these lines; they check where
+the shaft itself points at the ball's level.
+
 **Colors and units.** Every measurement is graded 🟢 green (good), 🟡 yellow
 (watch: just outside good) or 🔴 red (flag), and a checkpoint takes the worst
 color of its measurements. Angles are in degrees. Distances are measured as a
@@ -83,7 +93,7 @@ takeaway checkpoint. Settings live in `[analyzers.takeaway]`.
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Clubhead vs shaft line** | distance of the clubhead from the address shaft line (checkpoint 2's line), square to it, as % of torso length | within ±20% (≈10 cm): **Club on plane** | 20–50%: *slightly inside / outside the line* | past 50% (≈25 cm): *well inside* (your side: pulled inside or rolled open) or *well outside* (ball side: picked up outside) |
+| **Clubhead vs swing plane** | distance of the clubhead from the swing plane line (checkpoint 2's line), square to it, as % of torso length | within ±20% (≈10 cm): **Club on plane** | 20–50%: *slightly inside / outside the swing plane* | past 50% (≈25 cm): *well inside* (your side: pulled inside or rolled open) or *well outside* (ball side: picked up outside) |
 
 Where your hands are doesn't matter for this check. The rule started as "the
 club covers the hands", but that depends on where the hands went, and the
@@ -131,7 +141,7 @@ your **hands**. Body points come from tracking. Settings live in
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
 | **Lead arm vs spine** | angle between the lead arm (lead shoulder → hands) and the spine (hip center → shoulder center) on the top frame; 90° = the arm matches the shoulders | 80–100°: **Lead arm matches the shoulders** | 70–80° (*slightly above*) or 100–110° (*slightly below*) | under 70°: arm lifted **above the shoulders** (upright); over 110°: **below the shoulders** (flat, around the body) |
-| **Hands vs plane** | the hands vs two lines from the ball: the address shaft line (lower, orange) and the line to your trail shoulder at address (upper, blue); across, at the hands' height, as % of torso length | between the lines: **Hands on plane** | up to 15% outside either line (*slightly above / below the plane*) | more than 15% above the upper line (too steep) or below the lower line (too flat) |
+| **Hands vs plane zone** | the hands vs two lines from the ball: the swing plane line (lower, orange) and the shoulder line, to your trail shoulder at address (upper, blue); across, at the hands' height, as % of torso length | between the lines: **Hands in the plane zone** | up to 15% outside either line (*slightly above / below the plane*) | more than 15% above the upper line (too steep) or below the lower line (too flat) |
 
 Set from a reference photo of a scratch golfer: lead arm at 87–91° to the
 spine. McIlroy reads 84° with his hands between the lines (green); an amateur
@@ -147,7 +157,7 @@ hip height; the mirror of the takeaway) and click the **clubhead** and your
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Clubhead vs shaft line** | the clubhead's distance from the address shaft line, square to it (as at the takeaway), as % of torso length | on the line to 40% under (behind the hands): **Club down the plane** | up to 15% above (*slightly steep*) or 40–70% under (*well under*) | more than 15% above: **over the top**; more than 70% under: **stuck** (too flat) |
+| **Clubhead vs swing plane** | the clubhead's distance from the swing plane line, square to it (as at the takeaway), as % of torso length | on the line to 40% under (behind the hands): **Club down the swing plane** | up to 15% above (*slightly steep*) or 40–70% under (*well under*) | more than 15% above: **over the top**; more than 70% under: **stuck** (too flat) |
 | **Shallowing** | that distance minus the same one at your takeaway: + = the club comes down flatter than it went back | 0% or more flatter: **Shallowed** | up to 20% steeper | more than 20% steeper than going back: the over-the-top loop |
 
 Why compare with the takeaway and not shaft angles: at P6, like at the

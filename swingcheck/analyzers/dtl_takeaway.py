@@ -81,22 +81,22 @@ def takeaway(ctx: SwingContext) -> Verdict:
     inside_by = line.inside_by(ctx, clubhead)
 
     if inside_by > flag_at:
-        status, label = "flag", "Clubhead well inside the line"
-        meaning = "Taken away too far inside: the clubhead is well behind your address shaft line."
+        status, label = "flag", "Clubhead well inside the swing plane"
+        meaning = "Taken away too far inside: the clubhead is well behind your swing plane line (the address shaft line)."
     elif inside_by < -flag_at:
-        status, label = "flag", "Clubhead well outside the line"
-        meaning = "Taken away outside: the clubhead is well in front of your address shaft line."
+        status, label = "flag", "Clubhead well outside the swing plane"
+        meaning = "Taken away outside: the clubhead is well in front of your swing plane line (the address shaft line)."
     elif inside_by > tol:
-        status, label = "warn", "Clubhead slightly inside the line"
-        meaning = "A little inside your address shaft line. Many good players go back like this; watch it doesn't grow."
+        status, label = "warn", "Clubhead slightly inside the swing plane"
+        meaning = "A little inside your swing plane line (the address shaft line). Many good players go back like this; watch it doesn't grow."
     elif inside_by < -tol:
-        status, label = "warn", "Clubhead slightly outside the line"
-        meaning = "A little outside your address shaft line. Many good players go back like this; watch it doesn't grow."
+        status, label = "warn", "Clubhead slightly outside the swing plane"
+        meaning = "A little outside your swing plane line (the address shaft line). Many good players go back like this; watch it doesn't grow."
     else:
         status, label = "ok", "Club on plane"
-        meaning = "The clubhead is still on your address shaft line."
+        meaning = "The clubhead is still on your swing plane line (the address shaft line)."
     side = "inside" if inside_by > 0 else "outside"
-    offset_text = f"{ctx.distance_text(inside_by)} {side}" if abs(inside_by) >= 0.005 else "on the line"
+    offset_text = f"{ctx.distance_text(inside_by)} {side}" if abs(inside_by) >= 0.005 else "on the plane line"
 
     # Drawing on the takeaway frame: the address shaft line (as in checkpoint 2) with
     # the tolerance band either side, a square-on tick from the clubhead to the line,
@@ -105,7 +105,7 @@ def takeaway(ctx: SwingContext) -> Verdict:
     show = (f, min(len(ctx.pose) - 1, f + int(round(HOLD_MS * ctx.fps / 1000))))
     color = STATUS_COLORS[status]
     foot = clubhead - np.dot(clubhead - ch0, normal) * normal
-    overlays = [Overlay("line", [tuple(ch0), tuple(gr0)], PLANE_COLOR, "", show, 2)]
+    overlays = [Overlay("line", [tuple(ch0), tuple(gr0)], PLANE_COLOR, "swing plane", show, 2)]
     for edge in (-tol, tol):
         off = normal * edge * s
         overlays.append(Overlay("line", [tuple(ch0 + off), tuple(gr0 + off)], BAND_COLOR, "", show, 1))
@@ -136,7 +136,7 @@ def takeaway(ctx: SwingContext) -> Verdict:
                      "- = ball side (outside)",
         },
         rows=[
-            Row("Clubhead vs shaft line", offset_text,
+            Row("Clubhead vs swing plane", offset_text,
                 f"{pct(abs(inside_by))} of torso length · {_note(label, tol, flag_at)}", status),
             Row("Takeaway frame", str(f), "marked by you", "ok"),
         ],

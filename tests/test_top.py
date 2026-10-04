@@ -98,11 +98,11 @@ def _hands_at_plane(offset):
 
 
 @pytest.mark.parametrize("offset, status, label", [
-    (0.5, "ok", "Hands on plane"),
-    (1.1, "warn", "Hands slightly above the plane"),
-    (1.3, "flag", "Hands above the plane"),
-    (-0.1, "warn", "Hands slightly below the plane"),
-    (-0.3, "flag", "Hands below the plane"),
+    (0.5, "ok", "Hands in the plane zone"),
+    (1.1, "warn", "Hands slightly above the plane zone"),
+    (1.3, "flag", "Hands above the plane zone"),
+    (-0.1, "warn", "Hands slightly below the plane zone"),
+    (-0.3, "flag", "Hands below the plane zone"),
 ])
 def test_plane_bands(offset, status, label):
     v = run(_hands_at_plane(offset))
@@ -112,7 +112,7 @@ def test_plane_bands(offset, status, label):
 def test_plane_row_units():
     row = run(_hands_at_plane(1.1)).rows[1]
     assert row.value == "≈5 cm above"
-    assert row.note.startswith("10% of torso length · hands slightly above the plane")
+    assert row.note.startswith("10% of torso length · hands slightly above the plane zone")
 
 
 def test_left_handed_mirror_matches():
