@@ -21,6 +21,7 @@ import numpy as np
 
 from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
                                   pct, register)
+from swingcheck.analyzers.dtl_body import posture_kept, with_body
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.analyzers.dtl_takeaway import address_line
 
@@ -116,6 +117,14 @@ def downswing(ctx: SwingContext) -> Verdict:
         tips.append("Come down flatter than you went back: take it back less inside, or let the club drop behind you on the way down.")
     tip = " ".join(tips)
 
+    # Spine bend kept from address (dtl_body.py): standing up on the way down is where
+    # early extension starts. Its lines are drawn only when it's off, to keep the club clear.
+    posture = posture_kept(ctx, f, -line.toward_golfer, show)
+    status, label, summary, tip = with_body(status, label, summary, tip, [posture])
+    if posture.status != "ok":
+        plane = swing_plane_line(ctx, show)
+        overlays = plane + posture.overlays + overlays[len(plane):]  # under the club marks
+
     return Verdict(
         status=status,
         label=label,
@@ -135,6 +144,7 @@ def downswing(ctx: SwingContext) -> Verdict:
                 f"(green {pct(cfg['under_min'])}–{pct(cfg['under_max'])} under, "
                 f"red past {pct(-cfg['under_watch_min'])} above or {pct(cfg['under_watch_max'])} under)", plane_status),
             *rows_extra,
+            posture.row,
         ],
         overlays=overlays,
     )

@@ -160,10 +160,12 @@ your **hands**. Body points come from tracking. Settings live in
 |---|---|---|---|---|
 | **Lead arm vs spine** | angle between the lead arm (lead shoulder → hands) and the spine, drawn from the hip center through the head, on the top frame; 90° = the arm matches the shoulders | 75–105°: **Lead arm matches the shoulders** | 65–75° (*slightly above*) or 105–115° (*slightly below*) | under 65°: arm lifted **above the shoulders** (upright); over 115°: **below the shoulders** (flat, around the body) |
 | **Hands vs trail heel** | how far the hands sit across the picture from straight above the trail heel (tracked, median of a few frames around the top), as % of torso length; drawn as a dashed plumb line up from the heel | within ±15% (about 7 cm): **Hands over the trail heel** | 15–30% (*slightly outside* / *slightly behind the heel*) | more than 30%: hands **outside the heel** (out toward the ball) or **behind the heel** (deep, flat) |
+| **Spine bend kept** | as at the takeaway and halfway back: spine bend on the top frame vs address, from tracking; its lines are drawn only when it's off (the frame already has a spine line) | up to 8° more upright or 5° more bent | 8–12° more upright (*slightly standing up*) or 5–10° more bent | more than 12° more upright: **standing up** in the backswing; more than 10° more bent: **bending over** |
 
-The card shows the worse of the two. References for the hands: McIlroy about
+The card shows the worst of the three. References for the hands: McIlroy about
 2 cm toward the ball, Tiger about 6 cm, both green. If the heel isn't tracked,
-that row says "not measured" and the arm decides.
+that row says "not measured" and the others decide. Spine bend at the top:
+McIlroy 37° (address 37°), Tiger 30° (address 34°), both green.
 
 The spine runs from the hips **through the head**, the way golf instruction
 draws the spine angle (it matched the coach's spine marker on the reference
@@ -188,6 +190,7 @@ moved. Settings live in `[analyzers.downswing]`.
 |---|---|---|---|---|
 | **Clubhead vs swing plane** | the clubhead's distance from the swing plane line, square to it (as at the takeaway), as % of torso length | on the line to 40% under (behind the hands): **Club down the swing plane** | up to 30% above (*slightly steep*; a little above is forgivable) or 40–70% under (*well under*) | more than 30% above (≈15 cm): **over the top**; more than 70% under: **stuck** (too flat) |
 | **Shallowing** | that distance minus the same one at your takeaway: + = the club comes down flatter than it went back | 0% or more flatter: **Shallowed** | up to 20% steeper | more than 20% steeper than going back: the over-the-top loop |
+| **Spine bend kept** | spine bend on the downswing frame vs address, from tracking; its lines are drawn only when it's off | up to 5° more upright or 5° more bent | 5–10° (*slightly standing up* / *slightly bending over*) | more than 10° more upright: **standing up** coming down (where early extension starts); more than 10° more bent: **bending over** |
 
 Why compare with the takeaway and not shaft angles: at P6, like at the
 takeaway, the shaft points roughly at the camera, so its angle on screen is

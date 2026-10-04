@@ -19,11 +19,18 @@ ADDR_GRIP = np.array([560.0, 820.0])
 HANDS = np.array([520.0, 760.0])
 
 
-def pose(mirror=False):
+SPINE_BEND = 35.0  # degrees at address
+
+
+def pose(mirror=False, spine_lost=0.0):
+    """spine_lost: degrees of spine bend lost by the downswing frame (from frame 45)."""
     data = np.full((80, len(LANDMARKS), 4), np.nan)
-    for name, p in {"left_hip": HIP, "right_hip": HIP}.items():
-        x = WIDTH - 1 - p[0] if mirror else p[0]
-        data[:, LANDMARK_INDEX[name]] = (x, p[1], 0.0, 0.95)
+    for f in range(80):
+        bend = np.radians(SPINE_BEND - (spine_lost if f >= 45 else 0.0))
+        sh = HIP + 258.0 * np.array([np.sin(bend), -np.cos(bend)])
+        for name, p in {"left_hip": HIP, "right_hip": HIP, "left_shoulder": sh, "right_shoulder": sh}.items():
+            x = WIDTH - 1 - p[0] if mirror else p[0]
+            data[f, LANDMARK_INDEX[name]] = (x, p[1], 0.0, 0.95)
     return PoseSeq(fps=240.0, width=WIDTH, height=1920, data=data)
 
 
@@ -36,7 +43,7 @@ def on_line(under):
     return ADDR_CLUBHEAD + 0.6 * (ADDR_GRIP - ADDR_CLUBHEAD) + under * SCALE * normal
 
 
-def run(under=0.15, takeaway=0.0, mirror=False, config=None, marked=True):
+def run(under=0.15, takeaway=0.0, mirror=False, config=None, marked=True, spine_lost=0.0):
     config = copy.deepcopy(config or CONFIG)
     flip = (lambda p: (WIDTH - 1 - float(p[0]), float(p[1]))) if mirror else (lambda p: (float(p[0]), float(p[1])))
     if mirror:
@@ -49,7 +56,7 @@ def run(under=0.15, takeaway=0.0, mirror=False, config=None, marked=True):
     marks = Marks(view="dtl", address_frame=0,
                   points={"ball": flip(BALL), "clubhead": flip(ADDR_CLUBHEAD), "grip": flip(ADDR_GRIP)},
                   checkpoints=checkpoints)
-    ctx = SwingContext(view="dtl", pose=pose(mirror), marks=marks, phases=PHASES, scale=SCALE, config=config)
+    ctx = SwingContext(view="dtl", pose=pose(mirror, spine_lost), marks=marks, phases=PHASES, scale=SCALE, config=config)
     (v,) = [v for v in run_analyzers(ctx) if v.name == "downswing"]
     return v
 
@@ -133,3 +140,21 @@ def test_takeaway_clubhead_is_a_solid_dot_in_its_own_color():
     v = run(under=0.15, takeaway=-0.04)
     (dot,) = [o for o in v.overlays if o.kind == "point" and o.points[0] == pytest.approx(on_line(-0.04))]
     assert dot.color == TAKEAWAY_COLOR and dot.thickness >= 2  # filled, not a ring
+
+
+
+@pytest.mark.parametrize("lost, status, extra", [
+    (1, "ok", None),                       # McIlroy
+    (-2, "ok", None),                      # Tiger, a little more bent
+    (6, "warn", "slightly standing up"),   # the user's latest swing
+    (12, "flag", "standing up"),
+])
+def test_spine_bend_kept_coming_down(lost, status, extra):
+    for mirror in (False, True):
+        v = run(under=0.15, takeaway=-0.04, spine_lost=lost, mirror=mirror)  # club green
+        row = v.rows[-1]
+        assert row.label == "Spine bend kept" and row.status == status
+        assert "green up to 5° lost" in row.note
+        assert v.status == status
+        assert v.label == "Club down the swing plane, shallowed" + (f", {extra}" if extra else "")
+        assert any(o.label == "address spine" for o in v.overlays) == (status != "ok")

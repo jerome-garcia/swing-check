@@ -23,15 +23,16 @@ LEAD_SHOULDER_TOP = np.array([590.0, 880.0])
 HEAD = HIP + 1.3 * (SHOULDER_MID - HIP)  # the spine runs from the hips through the head
 
 
-def pose(mirror=False, head=None, heel_x=None):
-    """heel_x: screen x of the trail (right) heel; None = heel not tracked."""
+def pose(mirror=False, head=None, heel_x=None, upright=0.0):
+    """heel_x: screen x of the trail (right) heel; None = heel not tracked. upright: px the
+    shoulders sit back toward the golfer's back at the top (spine bend lost)."""
     head = HEAD if head is None else head
     data = np.full((60, len(LANDMARKS), 4), np.nan)
     for f in range(60):
         pts = {"left_hip": HIP + (40, 0), "right_hip": HIP - (40, 0),
                "left_ear": head + (6, 0), "right_ear": head - (6, 0),
-               "left_shoulder": LEAD_SHOULDER_TOP if f >= 20 else SHOULDER_MID + (60, 40),
-               "right_shoulder": 2 * SHOULDER_MID - LEAD_SHOULDER_TOP if f >= 20 else TRAIL_SHOULDER_ADDR}
+               "left_shoulder": LEAD_SHOULDER_TOP - (upright, 0) if f >= 20 else SHOULDER_MID + (60, 40),
+               "right_shoulder": 2 * SHOULDER_MID - LEAD_SHOULDER_TOP - (upright, 0) if f >= 20 else TRAIL_SHOULDER_ADDR}
         if heel_x is not None:
             pts["right_heel"] = np.array([heel_x, 1600.0])
         for name, p in pts.items():
@@ -51,7 +52,7 @@ def hands_at(arm_deg, length=300.0):
     return LEAD_SHOULDER_TOP + length * (rot @ spine)
 
 
-def run(hands, mirror=False, config=None, marked=True, head=None, heel_out=0.0, heel=True):
+def run(hands, mirror=False, config=None, marked=True, head=None, heel_out=0.0, heel=True, upright=0.0):
     """heel_out: torso lengths the hands sit out toward the ball from the trail heel."""
     config = copy.deepcopy(config or CONFIG)
     flip = (lambda p: (WIDTH - 1 - float(p[0]), float(p[1]))) if mirror else (lambda p: (float(p[0]), float(p[1])))
@@ -62,7 +63,7 @@ def run(hands, mirror=False, config=None, marked=True, head=None, heel_out=0.0, 
     marks = Marks(view="dtl", address_frame=0,
                   points={"ball": flip(BALL), "clubhead": flip(ADDR_CLUBHEAD), "grip": flip(ADDR_GRIP)},
                   checkpoints=checkpoints)
-    ctx = SwingContext(view="dtl", pose=pose(mirror, head, hands[0] - heel_out * SCALE if heel else None), marks=marks, phases=PHASES, scale=SCALE, config=config)
+    ctx = SwingContext(view="dtl", pose=pose(mirror, head, hands[0] - heel_out * SCALE if heel else None, upright), marks=marks, phases=PHASES, scale=SCALE, config=config)
     (v,) = [v for v in run_analyzers(ctx) if v.name == "top"]
     return v
 
@@ -110,7 +111,7 @@ def test_not_marked_explains_how():
 
 def test_judges_the_arm_and_the_hands_over_the_heel():
     v = run(hands_at(90))
-    assert [r.label for r in v.rows] == ["Lead arm vs spine", "Hands vs trail heel"]
+    assert [r.label for r in v.rows] == ["Lead arm vs spine", "Hands vs trail heel", "Spine bend kept"]
     assert v.label == "Lead arm matches the shoulders" and v.tip == ""
     assert v.measurements["hands_out_from_heel"] == pytest.approx(0.0, abs=1e-3)
 
@@ -148,3 +149,22 @@ def test_key_frame_shows_the_trail_heel_line():
 
 def test_key_frame_shows_the_swing_plane_line():
     assert any(o.kind == "line" and o.label == "swing plane" for o in run(hands_at(90)).overlays)
+
+
+
+@pytest.mark.parametrize("upright, status, extra", [
+    (0, "ok", None),                         # spine bend held (McIlroy)
+    (60, "warn", "slightly standing up"),    # about 11° more upright
+    (80, "flag", "standing up"),             # about 15° (jolo loses 13°)
+])
+def test_spine_bend_kept_at_the_top(upright, status, extra):
+    for mirror in (False, True):
+        v = run(hands_at(90), upright=upright, mirror=mirror)
+        row = v.rows[2]
+        assert row.label == "Spine bend kept" and row.status == status
+        assert "green up to 8° lost" in row.note
+        assert v.status == status
+        assert v.label == "Lead arm matches the shoulders" + (f", {extra}" if extra else "")
+        assert v.rows[0].note.startswith("lead arm matches the shoulders (")  # the arm row's own wording
+        # The posture lines are drawn only when it's off (the top already has a spine line).
+        assert any(o.label == "address spine" for o in v.overlays) == (status != "ok")

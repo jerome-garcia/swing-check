@@ -14,6 +14,9 @@ On the top frame you mark, using the hands you click there:
              across the picture, as a share of torso length: + = out toward
              the ball (away from the body), - = behind the heel (deep, flat).
 
+  posture    spine bend kept from address (dtl_body.py, as at the takeaway and
+             halfway back): losing it by the top = standing up in the backswing.
+
 Body points come from tracking. Bands are in [analyzers.top]. (A "hands in the
 plane zone" check was tried here and dropped at the user's request.)
 """
@@ -24,6 +27,7 @@ import numpy as np
 
 from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
                                   pct, register)
+from swingcheck.analyzers.dtl_body import posture_kept, with_body
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.geometry import angle_between_deg
 
@@ -100,6 +104,7 @@ def top(ctx: SwingContext) -> Verdict:
         out, heel_status, heel_label, heel_meaning, heel_tip = None, "ok", "", "", ""
         heel_row = Row("Hands vs trail heel", "not measured", "trail heel not tracked around the top", "error")
 
+    arm_label = label
     status = max(arm_status, heel_status, key=ORDER.__getitem__)
     if heel_status != "ok":
         label = f"{label}, {heel_label[0].lower() + heel_label[1:]}"
@@ -115,6 +120,11 @@ def top(ctx: SwingContext) -> Verdict:
     if np.dot(square, hands - lead_shoulder) < 0:
         square = -square
     target = lead_shoulder + square * np.linalg.norm(hands - lead_shoulder)
+
+    # Spine bend kept from address (dtl_body.py). Its lines are drawn only when it's off:
+    # the top frame already shows a spine (hips through the head) for the arm check.
+    posture = posture_kept(ctx, f, -toward_golfer, show)
+    status, label, summary, tip = with_body(status, label, summary, tip, [posture])
     overlays = [
         Overlay("segment", [tuple(hip_mid), tuple(head)], REFERENCE_COLOR, "", show, 2),
         Overlay("segment", [tuple(lead_shoulder), tuple(hands)], col, "", show, 3),
@@ -151,9 +161,10 @@ def top(ctx: SwingContext) -> Verdict:
         },
         rows=[
             Row("Lead arm vs spine", f"{arm_angle:.0f}°",
-                f"{label.lower()} (green {cfg['arm_spine_min']:g}–{cfg['arm_spine_max']:g}°, "
+                f"{arm_label.lower()} (green {cfg['arm_spine_min']:g}–{cfg['arm_spine_max']:g}°, "
                 f"red outside {cfg['arm_spine_watch_min']:g}–{cfg['arm_spine_watch_max']:g}°)", arm_status),
             heel_row,
+            posture.row,
         ],
-        overlays=swing_plane_line(ctx, show) + overlays,
+        overlays=swing_plane_line(ctx, show) + (posture.overlays if posture.status != "ok" else []) + overlays,
     )

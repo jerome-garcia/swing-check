@@ -208,6 +208,12 @@ arm_spine_watch_max = 115
 # - = behind the heel (deep). McIlroy +3%, Tiger +11%.
 heel_max = 0.15    # green within ±15% (about 7 cm)...
 heel_watch = 0.30  # ...yellow to 30% (about 15 cm); red beyond
+# Spine bend kept from address, degrees (as at halfway back). McIlroy is back at
+# his address bend by the top, Tiger about 4° more upright.
+posture_loss_max = 8       # green up to 8° more upright...
+posture_loss_watch = 12    # ...yellow to 12°; red beyond (standing up)
+posture_gain_max = 5       # green up to 5° more bent...
+posture_gain_watch = 10    # ...yellow to 10°; red beyond (bending over)
 
 [analyzers.downswing]
 # DTL checkpoint 6, on the frame you mark where the shaft is parallel to the
@@ -223,6 +229,13 @@ under_watch_max = 0.70  # shallow); red beyond (over the top / stuck)
 # comes down flatter than it went back.
 shallow_min = 0.0         # green: as flat or flatter coming down
 shallow_watch_min = -0.20 # yellow: up to 20% steeper; red beyond (over the top loop)
+# Spine bend kept from address, degrees. Good players hold it coming down
+# (McIlroy about 1° more upright, Tiger 2° more bent); losing it here is where
+# standing up / early extension starts.
+posture_loss_max = 5       # green up to 5° more upright...
+posture_loss_watch = 10    # ...yellow to 10°; red beyond (standing up)
+posture_gain_max = 5       # green up to 5° more bent...
+posture_gain_watch = 10    # ...yellow to 10°; red beyond (bending over)
 
 [analyzers.impact]
 # DTL checkpoint 7, automatic on the detected impact frame.
