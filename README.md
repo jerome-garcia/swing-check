@@ -111,14 +111,17 @@ Settings live in `[analyzers.halfway_back]`.
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Shaft points** | the line from the clubhead through the hands, carried down to the ball's level: where it lands vs the ball, as % of torso length | 0–40% inside the ball (between the ball and your feet): **Points just inside the ball** | 40–70% inside (*a little steep*) or up to 15% past the ball (*a little flat*) | past 70% inside: **Points at your feet** (too steep / upright); more than 15% past the ball: **Points outside the ball** (too flat / laid off) |
+| **Shaft points** | the line from the clubhead through the hands, carried down to the ball's level: where it lands vs the ball, as % of torso length | 10% past the ball to 40% inside (between the ball and your feet): **Points at the ball** / **just inside the ball** | 40–70% inside (*a little steep*) or 10–25% past the ball (*a little flat*) | past 70% inside: **Points at your feet** (too steep / upright); more than 25% past the ball: **Points outside the ball** (too flat / laid off) |
 | **Hands vs biceps** | across, at the hands' height: hands vs the line of your trail upper arm (shoulder → elbow, from body tracking) | within ±15%: **Hands split the biceps** | 15–30%: *slightly behind / in front of the arm* | past 30%: hands *deep behind* the arm or *far out in front* of it |
 
 Set from a reference photo (a scratch golfer: shaft 26% inside the ball, hands
 10% behind the biceps line, both green). McIlroy at lead arm parallel reads 30%
 inside and 4% behind (green); an amateur swing that went back inside at the
 takeaway reads 117% past the ball (laid off, red), with the hands 30% out in
-front. If the hands are still well below the trail elbow
+front. If the Hands click is more than about 10 cm (`hands_click_max`) from both
+tracked wrists, it probably landed on the shaft rather than the hands, so the
+hands aren't judged and the card asks you to re-mark them. If the hands are
+still well below the trail elbow
 (`hands_below_elbow_max`), the frame is earlier than lead arm parallel and the
 card asks you to pick a later one instead of guessing. The key frame shows the
 shaft line (green) carried down to the ball's level, a tick from where it lands

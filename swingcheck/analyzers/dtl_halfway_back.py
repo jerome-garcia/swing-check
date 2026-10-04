@@ -60,7 +60,9 @@ def halfway_back(ctx: SwingContext) -> Verdict:
     ball = np.asarray(ctx.marks.points["ball"], float)
     landing, inside_by, toward_golfer = shaft_landing(ctx, clubhead, hands, "halfway back")
     shaft_status = grade(inside_by, cfg["inside_min"], cfg["inside_max"], cfg["inside_watch_min"], cfg["inside_watch_max"])
-    if shaft_status == "ok":
+    if shaft_status == "ok" and inside_by < 0:
+        shaft_label, shaft_meaning = "Points at the ball", "the shaft points at the ball line, on plane"
+    elif shaft_status == "ok":
         shaft_label, shaft_meaning = "Points just inside the ball", "the shaft points just inside the ball, on plane"
     elif inside_by > cfg["inside_max"]:
         shaft_label, shaft_meaning = (("Points well inside the ball", "the shaft points toward your feet: a little steep")
@@ -83,7 +85,17 @@ def halfway_back(ctx: SwingContext) -> Verdict:
     out_by = ctx.units((hands[0] - arm_x) * -toward_golfer)  # + = toward the ball (out in front), - = behind
     lim, watch = cfg["hands_tolerance"], cfg["hands_watch"]
     hands_status = grade(out_by, -lim, lim, -watch, watch)
-    if hands_status == "ok":
+    # Sanity check on the Hands click: it should be near one of the tracked wrists. A click
+    # on the shaft above the hands still gives the right shaft line, but a wrong hands
+    # position, so in that case the hands aren't judged (and don't color the checkpoint).
+    click_off = _click_off_wrists(ctx, f, hands)
+    hands_misclicked = click_off is not None and click_off > cfg["hands_click_max"]
+    if hands_misclicked:
+        hands_status = "error"
+        hands_label = "Hands mark looks off"
+        hands_meaning = (f"your Hands mark is {ctx.distance_text(click_off)} from where your hands are tracked, "
+                         "so the hands weren't judged")
+    elif hands_status == "ok":
         hands_label, hands_meaning = "Hands split the biceps", "your hands sit on the line of your trail biceps"
     elif out_by > 0:
         hands_label, hands_meaning = (("Hands slightly in front of the arm", "your hands are a little out in front of your trail arm")
@@ -94,7 +106,7 @@ def halfway_back(ctx: SwingContext) -> Verdict:
                                       if hands_status == "warn" else
                                       ("Hands deep behind the arm", "your hands are well behind your trail arm, pulled in deep"))
 
-    status = max(shaft_status, hands_status, key=ORDER.__getitem__)
+    status = max([shaft_status] + ([hands_status] if hands_status != "error" else []), key=ORDER.__getitem__)
     label = f"{shaft_label}, {hands_label[0].lower() + hands_label[1:]}"
     summary = f"Halfway back, {shaft_meaning}, and {hands_meaning}."
 
@@ -122,7 +134,9 @@ def halfway_back(ctx: SwingContext) -> Verdict:
         tips.append("Turn your chest more and let the club set a little more around you."
                     if inside_by > cfg["inside_max"] else
                     "Hinge your wrists more upward so the butt of the club points at the ball line.")
-    if hands_status != "ok":
+    if hands_misclicked:
+        tips.append("Re-mark the Hands point in the middle of your hands (not on the shaft above them).")
+    elif hands_status != "ok":
         tips.append("Keep your hands closer to your body, over your trail biceps."
                     if out_by > 0 else
                     "Keep your hands in front of your chest instead of pulling them in behind you.")
@@ -136,7 +150,8 @@ def halfway_back(ctx: SwingContext) -> Verdict:
         frame=f,
         measurements={
             "shaft_inside_ball": round(inside_by, 3),
-            "hands_out_from_biceps": round(out_by, 3),
+            "hands_out_from_biceps": None if hands_misclicked else round(out_by, 3),
+            "hands_click_off_wrists": round(click_off, 3) if click_off is not None else None,
             "halfway_frame": f,
             "units": "share of torso length; shaft: + = lands between the ball and your feet (inside), "
                      "- = past the ball; hands: + = out in front of the trail upper arm (toward the ball), - = behind it",
@@ -144,8 +159,10 @@ def halfway_back(ctx: SwingContext) -> Verdict:
         rows=[
             Row("Shaft points", f"{ctx.distance_text(inside_by)} {shaft_side} the ball",
                 f"{pct(abs(inside_by))} of torso length · {shaft_label.lower()} "
-                f"(green {pct(cfg['inside_min'])}–{pct(cfg['inside_max'])} inside, "
+                f"(green {pct(-cfg['inside_min'])} outside to {pct(cfg['inside_max'])} inside, "
                 f"red past {pct(cfg['inside_watch_max'])} inside or {pct(-cfg['inside_watch_min'])} outside)", shaft_status),
+            Row("Hands vs biceps", "–", f"{hands_meaning}: Edit marks → Halfway back and click the middle of your hands",
+                "error") if hands_misclicked else
             Row("Hands vs biceps", f"{ctx.distance_text(out_by)} {hands_side}",
                 f"{pct(abs(out_by))} of torso length · {hands_label.lower()} "
                 f"(green within ±{pct(lim)}, red past {pct(watch)})", hands_status),
@@ -153,3 +170,15 @@ def halfway_back(ctx: SwingContext) -> Verdict:
         ],
         overlays=overlays,
     )
+
+
+def _click_off_wrists(ctx: SwingContext, frame: int, hands: np.ndarray) -> float | None:
+    """Distance (torso lengths) from the Hands click to the nearer tracked wrist on that frame,
+    or None if neither wrist is tracked there. The nearer one, so a single mis-tracked wrist
+    doesn't make a good click look wrong."""
+    dists = []
+    for side in ("left", "right"):
+        w = ctx.pose.xy(f"{side}_wrist")[frame]
+        if np.all(np.isfinite(w)):
+            dists.append(float(np.linalg.norm(np.asarray(w, float) - hands)))
+    return ctx.units(min(dists)) if dists else None

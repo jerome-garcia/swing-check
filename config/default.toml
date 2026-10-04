@@ -164,9 +164,9 @@ flag_distance = 0.50    # yellow up to this (slightly inside/outside, which many
 #
 # Shaft points: the clubhead->hands line carried down to the ball's level.
 # + = lands inside the ball (between the ball and your feet), - = past it.
-inside_min = 0.0          # green: 0-40% inside
+inside_min = -0.10        # green: 10% past the ball to 40% inside
 inside_max = 0.40
-inside_watch_min = -0.15  # yellow: up to 15% past the ball (a little flat)...
+inside_watch_min = -0.25  # yellow: up to 25% past the ball (a little flat)...
 inside_watch_max = 0.70   # ...or 40-70% inside (toward your feet, a little steep); red beyond
 # Hands vs the trail upper arm (shoulder->elbow line), across, at the hands'
 # height: "hands split the biceps".
@@ -175,6 +175,9 @@ hands_watch = 0.30        # yellow to ±30%; red beyond
 # At lead arm parallel the hands are about level with the trail biceps. Hands
 # more than this far below the trail elbow mean the marked frame is too early.
 hands_below_elbow_max = 0.15
+# The Hands click must be within this of a tracked wrist (about 10 cm); farther
+# means it probably landed on the shaft, so the hands aren't judged.
+hands_click_max = 0.20
 
 [analyzers.top]
 # DTL checkpoint 5, on the top frame you mark.
