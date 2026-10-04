@@ -15,22 +15,14 @@ PHASES = Phases(address=0, takeaway=20, top=40, early_downswing=50, impact=60)
 # Right-hander from behind: golfer on the left, ball on the right (the reference photo, roughly).
 HIP = np.array([360.0, 1070.0])
 BALL = np.array([806.0, 1484.0])
-TRAIL_SHOULDER = np.array([464.0, 775.0])
-TRAIL_ELBOW = np.array([486.0, 906.0])
 HANDS = np.array([450.0, 865.0])
 
 
-def pose(mirror=False, wrists=None):
+def pose(mirror=False):
     data = np.full((80, len(LANDMARKS), 4), np.nan)
-    pts = {"left_hip": HIP + (45, 5), "right_hip": HIP - (45, 5), "left_shoulder": (585.0, 850.0),
-           "right_shoulder": TRAIL_SHOULDER, "right_elbow": TRAIL_ELBOW}
-    if wrists is not None:  # tracked wrists (left, right)
-        pts["left_wrist"], pts["right_wrist"] = wrists
-    for name, p in pts.items():
-        if mirror:  # a left-hander is the mirror image, with left and right swapped
-            name = name.replace("left", "tmp").replace("right", "left").replace("tmp", "right")
-            p = (WIDTH - 1 - p[0], p[1])
-        data[:, LANDMARK_INDEX[name]] = (p[0], p[1], 0.0, 0.95)
+    for name, p in {"left_hip": HIP + (45, 5), "right_hip": HIP - (45, 5)}.items():
+        x = WIDTH - 1 - p[0] if mirror else p[0]
+        data[:, LANDMARK_INDEX[name]] = (x, p[1], 0.0, 0.95)
     return PoseSeq(fps=240.0, width=WIDTH, height=1920, data=data)
 
 
@@ -40,83 +32,63 @@ def clubhead_for(inside_by, hands=HANDS):
     return hands + (hands - landing) * 0.9
 
 
-def run(inside_by=0.25, hands=HANDS, mirror=False, config=None, marked=True, clubhead=None, wrists=None):
+def run(inside_by=0.25, mirror=False, config=None, marked=True, clubhead=None):
     config = copy.deepcopy(config or CONFIG)
     flip = (lambda p: (WIDTH - 1 - float(p[0]), float(p[1]))) if mirror else (lambda p: (float(p[0]), float(p[1])))
     if mirror:
         config["golfer"]["handedness"] = "left"
     checkpoints = {}
     if marked:
-        ch = clubhead if clubhead is not None else clubhead_for(inside_by, hands)
-        checkpoints["halfway_back"] = CheckpointMark(frame=30, points={"clubhead": flip(ch), "grip": flip(hands)})
+        ch = clubhead if clubhead is not None else clubhead_for(inside_by)
+        checkpoints["halfway_back"] = CheckpointMark(frame=30, points={"clubhead": flip(ch), "grip": flip(HANDS)})
     marks = Marks(view="dtl", address_frame=0,
                   points={"ball": flip(BALL), "clubhead": flip(BALL + (-25, 10)), "grip": flip((560, 820))},
                   checkpoints=checkpoints)
-    ctx = SwingContext(view="dtl", pose=pose(mirror, wrists), marks=marks, phases=PHASES, scale=SCALE, config=config)
+    ctx = SwingContext(view="dtl", pose=pose(mirror), marks=marks, phases=PHASES, scale=SCALE, config=config)
     (v,) = [v for v in run_analyzers(ctx) if v.name == "halfway_back"]
     return v
 
 
 def test_reference_photo_is_green():
     v = run(clubhead=np.array([183.0, 268.0]))  # the photo's clubhead and hands
-    assert v.status == "ok"
-    assert v.label == "Points just inside the ball, hands split the biceps"
+    assert v.status == "ok" and v.label == "Points just inside the ball"
     assert v.measurements["shaft_inside_ball"] == pytest.approx(0.26, abs=0.01)
-    assert v.measurements["hands_out_from_biceps"] == pytest.approx(-0.10, abs=0.01)
     assert v.frame == 30  # key frame is the marked frame
+    assert [r.label for r in v.rows] == ["Shaft points", "Halfway frame"]  # no biceps check
 
 
 @pytest.mark.parametrize("inside_by, status, label", [
     (0.2, "ok", "Points just inside the ball"),
+    (-0.05, "ok", "Points at the ball"),
     (0.55, "warn", "Points well inside the ball"),
     (0.9, "flag", "Points at your feet"),
-    (-0.05, "ok", "Points at the ball"),
     (-0.15, "warn", "Points just outside the ball"),
-    (-0.3, "flag", "Points outside the ball"),
+    (-0.4, "flag", "Points outside the ball"),
 ])
 def test_shaft_bands(inside_by, status, label):
     v = run(inside_by=inside_by)
-    row = v.rows[0]
-    assert row.status == status and label.lower() in row.note
+    assert v.status == status and v.label == label
     assert v.measurements["shaft_inside_ball"] == pytest.approx(inside_by, abs=1e-3)
+    assert (v.tip == "") == (status == "ok")
 
 
-@pytest.mark.parametrize("dx, status, label", [
-    (0.0, "ok", "Hands split the biceps"),
-    (0.2, "warn", "Hands slightly in front of the arm"),
-    (-0.2, "warn", "Hands slightly behind the arm"),
-    (0.4, "flag", "Hands far out in front of the arm"),
-    (-0.4, "flag", "Hands deep behind the arm"),
-])
-def test_hands_bands(dx, status, label):
-    # Hands moved sideways (toward the ball = screen right here) from the biceps line.
-    arm_x = TRAIL_SHOULDER[0] + (HANDS[1] - TRAIL_SHOULDER[1]) * (TRAIL_ELBOW[0] - TRAIL_SHOULDER[0]) / (TRAIL_ELBOW[1] - TRAIL_SHOULDER[1])
-    hands = np.array([arm_x + dx * SCALE, HANDS[1]])
-    v = run(hands=hands)
-    row = v.rows[1]
-    assert row.status == status and label.lower() in row.note
-    assert v.measurements["hands_out_from_biceps"] == pytest.approx(dx, abs=1e-3)
-
-
-def test_worst_color_wins_and_rows_have_units():
-    v = run(inside_by=0.9)
-    assert v.status == "flag"
-    assert v.rows[0].value == "≈45 cm inside the ball"  # 90% of the default 50 cm torso
-    assert "of torso length" in v.rows[0].note and "green 10% outside to 40% inside" in v.rows[0].note
+def test_row_has_units_and_limits():
+    row = run(inside_by=0.9).rows[0]
+    assert row.value == "≈45 cm inside the ball"  # 90% of the default 50 cm torso
+    assert "of torso length" in row.note and "green 10% outside to 40% inside" in row.note
 
 
 def test_left_handed_mirror_matches():
-    for x in (0.2, 0.55, -0.3):
+    for x in (0.2, 0.55, -0.4):
         right, left = run(inside_by=x), run(inside_by=x, mirror=True)
         assert left.label == right.label
-        for key in ("shaft_inside_ball", "hands_out_from_biceps"):
-            assert left.measurements[key] == pytest.approx(right.measurements[key], abs=1e-3)
+        assert left.measurements["shaft_inside_ball"] == pytest.approx(right.measurements["shaft_inside_ball"], abs=1e-3)
 
 
 def test_bands_from_config():
     config = copy.deepcopy(CONFIG)
     config["analyzers"]["halfway_back"]["inside_max"] = 0.1
-    assert run(inside_by=0.2, config=config).rows[0].status == "warn"
+    assert run(inside_by=0.2, config=config).status == "warn"
 
 
 def test_not_marked_explains_how():
@@ -127,27 +99,3 @@ def test_not_marked_explains_how():
 def test_clubhead_below_hands_is_a_marking_error():
     v = run(clubhead=HANDS + (50, 100))
     assert v.status == "error" and "above the hands" in v.summary
-
-
-def test_frame_too_early_says_so():
-    # Hands well below the trail elbow: before lead arm parallel.
-    v = run(hands=TRAIL_ELBOW + (-10, 0.3 * SCALE))
-    assert v.status == "error" and "later frame" in v.summary
-
-
-def test_hands_click_off_the_hands_is_not_judged():
-    # Tracked hands are on the biceps line; the click landed 30% of torso up the shaft.
-    wrists = (HANDS, HANDS + (90, 15))  # the right wrist mis-tracked out on the lead forearm
-    off = HANDS + (-0.25 * SCALE, -0.18 * SCALE)
-    v = run(hands=off, wrists=wrists, clubhead=off + (-150, -300))
-    row = v.rows[1]
-    assert row.status == "error" and "middle of your hands" in row.note
-    assert v.measurements["hands_out_from_biceps"] is None
-    assert "Re-mark the Hands point" in v.tip
-    assert v.status in ("ok", "warn", "flag")  # judged on the shaft alone
-
-
-def test_hands_click_near_either_wrist_is_trusted():
-    wrists = (HANDS + (200, 0), HANDS + (8, 5))  # only the right wrist is near the click
-    v = run(hands=HANDS, wrists=wrists, clubhead=np.array([183.0, 268.0]))
-    assert v.rows[1].status == "ok" and v.measurements["hands_click_off_wrists"] < 0.05

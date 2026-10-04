@@ -27,7 +27,7 @@ of the swing.
 | 1 | **Address / alignment** | Arms perpendicular to the ground, spine tilt at the right angle, knee bend correct (plus back rounding) | ✅ Implemented |
 | 2 | **Swing plane** | At address, a line through the clubhead and shaft points you click is the swing plane; check that its angle is correct and that it points roughly at the belt buckle | ✅ Implemented |
 | 3 | **Takeaway** | When the club is parallel to the target line in the takeaway, the clubhead is still on the address shaft line (on plane) | ✅ Implemented |
-| 4 | **Backswing (halfway back)** | At lead arm parallel, the hands split the trail biceps and the shaft points back just inside the golf ball | ✅ Implemented |
+| 4 | **Backswing (halfway back)** | At lead arm parallel, the shaft points back at or just inside the golf ball ("hands split the biceps" was tried and dropped) | ✅ Implemented |
 | 5 | **Top of backswing** | The lead (left) arm matches the shoulders, 90° to the spine, and the hands are on plane | ✅ Implemented |
 | 6 | **Downswing** | With the shaft parallel to the ground coming down, the club is back on plane and flatter than at the takeaway (shallowing) | ✅ Implemented |
 | 7 | **Impact** | The hips stay back on the "tush line" (no early extension) and the spine bend is kept | ✅ Implemented |
@@ -112,20 +112,16 @@ Settings live in `[analyzers.halfway_back]`.
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
 | **Shaft points** | the line from the clubhead through the hands, carried down to the ball's level: where it lands vs the ball, as % of torso length | 10% past the ball to 40% inside (between the ball and your feet): **Points at the ball** / **just inside the ball** | 40–70% inside (*a little steep*) or 10–25% past the ball (*a little flat*) | past 70% inside: **Points at your feet** (too steep / upright); more than 25% past the ball: **Points outside the ball** (too flat / laid off) |
-| **Hands vs biceps** | across, at the hands' height: hands vs the line of your trail upper arm (shoulder → elbow, from body tracking) | within ±15%: **Hands split the biceps** | 15–30%: *slightly behind / in front of the arm* | past 30%: hands *deep behind* the arm or *far out in front* of it |
 
-Set from a reference photo (a scratch golfer: shaft 26% inside the ball, hands
-10% behind the biceps line, both green). McIlroy at lead arm parallel reads 30%
-inside and 4% behind (green); an amateur swing that went back inside at the
-takeaway reads 117% past the ball (laid off, red), with the hands 30% out in
-front. If the Hands click is more than about 10 cm (`hands_click_max`) from both
-tracked wrists, it probably landed on the shaft rather than the hands, so the
-hands aren't judged and the card asks you to re-mark them. If the hands are
-still well below the trail elbow
-(`hands_below_elbow_max`), the frame is earlier than lead arm parallel and the
-card asks you to pick a later one instead of guessing. The key frame shows the
-shaft line (green) carried down to the ball's level, a tick from where it lands
-to the ball, and the trail upper arm (white) with the hands.
+Set from a reference photo (a scratch golfer: shaft 26% inside the ball,
+green). McIlroy at lead arm parallel reads 30% inside (green); an amateur swing
+that went back inside at the takeaway reads 117% past the ball (laid off, red).
+Your spec also asked for "the hands split the biceps"; that check was built and
+then dropped: from behind, the trail elbow is half hidden at this point, so the
+tracked biceps line moved too much to judge a few centimetres reliably.
+
+The key frame shows the shaft line (green) carried down to the ball's level and
+a tick from where it lands to the ball.
 
 **5. Top (implemented).** On the **Top** marking step, scrub to the top of your
 backswing (the moment the club stops going back) and click the **clubhead** and

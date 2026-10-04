@@ -4,28 +4,26 @@ On the frame you mark where the lead arm is parallel to the ground, using the
 clubhead and hands you click there:
 
   shaft points   the shaft line, from the clubhead through the hands and on
-                 down to the ball's level, should land just inside the ball
-                 (between the ball and your feet). Well inside = pointing at
-                 your feet (shaft too steep / upright); past the ball = shaft
-                 too flat (laid off).
-  hands          seen from behind, the hands should "split the biceps": sit on
-                 the line of the trail upper arm (shoulder to elbow, from body
-                 tracking), not deep behind it or out in front of it.
+                 down to the ball's level, should land at or just inside the
+                 ball (between the ball and your feet). Well inside = pointing
+                 at your feet (shaft too steep / upright); past the ball =
+                 shaft too flat (laid off).
 
-Both are distances as a share of torso length, with green / yellow / red bands
-in [analyzers.halfway_back].
+A distance as a share of torso length, with green / yellow / red bands in
+[analyzers.halfway_back]. (A "hands split the biceps" check was tried and
+dropped: from behind the trail elbow is half hidden at this point, so the
+tracked biceps line wasn't reliable enough.)
 """
 
 from __future__ import annotations
 
 import numpy as np
 
-from swingcheck.analyzers import (BALL_COLOR, REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext,
-                                  Verdict, grade, pct, register)
+from swingcheck.analyzers import (BALL_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade, pct,
+                                  register)
 
 SHAFT_COLOR = (80, 230, 80)
 HOLD_MS = 400  # how long the overlays stay up in the annotated video
-ORDER = {"ok": 0, "warn": 1, "flag": 2}
 
 
 def shaft_landing(ctx: SwingContext, clubhead, hands, where: str) -> tuple[np.ndarray, float, float]:
@@ -59,126 +57,59 @@ def halfway_back(ctx: SwingContext) -> Verdict:
     hands = np.asarray(mark.points["grip"], float)
     ball = np.asarray(ctx.marks.points["ball"], float)
     landing, inside_by, toward_golfer = shaft_landing(ctx, clubhead, hands, "halfway back")
-    shaft_status = grade(inside_by, cfg["inside_min"], cfg["inside_max"], cfg["inside_watch_min"], cfg["inside_watch_max"])
-    if shaft_status == "ok" and inside_by < 0:
-        shaft_label, shaft_meaning = "Points at the ball", "the shaft points at the ball line, on plane"
-    elif shaft_status == "ok":
-        shaft_label, shaft_meaning = "Points just inside the ball", "the shaft points just inside the ball, on plane"
+
+    status = grade(inside_by, cfg["inside_min"], cfg["inside_max"], cfg["inside_watch_min"], cfg["inside_watch_max"])
+    if status == "ok" and inside_by < 0:
+        label, meaning = "Points at the ball", "the shaft points at the ball line, on plane"
+    elif status == "ok":
+        label, meaning = "Points just inside the ball", "the shaft points just inside the ball, on plane"
     elif inside_by > cfg["inside_max"]:
-        shaft_label, shaft_meaning = (("Points well inside the ball", "the shaft points toward your feet: a little steep")
-                                      if shaft_status == "warn" else
-                                      ("Points at your feet", "the shaft points at your feet: too steep / upright"))
+        label, meaning = (("Points well inside the ball", "the shaft points toward your feet: a little steep")
+                          if status == "warn" else
+                          ("Points at your feet", "the shaft points at your feet: too steep / upright"))
     else:
-        shaft_label, shaft_meaning = (("Points just outside the ball", "the shaft points just past the ball: a little flat")
-                                      if shaft_status == "warn" else
-                                      ("Points outside the ball", "the shaft points well past the ball: too flat / laid off"))
-
-    # 2. Hands vs the trail upper arm (shoulder -> elbow) at the hands' height.
-    shoulder = ctx.value(ctx.track(ctx.side("shoulder", "trail")), f, "trail shoulder")
-    elbow = ctx.value(ctx.track(ctx.side("elbow", "trail")), f, "trail elbow")
-    if abs(elbow[1] - shoulder[1]) < 1:
-        raise MissingData("the trail upper arm is level in the image, so the hands can't be compared to it")
-    if hands[1] > elbow[1] + cfg["hands_below_elbow_max"] * ctx.scale:
-        raise MissingData("your hands are still well below your trail elbow on the marked frame, which looks earlier "
-                          "than lead arm parallel: Edit marks → Halfway back and pick a later frame")
-    arm_x = shoulder[0] + (hands[1] - shoulder[1]) * (elbow[0] - shoulder[0]) / (elbow[1] - shoulder[1])
-    out_by = ctx.units((hands[0] - arm_x) * -toward_golfer)  # + = toward the ball (out in front), - = behind
-    lim, watch = cfg["hands_tolerance"], cfg["hands_watch"]
-    hands_status = grade(out_by, -lim, lim, -watch, watch)
-    # Sanity check on the Hands click: it should be near one of the tracked wrists. A click
-    # on the shaft above the hands still gives the right shaft line, but a wrong hands
-    # position, so in that case the hands aren't judged (and don't color the checkpoint).
-    click_off = _click_off_wrists(ctx, f, hands)
-    hands_misclicked = click_off is not None and click_off > cfg["hands_click_max"]
-    if hands_misclicked:
-        hands_status = "error"
-        hands_label = "Hands mark looks off"
-        hands_meaning = (f"your Hands mark is {ctx.distance_text(click_off)} from where your hands are tracked, "
-                         "so the hands weren't judged")
-    elif hands_status == "ok":
-        hands_label, hands_meaning = "Hands split the biceps", "your hands sit on the line of your trail biceps"
-    elif out_by > 0:
-        hands_label, hands_meaning = (("Hands slightly in front of the arm", "your hands are a little out in front of your trail arm")
-                                      if hands_status == "warn" else
-                                      ("Hands far out in front of the arm", "your hands are well out in front of your trail arm, away from your body"))
-    else:
-        hands_label, hands_meaning = (("Hands slightly behind the arm", "your hands are a little behind your trail arm")
-                                      if hands_status == "warn" else
-                                      ("Hands deep behind the arm", "your hands are well behind your trail arm, pulled in deep"))
-
-    status = max([shaft_status] + ([hands_status] if hands_status != "error" else []), key=ORDER.__getitem__)
-    label = f"{shaft_label}, {hands_label[0].lower() + hands_label[1:]}"
-    summary = f"Halfway back, {shaft_meaning}, and {hands_meaning}."
+        label, meaning = (("Points just outside the ball", "the shaft points just past the ball: a little flat")
+                          if status == "warn" else
+                          ("Points outside the ball", "the shaft points well past the ball: too flat / laid off"))
+    tip = "" if status == "ok" else (
+        "Turn your chest more and let the club set a little more around you."
+        if inside_by > cfg["inside_max"] else
+        "Hinge your wrists more upward so the butt of the club points at the ball line.")
 
     # Drawing on the marked frame: the shaft line carried down to the ball's level, the
-    # ball, a tick from where it lands to the ball, and the trail upper arm with the hands.
+    # ball, and a tick from where it lands to the ball.
     s = ctx.scale
     show = (f, min(len(ctx.pose) - 1, f + int(round(HOLD_MS * ctx.fps / 1000))))
-    shaft_col, hands_col = STATUS_COLORS[shaft_status], STATUS_COLORS[hands_status]
+    col = STATUS_COLORS[status]
     overlays = [
         Overlay("segment", [tuple(clubhead), tuple(landing)], SHAFT_COLOR, "", show, 3),
-        Overlay("segment", [tuple(landing), tuple(ball)], shaft_col, "", show, 2),
+        Overlay("segment", [tuple(landing), tuple(ball)], col, "", show, 2),
         Overlay("point", [tuple(ball)], BALL_COLOR, "", show, 1),
-        Overlay("point", [tuple(landing)], shaft_col, "", show, 2),
-        Overlay("text", [(float(landing[0]) - toward_golfer * 0.1 * s, float(landing[1]) + 0.2 * s)], shaft_col, shaft_label, show),
-        Overlay("segment", [tuple(shoulder), tuple(elbow)], REFERENCE_COLOR, "", show, 2),
-        Overlay("point", [tuple(hands)], hands_col, "", show, 1),
+        Overlay("point", [tuple(landing)], col, "", show, 2),
+        Overlay("point", [tuple(hands)], SHAFT_COLOR, "", show, 1),
         Overlay("point", [tuple(clubhead)], SHAFT_COLOR, "", show, 2),
-        Overlay("text", [(float(hands[0]) - toward_golfer * 0.25 * s, float(hands[1]) - 0.15 * s)], hands_col, hands_label, show),
+        Overlay("text", [(float(landing[0]) - toward_golfer * 0.1 * s, float(landing[1]) + 0.2 * s)], col, label, show),
     ]
 
-    shaft_side = "inside" if inside_by >= 0 else "outside"
-    hands_side = "in front" if out_by >= 0 else "behind"
-    tips = []
-    if shaft_status != "ok":
-        tips.append("Turn your chest more and let the club set a little more around you."
-                    if inside_by > cfg["inside_max"] else
-                    "Hinge your wrists more upward so the butt of the club points at the ball line.")
-    if hands_misclicked:
-        tips.append("Re-mark the Hands point in the middle of your hands (not on the shaft above them).")
-    elif hands_status != "ok":
-        tips.append("Keep your hands closer to your body, over your trail biceps."
-                    if out_by > 0 else
-                    "Keep your hands in front of your chest instead of pulling them in behind you.")
-    tip = " ".join(tips)
-
+    side = "inside" if inside_by >= 0 else "outside"
     return Verdict(
         status=status,
         label=label,
-        summary=summary,
+        summary=f"Halfway back, {meaning}.",
         tip=tip,
         frame=f,
         measurements={
             "shaft_inside_ball": round(inside_by, 3),
-            "hands_out_from_biceps": None if hands_misclicked else round(out_by, 3),
-            "hands_click_off_wrists": round(click_off, 3) if click_off is not None else None,
             "halfway_frame": f,
-            "units": "share of torso length; shaft: + = lands between the ball and your feet (inside), "
-                     "- = past the ball; hands: + = out in front of the trail upper arm (toward the ball), - = behind it",
+            "units": "share of torso length; + = the shaft line lands between the ball and your feet (inside), "
+                     "- = past the ball",
         },
         rows=[
-            Row("Shaft points", f"{ctx.distance_text(inside_by)} {shaft_side} the ball",
-                f"{pct(abs(inside_by))} of torso length · {shaft_label.lower()} "
+            Row("Shaft points", f"{ctx.distance_text(inside_by)} {side} the ball",
+                f"{pct(abs(inside_by))} of torso length · {label.lower()} "
                 f"(green {pct(-cfg['inside_min'])} outside to {pct(cfg['inside_max'])} inside, "
-                f"red past {pct(cfg['inside_watch_max'])} inside or {pct(-cfg['inside_watch_min'])} outside)", shaft_status),
-            Row("Hands vs biceps", "–", f"{hands_meaning}: Edit marks → Halfway back and click the middle of your hands",
-                "error") if hands_misclicked else
-            Row("Hands vs biceps", f"{ctx.distance_text(out_by)} {hands_side}",
-                f"{pct(abs(out_by))} of torso length · {hands_label.lower()} "
-                f"(green within ±{pct(lim)}, red past {pct(watch)})", hands_status),
+                f"red past {pct(cfg['inside_watch_max'])} inside or {pct(-cfg['inside_watch_min'])} outside)", status),
             Row("Halfway frame", str(f), "marked by you", "ok"),
         ],
         overlays=overlays,
     )
-
-
-def _click_off_wrists(ctx: SwingContext, frame: int, hands: np.ndarray) -> float | None:
-    """Distance (torso lengths) from the Hands click to the nearer tracked wrist on that frame,
-    or None if neither wrist is tracked there. The nearer one, so a single mis-tracked wrist
-    doesn't make a good click look wrong."""
-    dists = []
-    for side in ("left", "right"):
-        w = ctx.pose.xy(f"{side}_wrist")[frame]
-        if np.all(np.isfinite(w)):
-            dists.append(float(np.linalg.norm(np.asarray(w, float) - hands)))
-    return ctx.units(min(dists)) if dists else None
