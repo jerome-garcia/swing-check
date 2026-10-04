@@ -89,6 +89,26 @@ function summaryPanel(s, states, onSelect) {
 }
 
 // --- Checkpoint stepper (down-the-line) ---------------------------------------
+// The drawing language of every key frame (swingcheck/analyzers/__init__.py), as a legend.
+const LEGEND = [
+  ["swatch-line status", "Green / yellow / red: what was measured, colored by its result"],
+  ["swatch-line dashed", "White, dashed: a target, or where you were at address"],
+  ["swatch-line plane", "Magenta with grey lines: the swing plane and its on-plane zone"],
+  ["swatch-line past", "Cyan: an earlier checkpoint, e.g. the clubhead at the takeaway"],
+  ["mark circle", "Circle: the clubhead"],
+  ["mark square", "Square: the hands"],
+  ["mark ring", "Ring: the ball, a heel, or where a shaft line lands"],
+];
+let legendOpen = false; // kept while stepping through the checkpoints
+
+function drawingLegend() {
+  const d = el("details", { class: "legend", open: legendOpen || null },
+    el("summary", {}, "How to read the drawings"),
+    el("ul", {}, LEGEND.map(([cls, text]) => el("li", {}, el("span", { class: cls, "aria-hidden": "true" }), text))));
+  d.addEventListener("toggle", () => { legendOpen = d.open; });
+  return d;
+}
+
 function checkpointStepper(s, states) {
   // Start on the first red checkpoint, else the first one with a result.
   let index = states.findIndex(x => x.state === "flag");
@@ -127,7 +147,7 @@ function checkpointStepper(s, states) {
     prev.disabled = index === 0;
     next.disabled = index === states.length - 1;
     heading.replaceChildren(el("span", { class: "subtle" }, `${cp.number} / ${states.length}`), el("strong", {}, cp.title));
-    body.replaceChildren(keyFrame(cp), card(states[index]));
+    body.replaceChildren(el("div", { class: "step-media" }, keyFrame(cp), drawingLegend()), card(states[index]));
     listeners.forEach(fn => fn(index));
   }
 

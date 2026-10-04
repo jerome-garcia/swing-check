@@ -24,11 +24,14 @@ const STEPS = {
   ],
 };
 // Label offsets (CSS px) keep the ball and clubhead labels apart; those points sit together.
+// Shapes match the key frames: clubhead = circle, hands = square, ball = ring. Here they're
+// outlines with a center dot, so you can still see exactly what you clicked.
 const POINT_INFO = {
-  ball: { label: "Ball", hint: "Center of the ball", color: "#ffffff", dx: 11, dy: 20 },
-  clubhead: { label: "Clubhead", hint: "The hosel, where the shaft meets the head", color: "#ffc233", dx: -70, dy: -10 },
-  grip: { label: "Grip", hint: "Center of your hands on the shaft", color: "#4fb3ff", dx: 11, dy: -9 },
+  ball: { label: "Ball", hint: "Center of the ball", color: "#ffffff", shape: "ring", dx: 13, dy: 20 },
+  clubhead: { label: "Clubhead", hint: "The hosel, where the shaft meets the head", color: "#ffffff", shape: "circle", dx: -70, dy: -10 },
+  grip: { label: "Hands", hint: "Center of your hands on the shaft", color: "#ffffff", shape: "square", dx: 13, dy: -9 },
 };
+const PLANE_COLOR = "#ff00ff"; // the address shaft line is the swing plane, magenta as on the key frames
 // Wording for points on a later checkpoint frame.
 const STEP_POINT_INFO = {
   takeaway: {
@@ -175,6 +178,23 @@ export async function renderMark(view, id, isCurrent) {
   }
 
   // --- Drawing --------------------------------------------------------------
+  // An outline mark (circle / square / ring) with a dark edge, plus a center dot for the
+  // clubhead and hands so the clicked spot stays visible.
+  function drawMark(c, shape, x, y, color, dpr) {
+    const r = (shape === "ring" ? 9 : 7) * dpr;
+    const path = () => {
+      c.beginPath();
+      if (shape === "square") c.rect(x - r, y - r, 2 * r, 2 * r);
+      else c.arc(x, y, r, 0, Math.PI * 2);
+    };
+    c.lineWidth = 4 * dpr; c.strokeStyle = "rgba(0,0,0,0.8)"; path(); c.stroke();
+    c.lineWidth = 2 * dpr; c.strokeStyle = color; path(); c.stroke();
+    if (shape !== "ring") {
+      c.fillStyle = "rgba(0,0,0,0.8)"; c.beginPath(); c.arc(x, y, 2.5 * dpr, 0, Math.PI * 2); c.fill();
+      c.fillStyle = color; c.beginPath(); c.arc(x, y, 1.5 * dpr, 0, Math.PI * 2); c.fill();
+    }
+  }
+
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const img = full || preview;
@@ -183,9 +203,10 @@ export async function renderMark(view, id, isCurrent) {
 
     const points = cur().points;
     if (points.clubhead && points.grip) {
+      // At address the shaft line is the swing plane (magenta); later, just the shaft (white).
       const [ax, ay] = toCanvas(...points.clubhead);
       const [bx, by] = toCanvas(...points.grip);
-      ctx.strokeStyle = POINT_INFO.clubhead.color;
+      ctx.strokeStyle = state.active === "address" ? PLANE_COLOR : "#ffffff";
       ctx.lineWidth = 2 * dpr;
       ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
     }
@@ -194,12 +215,7 @@ export async function renderMark(view, id, isCurrent) {
       if (!p) continue;
       const [cx, cy] = toCanvas(...p);
       const info = pointInfo(state.active, name);
-      ctx.lineWidth = 3 * dpr;
-      ctx.strokeStyle = "rgba(0,0,0,0.8)";
-      ctx.beginPath(); ctx.arc(cx, cy, 7 * dpr, 0, Math.PI * 2); ctx.stroke();
-      ctx.lineWidth = 2 * dpr;
-      ctx.strokeStyle = info.color;
-      ctx.beginPath(); ctx.arc(cx, cy, 7 * dpr, 0, Math.PI * 2); ctx.stroke();
+      drawMark(ctx, info.shape, cx, cy, info.color, dpr);
       label(ctx, info.label, cx + info.dx * dpr, cy + info.dy * dpr, info.color, dpr);
     }
     if (state.cursor && nextPoint()) drawLoupe(dpr);
@@ -321,7 +337,7 @@ export async function renderMark(view, id, isCurrent) {
       el("div", { class: "hud-text" },
         el("span", { class: "hud-step" }, steps.length > 1 ? `${i + 1}/${steps.length} · ${stepDef().title}` : stepDef().title),
         info
-          ? el("span", { class: "hud-next" }, el("span", { class: "swatch", style: { background: info.color } }), `Click the ${info.label.toLowerCase()}`)
+          ? el("span", { class: "hud-next" }, el("span", { class: `swatch ${info.shape}` }), `Click the ${info.label.toLowerCase()}`)
           : el("span", { class: "hud-next done" }, "✓ Done")),
       el("div", { class: "actions" },
         el("button", { class: "btn small", type: "button", onclick: undo, disabled: !started(state.active) }, "Undo"),
@@ -344,7 +360,7 @@ export async function renderMark(view, id, isCurrent) {
       const done = Boolean(cur().points[name]);
       const info = pointInfo(state.active, name);
       return el("li", { class: `${done ? "done" : ""} ${name === next ? "next" : ""}` },
-        el("span", { class: "swatch", style: { background: info.color } }),
+        el("span", { class: `swatch ${info.shape}` }),
         el("div", {}, el("strong", {}, info.label), el("div", { class: "subtle small" }, info.hint)),
         el("span", { class: "check" }, done ? "✓" : name === next ? "Click it" : ""));
     }));

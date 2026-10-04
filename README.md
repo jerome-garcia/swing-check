@@ -430,7 +430,7 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    ‹ › buttons or the arrow keys (Shift = 10 frames). Then click:
    - the **ball**
    - the **clubhead at the hosel**, where the shaft meets the head
-   - the **grip**, the center of your hands
+   - your **hands**, the center of your hands on the shaft
 
    A magnifier follows the cursor; on a phone, touch and hold, slide to aim with
    the magnifier above your finger, and let go to place the point. **Undo**
@@ -502,7 +502,9 @@ fix and the measurement behind it ("Biggest issue"). Tap a dot to jump to that
 checkpoint.
 
 **Reading the drawings.** Every key frame and the annotated video use one
-drawing language:
+drawing language (also under **How to read the drawings** beside each key frame
+in the app; the marking screen uses the same shapes, as outlines with a center
+dot so you can see exactly what you clicked):
 
 | Look | Means |
 |---|---|

@@ -280,6 +280,22 @@ button.score-item:hover { background: var(--surface-2); }
 .step-body { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 16px; align-items: start; }
 .step-frame { display: block; border-radius: var(--radius-sm); overflow: hidden; background: #000; }
 .step-frame img { display: block; width: 100%; }
+.step-media { display: grid; gap: 8px; min-width: 0; }
+.legend { font-size: 13px; color: var(--muted); }
+.legend summary { cursor: pointer; }
+.legend ul { list-style: none; margin: 8px 0 0; padding: 10px 12px; display: grid; gap: 6px;
+  background: #1d221c; color: #e8ebe6; border-radius: var(--radius-sm); }
+.legend li { display: flex; align-items: center; gap: 10px; }
+/* Swatches drawn like the key frames: on a dark chip so the white ones show in light mode. */
+.legend .swatch-line { width: 26px; height: 0; border-top: 3px solid; flex: none; }
+.legend .swatch-line.status { border-image: linear-gradient(90deg, #50c850 33%, #ffc800 33% 66%, #e63c3c 66%) 1; }
+.legend .swatch-line.dashed { border-top: 3px dashed #fff; }
+.legend .swatch-line.plane { border-color: #ff00ff; box-shadow: 0 -5px 0 -1px #969696, 0 5px 0 -1px #969696; }
+.legend .swatch-line.past { border-color: #00ffff; }
+.legend .mark { width: 12px; height: 12px; flex: none; margin: 0 7px; box-sizing: border-box; }
+.legend .mark.circle { border-radius: 50%; background: #50c850; outline: 1.5px solid #fff; }
+.legend .mark.square { background: #50c850; outline: 1.5px solid #fff; }
+.legend .mark.ring { border-radius: 50%; border: 2px solid #fff; width: 14px; height: 14px; margin: 0 6px; }
 .empty-frame { aspect-ratio: 9 / 16; display: grid; place-items: center; color: #aaa; font-size: 13px; text-align: center; padding: 12px; }
 
 .verdict {
@@ -474,7 +490,10 @@ button.score-item:hover { background: var(--surface-2); }
 .point-list li.next { border-color: var(--accent); background: var(--accent-soft); }
 .point-list li.done .check { color: var(--ok); font-weight: 700; }
 .point-list .check { font-size: 13px; color: var(--muted); }
-.swatch { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(0, 0, 0, 0.6); flex: none; }
+/* Point swatches: the same shapes as on the frame (clubhead circle, hands square, ball ring). */
+.swatch { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--text, #1d221c); flex: none; box-sizing: border-box; }
+.swatch.circle, .swatch.square { background: radial-gradient(circle, var(--text, #1d221c) 0 2px, transparent 2.5px); }
+.swatch.square { border-radius: 2px; }
 .mark-side .notice { margin: 0 0 10px; }
 .mark-side .actions { margin-bottom: 12px; }
 
@@ -489,6 +508,7 @@ button.score-item:hover { background: var(--surface-2); }
 @media (max-width: 640px) {
   .step-body { grid-template-columns: 1fr; }
   .step-frame { max-width: 360px; width: 100%; margin: 0 auto; }
+  .legend { max-width: 360px; width: 100%; margin: 0 auto; }
   .scorecard.labeled { grid-template-columns: repeat(4, minmax(0, 1fr)); row-gap: 8px; }
 }
 @media (max-width: 560px) {
