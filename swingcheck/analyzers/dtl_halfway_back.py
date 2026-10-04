@@ -21,6 +21,7 @@ import numpy as np
 
 from swingcheck.analyzers import (BALL_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade, pct,
                                   register)
+from swingcheck.analyzers.dtl_swing_plane import plane_oval
 
 SHAFT_COLOR = (80, 230, 80)
 HOLD_MS = 400  # how long the overlays stay up in the annotated video
@@ -111,5 +112,5 @@ def halfway_back(ctx: SwingContext) -> Verdict:
                 f"red past {pct(cfg['inside_watch_max'])} inside or {pct(-cfg['inside_watch_min'])} outside)", status),
             Row("Halfway frame", str(f), "marked by you", "ok"),
         ],
-        overlays=overlays,
+        overlays=plane_oval(ctx, show) + overlays,
     )

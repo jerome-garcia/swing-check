@@ -21,6 +21,7 @@ import numpy as np
 from swingcheck.analyzers import (BALL_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade, pct,
                                   register)
 from swingcheck.analyzers.dtl_halfway_back import shaft_landing
+from swingcheck.analyzers.dtl_swing_plane import plane_oval
 
 SHAFT_COLOR = (80, 230, 80)
 BACK_COLOR = (200, 200, 200)
@@ -132,5 +133,5 @@ def follow_through(ctx: SwingContext) -> Verdict:
             same_row,
             Row("Follow-through frame", str(f), "marked by you", "ok"),
         ],
-        overlays=overlays,
+        overlays=plane_oval(ctx, show) + overlays,
     )

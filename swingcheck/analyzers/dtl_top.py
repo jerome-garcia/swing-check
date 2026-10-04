@@ -20,6 +20,7 @@ import numpy as np
 
 from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
                                   pct, register)
+from swingcheck.analyzers.dtl_swing_plane import plane_oval
 from swingcheck.geometry import angle_between_deg
 
 PLANE_COLOR = (0, 140, 255)  # address shaft line, as in checkpoint 2
@@ -164,5 +165,5 @@ def top(ctx: SwingContext) -> Verdict:
                 plane_status),
             Row("Top frame", str(f), "marked by you", "ok"),
         ],
-        overlays=overlays,
+        overlays=plane_oval(ctx, show) + overlays,
     )

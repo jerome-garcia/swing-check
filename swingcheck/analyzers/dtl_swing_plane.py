@@ -42,6 +42,38 @@ def torso_crossing(clubhead, grip, hip, shoulder) -> float:
     return float(u)
 
 
+OVAL_COLOR = (170, 255, 120)  # mint (BGR): not a status color
+
+
+def plane_oval(ctx: SwingContext, show: tuple[int, int] | None) -> list[Overlay]:
+    """The swing plane drawn as an oval, like the classic illustration: its long axis runs
+    along the swing plane line (the address shaft line) from the clubhead at address up
+    past the golfer, centered where that line passes closest to the shoulders at address
+    (roughly the swing's pivot). From behind the clubhead's circle is seen nearly edge-on,
+    so the oval is narrow ([analyzers.swing_plane] oval_width). Empty if it can't be drawn."""
+    cfg = ctx.config["analyzers"]["swing_plane"]
+    if not cfg["draw_oval"]:
+        return []
+    pts = ctx.marks.points
+    ch0, gr0 = np.asarray(pts["clubhead"], float), np.asarray(pts["grip"], float)
+    a = ctx.marks.address_frame
+    shoulder = ctx.midpoint("left_shoulder", "right_shoulder")[a]
+    if not np.all(np.isfinite(shoulder)):
+        shoulder = ctx.track(ctx.side("shoulder", "trail"))[a]
+    if np.linalg.norm(gr0 - ch0) < 5 or not np.all(np.isfinite(shoulder)):
+        return []
+    d = (gr0 - ch0) / np.linalg.norm(gr0 - ch0)
+    semi_major = float(np.dot(shoulder - ch0, d))
+    if semi_major <= np.linalg.norm(gr0 - ch0):
+        return []  # shoulders not above the hands along the line: no sensible pivot
+    center = ch0 + semi_major * d
+    normal = np.array([-d[1], d[0]])
+    t = np.linspace(0, 2 * np.pi, 97)
+    ring = center + np.outer(np.cos(t) * semi_major, d) + np.outer(np.sin(t) * semi_major * cfg["oval_width"], normal)
+    # Unlabeled: the swing plane line it's built on carries the "swing plane" label.
+    return [Overlay("polyline", [tuple(p) for p in ring], OVAL_COLOR, "", show, 2)]
+
+
 @register("swing_plane", view="dtl", title="Swing plane", phase="address")
 def swing_plane(ctx: SwingContext) -> Verdict:
     cfg = ctx.cfg
@@ -132,7 +164,7 @@ def swing_plane(ctx: SwingContext) -> Verdict:
             "units": "crosses torso at: share of the way from hip center (0) to shoulder center (1); "
                      f"the belt buckle is {cfg['belt_min']:g}-{cfg['belt_max']:g}",
         },
-        overlays=overlays,
+        overlays=plane_oval(ctx, show) + overlays,
         rows=[
             Row("Alignment", f"{pct(u)} up the torso",
                 f"{ctx.distance_text(u)} {'above' if u >= 0 else 'below'} hip center · {aim} "

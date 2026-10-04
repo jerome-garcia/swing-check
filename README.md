@@ -43,6 +43,13 @@ so that check uses the **plane zone**: between the swing plane line and the
 Halfway back (4) and follow-through (8) don't use these lines; they check where
 the shaft itself points at the ball's level.
 
+The key frames of checkpoints 2–8 (except impact) also draw the swing plane as
+a mint **oval**, like the classic swing-plane illustration: its long axis runs
+along the swing plane line from the clubhead at address up past you, centered
+where that line passes closest to your shoulders at address. It's a visual
+guide only; no measurement uses it. Turn it off or change its width with
+`draw_oval` / `oval_width` in `[analyzers.swing_plane]`.
+
 **Colors and units.** Every measurement is graded 🟢 green (good), 🟡 yellow
 (watch: just outside good) or 🔴 red (flag), and a checkpoint takes the worst
 color of its measurements. Angles are in degrees. Distances are measured as a

@@ -28,6 +28,7 @@ import numpy as np
 
 from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, pct,
                                   register)
+from swingcheck.analyzers.dtl_swing_plane import plane_oval
 
 PLANE_COLOR = (0, 140, 255)
 BAND_COLOR = (150, 150, 150)
@@ -140,7 +141,7 @@ def takeaway(ctx: SwingContext) -> Verdict:
                 f"{pct(abs(inside_by))} of torso length · {_note(label, tol, flag_at)}", status),
             Row("Takeaway frame", str(f), "marked by you", "ok"),
         ],
-        overlays=overlays,
+        overlays=plane_oval(ctx, show) + overlays,
     )
 
 

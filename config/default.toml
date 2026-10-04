@@ -148,6 +148,12 @@ angle_min = 45
 angle_max = 65
 angle_watch_min = 40
 angle_watch_max = 70
+# Draw the swing plane as an oval (like the classic illustration) on the key
+# frames and video of checkpoints 2-8: long axis along the swing plane line,
+# centered where it passes closest to your shoulders at address. Width as a
+# share of its length.
+draw_oval = true
+oval_width = 0.2
 
 [analyzers.takeaway]
 # DTL checkpoint 3, on the takeaway frame you mark (shaft parallel to the

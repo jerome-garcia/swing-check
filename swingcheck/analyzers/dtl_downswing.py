@@ -21,6 +21,7 @@ import numpy as np
 
 from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
                                   pct, register)
+from swingcheck.analyzers.dtl_swing_plane import plane_oval
 from swingcheck.analyzers.dtl_takeaway import address_line
 
 PLANE_COLOR = (0, 140, 255)
@@ -136,5 +137,5 @@ def downswing(ctx: SwingContext) -> Verdict:
             *rows_extra,
             Row("Downswing frame", str(f), "marked by you", "ok"),
         ],
-        overlays=overlays,
+        overlays=plane_oval(ctx, show) + overlays,
     )
