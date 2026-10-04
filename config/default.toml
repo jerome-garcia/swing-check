@@ -206,7 +206,7 @@ heel_watch = 0.30  # ...yellow to 30% (about 15 cm); red beyond
 # the plane, the golfer's side), - = above it (over the top).
 under_min = 0.0         # green: on the line to 40% under
 under_max = 0.40
-under_watch_min = -0.20 # yellow: up to 20% above (to the grey line; steep) or 40-70% under (very
+under_watch_min = -0.30 # yellow: up to 30% above (slightly steep; a little above is forgivable) or 40-70% under (very
 under_watch_max = 0.70  # shallow); red beyond (over the top / stuck)
 # Shallowing: that distance minus the same one at your takeaway. + = the club
 # comes down flatter than it went back.
