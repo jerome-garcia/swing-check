@@ -127,7 +127,6 @@ def takeaway(ctx: SwingContext) -> Verdict:
     foot = clubhead - np.dot(clubhead - ch0, normal) * normal
     overlays = swing_plane_line(ctx, show) + [
         Overlay("segment", [tuple(clubhead), tuple(foot)], color, "", show, 2),
-        Overlay("point", [tuple(clubhead)], color, "", show, 2),
         # Label on the ball side of the clubhead, away from the body.
         Overlay("text", [(float(clubhead[0]) - toward_golfer * 0.15 * s, float(clubhead[1]) + 0.25 * s)], color, label, show),
     ]
@@ -149,6 +148,10 @@ def takeaway(ctx: SwingContext) -> Verdict:
     tip = " ".join(t for t in [tip] + [b.tip for b in body] if t)
     for b in body:
         overlays += b.overlays
+    # The clubhead last, on top of the body lines, with a white ring so it stands out
+    # even where it crosses a line of the same color (e.g. a green spine).
+    overlays += [Overlay("point", [tuple(clubhead)], color, "", show, 2),
+                 Overlay("point", [tuple(clubhead)], REFERENCE_COLOR, "", show, 1)]
 
     return Verdict(
         status=status,
@@ -219,7 +222,7 @@ def _posture(ctx: SwingContext, f: int, forward: float, show: tuple[int, int]) -
     s = ctx.scale
     overlays = [
         Overlay("dashed", [tuple(hip1), tuple(hip1 + (sh0 - hip0))], REFERENCE_COLOR, "address spine", show, 2),
-        Overlay("segment", [tuple(hip1), tuple(sh1)], col, "", show, 3),
+        Overlay("segment", [tuple(hip1), tuple(sh1)], col, "", show, 2),
         Overlay("text", [tuple((hip1 + sh1) / 2 - forward * np.array([0.55 * s, 0.0]))], col,
                 f"spine {bend1:.0f} deg (address {bend0:.0f})", show),
     ]
@@ -260,7 +263,7 @@ def _trail_knee(ctx: SwingContext, f: int, forward: float, show: tuple[int, int]
     col = STATUS_COLORS[status]
     s = ctx.scale
     overlays = [
-        Overlay("polyline", [tuple(hip[f]), tuple(knee[f]), tuple(ankle[f])], col, "", show, 3),
+        Overlay("polyline", [tuple(hip[f]), tuple(knee[f]), tuple(ankle[f])], col, "", show, 2),
         Overlay("text", [(float(knee[f][0]) - forward * 0.55 * s, float(knee[f][1]))], col,
                 f"knee {flex1:.0f} deg (address {flex0:.0f})", show),
     ]
