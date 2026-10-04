@@ -104,7 +104,7 @@ don't matter here); that frame is the takeaway checkpoint. Settings live in `[an
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Clubhead vs swing plane** | distance of the clubhead from the swing plane line (checkpoint 2's line), square to it, as % of torso length | within ±20% (≈10 cm): **Clubhead on the swing plane** | 20–50%: *clubhead slightly toward you / toward the ball* | past 50% (≈25 cm): *well inside* (your side: pulled inside or rolled open) or *well outside* (ball side: picked up outside) |
+| **Clubhead vs swing plane** | distance of the clubhead from the swing plane line (checkpoint 2's line), square to it, as % of torso length | within ±20% (≈10 cm): **Clubhead on the swing plane** | 20–50%: *clubhead slightly toward you / toward the ball* | past 50% (≈25 cm): *clubhead too far toward you* (pulled inside or rolled open) or *too far toward the ball* (picked up outside) |
 | **Spine bend kept** | spine bend (hip center → shoulder center, from vertical) on the takeaway frame vs address, from tracking | up to 6° more upright or 5° more bent: **posture kept** | 6–10° more upright (*slightly standing up*) or 5–10° more bent (*slightly bending over*) | more than 10°: **standing up** early or **bending over** |
 | **Back knee bend kept** | trail knee flex (180° − hip-knee-ankle angle) on the takeaway frame vs address, from tracking | up to 5° straighter or 8° more bent: **flex kept** | more than 5° straighter (*slightly straightening*; past 10°, *straightening*) or more than 8° more bent (*sinking*) | never: a watch item (see below) |
 
@@ -142,7 +142,7 @@ Settings live in `[analyzers.halfway_back]`.
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Shaft points at** | the line from the clubhead through the hands, carried down to the ball's level: where it lands vs the ball, as % of torso length | 10% past the ball to 40% inside (between the ball and your feet): **Points at the ball** / **just inside the ball** | 40–70% inside (*a little steep*) or 10–25% past the ball (*a little flat*) | past 70% inside: **Points at your feet** (too steep / upright); more than 25% past the ball: **Points well past the ball** (too flat / laid off) |
+| **Shaft points at** | the line from the clubhead through the hands, carried down to the ball's level: where it lands vs the ball, as % of torso length | 10% past the ball to 40% inside (between the ball and your feet): **Points at the ball** | 40–70% inside (*points between the ball and your feet*: a little steep) or 10–25% past the ball (*points just past the ball*: a little flat) | past 70% inside: **Points at your feet** (too steep / upright); more than 25% past the ball: **Points well past the ball** (too flat / laid off) |
 | **Spine bend kept** | as at the takeaway: spine bend on this frame vs address, from tracking | up to 8° more upright or 5° more bent | 8–12° more upright (*slightly standing up*) or 5–10° more bent | more than 12° more upright: **standing up**; more than 10° more bent: **bending over** |
 | **Back knee bend kept** | as at the takeaway: trail knee flex on this frame vs address | up to 6° straighter or 8° more bent | more than 6° straighter (*slightly straightening*; past 10°, *straightening*) or more than 8° more bent | never: a watch item |
 
@@ -169,7 +169,7 @@ your **hands**. Body points come from tracking. Settings live in
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
 | **Front arm vs spine** | angle between the lead arm (lead shoulder → hands) and the spine, drawn from the hip center through the head, on the top frame; 90° = the arm matches the shoulders | 75–105°: **Front arm matches your shoulders** | 65–75° (*slightly above*) or 105–115° (*slightly below*) | under 65°: arm lifted **above the shoulders** (upright); over 115°: **below the shoulders** (flat, around the body) |
-| **Hands vs back heel** | how far the hands sit across the picture from straight above the trail heel (tracked, median of a few frames around the top), as % of torso length; drawn as a dashed plumb line up from the heel | within ±15% (about 7 cm): **Hands over your back heel** | 15–30% (*slightly outside* / *slightly behind the heel*) | more than 30%: hands **outside the heel** (out toward the ball) or **behind the heel** (deep, flat) |
+| **Hands vs back heel** | how far the hands sit across the picture from straight above the back (trail) heel (tracked, median of a few frames around the top), as % of torso length; drawn as a dashed plumb line up from the heel | within ±15% (about 7 cm): **Hands over your back heel** | 15–30% (*hands slightly toward the ball* / *slightly behind your back heel*) | more than 30%: **hands too far toward the ball** or **behind your back heel** (deep, flat) |
 | **Spine bend kept** | as at the takeaway and halfway back: spine bend on the top frame vs address, from tracking; its lines are drawn only when it's off (the frame already has a spine line) | up to 8° more upright or 5° more bent | 8–12° more upright (*slightly standing up*) or 5–10° more bent | more than 12° more upright: **standing up** in the backswing; more than 10° more bent: **bending over** |
 
 The card shows the worst of the three. References for the hands: McIlroy about
@@ -198,7 +198,7 @@ moved. Settings live in `[analyzers.downswing]`.
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Clubhead vs swing plane** | the clubhead's distance from the swing plane line, square to it (as at the takeaway), as % of torso length | on the line to 40% under (behind the hands): **Clubhead on the swing plane** | up to 30% above (*slightly steep*; a little above is forgivable) or 40–70% under (*well under*) | more than 30% above (≈15 cm): **over the top**; more than 70% under: **stuck** (too flat) |
+| **Clubhead vs swing plane** | the clubhead's distance from the swing plane line, square to it (as at the takeaway), as % of torso length | on the line to 40% under (behind the hands): **Clubhead on the swing plane** | up to 30% above (*slightly above*; a little above is forgivable) or 40–70% under (*well under*) | more than 30% above (≈15 cm): **clubhead above the swing plane** (over the top); more than 70% under: **too far under** (stuck, too flat) |
 | **Vs your takeaway** (shallowing) | that distance minus the same one at your takeaway: + = the club comes down flatter than it went back | 0% or more flatter: **Flatter than going back** | up to 20% steeper | more than 20% steeper than going back: the over-the-top loop |
 | **Spine bend kept** | spine bend on the downswing frame vs address, from tracking; its lines are drawn only when it's off | up to 5° more upright or 5° more bent | 5–10° (*slightly standing up* / *slightly bending over*) | more than 10° more upright: **standing up** coming down (where early extension starts); more than 10° more bent: **bending over** |
 
@@ -220,7 +220,7 @@ down-the-line impact checks.
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Hips vs address** (the tush line) | the rear edge of your body outline at hip height (from segmentation), at impact vs address, as % of torso length | moved back, or up to 10% (≈5 cm) toward the ball: **Hips stay back** | 10–15% toward the ball | more than 15% (≈7.5 cm, about 3 in): **Early extension** (hips thrust toward the ball) |
+| **Hips vs address** (the tush line) | the rear edge of your body outline at hip height (from segmentation), at impact vs address, as % of torso length | moved back, or up to 10% (≈5 cm) toward the ball: **Hips stay back** | 10–15% toward the ball | more than 15% (≈7.5 cm, about 3 in): **Hips toward the ball** (early extension) |
 | **Spine bend kept** | forward bend of the hip-center → shoulder-center line at impact vs address | up to 10° more upright or 6° more bent: **Posture kept** | 10–15° more upright (*slightly standing up*) or 6–12° more bent (*slightly dipping*) | more than that: **Standing up** / **Dipping** |
 
 Good players lose a few degrees of bend as the hips open (McIlroy about 7°)
@@ -243,7 +243,7 @@ where the shaft looks about as steep as at halfway back. Settings live in
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
 | **Shaft points at** | the shaft line carried down to the ball's level, as at halfway back | 15% past the ball to 60% inside: **Exits on the swing plane** | to 30% past (*slightly flat*) or 60–85% inside (*slightly steep*) | beyond: **Exits flat** / **Exits steep** |
-| **Vs halfway back** | this landing vs the halfway-back landing, as % of torso length | within ±30%: **Same line as going back** | 30–55% apart (*slightly steeper / flatter*) | more than 55% apart |
+| **Vs halfway back** | this landing vs the halfway-back landing, as % of torso length | within ±30%: **Same line as going back** | 30–55% apart (*slightly steeper / flatter than going back*) | more than 55% apart |
 
 Set from the same reference golfer (follow-through on the ball, halfway back
 16–26% inside: about 20% apart, green). McIlroy exits 48% inside, 18% steeper
