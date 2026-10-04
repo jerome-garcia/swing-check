@@ -21,6 +21,7 @@ import numpy as np
 
 from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
                                   register)
+from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.geometry import angle_between_deg
 
 HOLD_MS = 400
@@ -105,5 +106,5 @@ def top(ctx: SwingContext) -> Verdict:
                 f"red outside {cfg['arm_spine_watch_min']:g}–{cfg['arm_spine_watch_max']:g}°)", status),
             Row("Top frame", str(f), "marked by you", "ok"),
         ],
-        overlays=overlays,
+        overlays=swing_plane_line(ctx, show) + overlays,
     )

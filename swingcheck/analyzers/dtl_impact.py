@@ -21,6 +21,7 @@ import numpy as np
 from swingcheck import pose as pose_mod
 from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
                                   pct, register)
+from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.geometry import tilt_from_vertical_deg
 
 ORDER = {"ok": 0, "warn": 1, "flag": 2}
@@ -152,5 +153,5 @@ def impact(ctx: SwingContext) -> Verdict:
                 posture_status),
             Row("Impact frame", str(f), "detected (adjust under Phases)", "ok"),
         ],
-        overlays=overlays,
+        overlays=swing_plane_line(ctx, show) + overlays,
     )

@@ -122,3 +122,11 @@ def test_overlapping_marks_are_an_error_not_a_crash():
     v = run(CLUBHEAD + (1, 1))
     assert v.status == "error"
 
+
+
+def test_swing_plane_line_spans_the_frame_and_the_whole_video():
+    v = run(grip_for(0.3))
+    lines = [o for o in v.overlays if o.kind == "line" and o.label == "swing plane"]
+    assert len(lines) == 1
+    assert lines[0].frames == (0, 39)  # the whole clip, so the clubhead can be followed against it
+    assert [o.label for o in v.overlays if o.kind == "text"] == ["Points at belt buckle"]

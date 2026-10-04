@@ -121,8 +121,19 @@ class Annotator:
         or, in the full video, those whose lines are on screen right now."""
         if len(self.verdicts) == 1:
             return list(self.verdicts)
-        return [v for v in self.verdicts
-                if any(o.kind != "path" and (o.frames is None or o.frames[0] <= i <= o.frames[1]) for o in v.overlays)]
+        last = len(self.path) - 1
+        active = []
+        for v in self.verdicts:
+            drawn = [o for o in v.overlays if o.kind != "path"]
+            # Overlays shown for the whole clip (e.g. the swing plane line) are background;
+            # a check is named while its own, time-limited lines are on screen.
+            timed = [o for o in drawn if o.frames is not None and not (o.frames[0] <= 0 and o.frames[1] >= last)]
+            if timed:
+                if any(o.frames[0] <= i <= o.frames[1] for o in timed):
+                    active.append(v)
+            elif drawn:
+                active.append(v)
+        return active
 
     def _header(self, img: np.ndarray, verdicts: list[Verdict]) -> None:
         s = self.s

@@ -108,3 +108,7 @@ def test_left_handed_mirror_matches():
 def test_not_marked_explains_how():
     v = run(marked=False)
     assert v.status == "error" and "Follow-through" in v.summary
+
+
+def test_key_frame_shows_the_swing_plane_line():
+    assert any(o.kind == "line" and o.label == "swing plane" for o in run().overlays)

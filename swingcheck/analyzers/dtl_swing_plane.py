@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
+from swingcheck.analyzers import (STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
                                   pct, register)
 
 PLANE_COLOR = (0, 140, 255)  # orange, like the classic drawn-on shaft line
@@ -40,6 +40,17 @@ def torso_crossing(clubhead, grip, hip, shoulder) -> float:
         raise MissingData("the shaft line runs parallel to the spine, so it never points at the body")
     _, u = np.linalg.solve(m, h - c)
     return float(u)
+
+
+def swing_plane_line(ctx: SwingContext, show: tuple[int, int] | None) -> list[Overlay]:
+    """The swing plane line (the address shaft line, clubhead through grip) across the
+    whole frame, labeled. Every checkpoint from 2 to 8 draws it on its key frame, so the
+    clubhead can be judged against it by eye."""
+    pts = ctx.marks.points
+    ch0, gr0 = np.asarray(pts["clubhead"], float), np.asarray(pts["grip"], float)
+    if np.linalg.norm(gr0 - ch0) < 1:
+        return []
+    return [Overlay("line", [tuple(ch0), tuple(gr0)], PLANE_COLOR, "swing plane", show, 2)]
 
 
 @register("swing_plane", view="dtl", title="Swing plane", phase="address")
@@ -88,27 +99,19 @@ def swing_plane(ctx: SwingContext) -> Verdict:
         summary += (f" Shaft angle {angle:.0f}° is outside {cfg['angle_min']}-{cfg['angle_max']}°"
                     " (check the club and camera height).")
 
-    # Drawing: the shaft line extended up to (a bit past) where it meets the torso,
-    # the belt-buckle target zone on the torso line, and a horizontal reference at the clubhead.
+    # Drawing: the swing plane line across the whole frame, kept on screen for the whole
+    # video so the clubhead can be followed against it; plus the belt-buckle zone on the
+    # torso, where the line crosses it, and the result.
     s = ctx.scale
     t = shoulder - hip
     cross = hip + u * t
-    direction = (grip - clubhead) / np.linalg.norm(grip - clubhead)
-    reach = max(np.dot(cross - clubhead, direction), np.linalg.norm(grip - clubhead)) + 0.15 * s
-    tip = clubhead + direction * reach
     zone = [tuple(hip + cfg["belt_min"] * t), tuple(hip + cfg["belt_max"] * t)]
-    toward_golfer = 1.0 if grip[0] < clubhead[0] else -1.0
     show = (0, max(f, ctx.frame("takeaway")))
     color = STATUS_COLORS[status]
-    overlays = [
+    overlays = swing_plane_line(ctx, (0, len(ctx.pose) - 1)) + [
         Overlay("segment", zone, ZONE_COLOR, "", show, 6),
-        Overlay("segment", [tuple(hip), tuple(shoulder)], REFERENCE_COLOR, "", show, 1),
-        Overlay("segment", [tuple(clubhead), tuple(tip)], PLANE_COLOR, "", show, 3),
-        Overlay("segment", [tuple(clubhead), (clubhead[0] - toward_golfer * 0.35 * s, clubhead[1])], REFERENCE_COLOR, "", show, 1),
         Overlay("point", [tuple(cross)], color, "", show, 2),
         Overlay("text", [(float(cross[0]) + 0.12 * s, float(cross[1]))], color, aim, show),
-        Overlay("text", [tuple((clubhead + grip) / 2 - np.array([toward_golfer * 0.1 * s, 0.0]))],
-                PLANE_COLOR, f"swing plane {angle:.0f} deg", show),
     ]
     tips = []
     if aim_status != "ok":

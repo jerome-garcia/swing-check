@@ -141,3 +141,12 @@ def test_video_header_names_only_checks_on_screen():
     assert [v.name for v in ann._active(55)] == ["late"]
     assert ann._active(35) == []
     assert [v.name for v in ann.only(late)._active(10)] == ["late"]  # a key frame always names its check
+
+
+def test_whole_clip_overlays_dont_keep_a_check_in_the_header():
+    plane = Verdict(status="ok", label="a", summary="", name="plane", title="Plane",
+                    overlays=[Overlay("line", [(0.0, 0.0), (10.0, 10.0)], frames=(0, 99)),
+                              Overlay("point", [(10.0, 10.0)], frames=(0, 10))])
+    ann = Annotator([plane, plane], PHASES, np.zeros((100, 2)), 240.0, 100, 100, CONFIG)
+    assert len(ann._active(5)) == 2      # its own lines are on screen
+    assert ann._active(50) == []         # only the background line is

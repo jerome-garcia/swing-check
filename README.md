@@ -41,6 +41,10 @@ on or near it. Halfway back (4) and follow-through (8) check where the shaft
 itself points at the ball's level. The top (5) checks the lead arm against the
 spine.
 
+The swing plane line is drawn across the whole frame on every checkpoint's key
+frame from 2 to 8, and it stays on screen for the whole annotated video, so you
+can follow the clubhead against it through the swing by eye.
+
 **Colors and units.** Every measurement is graded 🟢 green (good), 🟡 yellow
 (watch: just outside good) or 🔴 red (flag), and a checkpoint takes the worst
 color of its measurements. Angles are in degrees. Distances are measured as a
@@ -71,8 +75,9 @@ yellow or red part at the middle of its green range: the spine at 37.5°, the ar
 down, and the thigh at 25° of knee flex (shin kept where it is).
 
 **2. Swing plane (implemented).** The line through the clubhead (hosel) and
-grip you click at address. Drawn in orange on the address key frame, extended
-up to where it meets your body. Settings live in `[analyzers.swing_plane]`.
+grip you click at address. Drawn in orange across the whole frame (and the
+whole video), with the belt-buckle zone in green on your torso and where the
+line crosses it. Settings live in `[analyzers.swing_plane]`.
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|

@@ -108,3 +108,7 @@ def test_judges_the_arm_only():
     v = run(hands_at(90))
     assert [r.label for r in v.rows] == ["Lead arm vs spine", "Top frame"]
     assert v.label == "Lead arm matches the shoulders" and v.tip == ""
+
+
+def test_key_frame_shows_the_swing_plane_line():
+    assert any(o.kind == "line" and o.label == "swing plane" for o in run(hands_at(90)).overlays)

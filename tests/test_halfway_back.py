@@ -99,3 +99,7 @@ def test_not_marked_explains_how():
 def test_clubhead_below_hands_is_a_marking_error():
     v = run(clubhead=HANDS + (50, 100))
     assert v.status == "error" and "above the hands" in v.summary
+
+
+def test_key_frame_shows_the_swing_plane_line():
+    assert any(o.kind == "line" and o.label == "swing plane" for o in run().overlays)
