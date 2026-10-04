@@ -1,5 +1,5 @@
 import { renderResults } from "./results.js";
-import { api, el, formatDate, moreMenu, pollJob, progressBlock, STATUS_TEXT, swingUrl, VIEW_NAMES } from "./util.js";
+import { api, el, formatDate, moreMenu, pollJob, progressBlock, putJSON, STATUS_TEXT, swingUrl, VIEW_NAMES } from "./util.js";
 
 const JOB_TITLES = { convert: "Converting video", analyze: "Analyzing swing" };
 
@@ -55,7 +55,21 @@ export async function renderSwing(view, id, isCurrent) {
     location.replace(swingUrl(id, "mark"));
     return;
   }
-  // Results pages add Re-analyze and Report; Edit marks is always offered.
-  const header = (actions = [], menu = []) => swingHeader(s, actions, [{ label: "Edit marks", href: swingUrl(id, "mark") }, ...menu]);
+  // Results pages add Re-analyze and Report; Edit marks is always offered, and a down-the-line
+  // swing can be the marking reference (its frames show beside each marking step).
+  const reference = await api("/api/reference").catch(() => ({ id: null }));
+  if (!isCurrent()) return;
+  const isReference = reference.id === id;
+  const referenceItem = s.view === "dtl" ? {
+    label: isReference ? "Stop using as marking reference" : "Use as marking reference",
+    onclick: async () => {
+      try {
+        await putJSON("/api/reference", { id: isReference ? null : id });
+        await renderSwing(view, id, isCurrent);
+      } catch (err) { alert(err.message); }
+    },
+  } : null;
+  const header = (actions = [], menu = []) => swingHeader(s, actions,
+    [{ label: "Edit marks", href: swingUrl(id, "mark") }, ...(referenceItem ? [referenceItem] : []), ...menu]);
   await renderResults(view, s, header, isCurrent, () => renderSwing(view, id, isCurrent));
 }

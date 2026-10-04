@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import shutil
 from pathlib import Path
 from typing import Any
@@ -20,8 +21,9 @@ from swingcheck.app.store import Store, SwingNotFound
 from swingcheck.config import PROJECT_ROOT, load_config
 from swingcheck.ingest import VideoInfo
 from swingcheck.output.summary_pdf import summary_pdf
-from swingcheck.pipeline import PipelineError, analyze, ingest, save_marks
+from swingcheck.pipeline import PipelineError, analyze, ingest, load_suggested, save_marks, suggest_frames
 
+log = logging.getLogger(__name__)
 STATIC = Path(__file__).parent / "static"
 VIDEO_EXTENSIONS = {".mov", ".mp4", ".m4v", ".avi", ".mkv", ".webm", ".3gp"}
 
@@ -51,6 +53,10 @@ class TrimIn(BaseModel):
     end: float | None = None
 
 
+class ReferenceIn(BaseModel):
+    id: str | None = None  # None stops using a reference
+
+
 class AnalyzeIn(BaseModel):
     phases: dict[str, int] = {}  # manual phase frames, e.g. {"impact": 412}; saved for later runs
     reset_phases: bool = False   # drop saved manual phases and use detection
@@ -72,7 +78,13 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
         source = folder / meta.source_file
 
         def run(progress):
-            ingest(source, folder, config, start=start, end=end, progress=progress)
+            info = ingest(source, folder, config, start=start, end=end, progress=progress)
+            # Starting frames for the marking screen. They're only a convenience: a clip where
+            # the swing can't be found (or any other failure here) still converts.
+            try:
+                suggest_frames(folder, info, config, progress=progress)
+            except Exception:  # noqa: BLE001
+                log.exception("Couldn't suggest frames for %s", swing_id)
 
         return jobs.submit(swing_id, "convert", run)
 
@@ -184,6 +196,28 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
         job = jobs.submit(swing_id, "analyze", run)
         return {"job": job.to_json()}
 
+    @app.get("/api/reference")
+    def get_reference() -> dict[str, Any]:
+        """The marking reference: its frame and marks for each step, or {"id": None}."""
+        ref = store.reference_id()
+        if ref is None or store.status(ref) not in ("marked", "analyzed"):
+            return {"id": None}
+        folder = store.path(ref)
+        info = VideoInfo.load(folder / "video.json")
+        marks = json.loads((folder / "marks.json").read_text())
+        steps = {"address": {"frame": marks["address_frame"], "points": marks["points"]}}
+        steps.update(marks.get("checkpoints") or {})
+        return {"id": ref, "name": store.meta(ref).name, "width": info.width, "height": info.height, "steps": steps}
+
+    @app.put("/api/reference")
+    def set_reference(body: ReferenceIn) -> dict[str, Any]:
+        if body.id is not None:
+            swing_or_404(body.id)
+            if store.status(body.id) not in ("marked", "analyzed"):
+                raise HTTPException(409, "Mark this swing first, then use it as the reference.")
+        store.set_reference(body.id)
+        return get_reference()
+
     @app.get("/api/jobs/{job_id}")
     def get_job(job_id: str) -> dict[str, Any]:
         job = jobs.get(job_id)
@@ -209,6 +243,8 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
                           ("phases", "phases.json")):
             path = folder / name
             detail[key] = json.loads(path.read_text()) if path.exists() else None
+        detail["suggested"] = (load_suggested(folder, VideoInfo.load(folder / "video.json"))
+                               if (folder / "video.json").exists() else None)
         detail["files"] = sorted(p.name for p in folder.iterdir()
                                  if p.suffix in (".mp4", ".png", ".txt") and p.name != "pose_debug.mp4")
         job = jobs.active_for(swing_id) or jobs.latest_for(swing_id)

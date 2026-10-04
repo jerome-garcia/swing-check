@@ -1,6 +1,7 @@
 """The analysis pipeline as reusable stages, independent of the UI.
 
     info = ingest(video, run_dir, config, start, end)        # normalize + trim
+    suggest_frames(run_dir, info, config)                     # rough phase frames for the marking screen
     save_marks(run_dir, view, address_frame, points, info)    # from the marking screen
     result = analyze(run_dir, view, config)                   # pose -> phases -> checks -> outputs
 
@@ -17,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from swingcheck.analyzers import SwingContext, Verdict, run_analyzers
-from swingcheck.body import body_scale, hands
+from swingcheck.body import body_scale, clip_torso_length, hands
 from swingcheck.ingest import VideoInfo, normalize
 from swingcheck.checkpoints import DTL_CHECKPOINTS
 from swingcheck.priority import pick_focus
@@ -25,9 +26,10 @@ from swingcheck.models import CHECKPOINT_MARKS, REQUIRED_MARKS, CheckpointMark, 
 from swingcheck.output.annotate import Annotator, write_outputs
 from swingcheck.output.report import build_report
 from swingcheck.phases import PhaseError, Phases, detect_phases, get_phases
-from swingcheck.pose import get_pose, write_debug_video
+from swingcheck.pose import extract_pose, get_pose, write_debug_video
 
 ProgressFn = Callable[[str, float | None, str], None]
+SUGGEST_FILE = "suggest.json"
 
 
 class PipelineError(RuntimeError):
@@ -71,6 +73,45 @@ def ingest(source: Path, run_dir: Path, config: dict[str, Any], start: float | N
                      progress=lambda f: progress("normalize", f, "Converting video"))
     progress("normalize", 1.0, f"{info.width}x{info.height} @ {info.fps:g} fps, {info.frame_count} frames")
     return info
+
+
+def suggest_frames(run_dir: Path, info: VideoInfo, config: dict[str, Any],
+                   progress: ProgressFn | None = None) -> dict[str, int] | None:
+    """Rough phase frames (address, takeaway, top, early downswing, impact) so the
+    marking screen can open each step near the right frame before any analysis.
+
+    A quick pose pass at ~`trim.coarse_fps` over the whole clip, then the usual phase
+    detection with the clip's median torso as the scale. Saved to suggest.json with the
+    video signature; returns None (and saves nothing) if the swing can't be found.
+    """
+    progress = progress or _noop
+    path = run_dir / SUGGEST_FILE
+    path.unlink(missing_ok=True)
+    stride = max(1, round(info.fps / config["trim"]["coarse_fps"]))
+
+    def pose_progress(done: int, todo: int, label: str) -> None:
+        progress("suggest", done / todo if todo else None, "Finding your swing")
+
+    progress("suggest", 0.0, "Finding your swing")
+    try:
+        data = extract_pose(run_dir / "normalized.mp4", info, config, select=lambda i: i % stride == 0,
+                            label="Finding your swing", progress=pose_progress)
+        pose = PoseSeq(info.fps, info.width, info.height, data)
+        phases = detect_phases(hands(pose, config), info.fps, clip_torso_length(pose, config), config["phases"])
+    except (PhaseError, ValueError):
+        return None
+    frames = phases.as_dict()
+    path.write_text(json.dumps({"video_signature": video_signature(info), "phases": frames}, indent=2))
+    return frames
+
+
+def load_suggested(run_dir: Path, info: VideoInfo) -> dict[str, int] | None:
+    """The suggested phase frames, if they were found on this exact conversion."""
+    try:
+        data = json.loads((run_dir / SUGGEST_FILE).read_text())
+    except (OSError, ValueError):
+        return None
+    return data.get("phases") if data.get("video_signature") == video_signature(info) else None
 
 
 def save_marks(run_dir: Path, view: str, address_frame: int, points: dict[str, Point], info: VideoInfo,

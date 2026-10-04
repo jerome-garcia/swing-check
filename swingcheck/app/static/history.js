@@ -2,7 +2,8 @@ import { api, checkpointStates, el, features, fileUrl, formatDate, scorecard, ST
 
 export async function renderHistory(view, isCurrent) {
   view.replaceChildren(el("p", { class: "subtle" }, "Loading swings…"));
-  const [swings, feats] = await Promise.all([api("/api/swings"), features()]);
+  const [swings, feats, reference] = await Promise.all([
+    api("/api/swings"), features(), api("/api/reference").catch(() => ({ id: null }))]);
   if (!isCurrent()) return; // the user navigated away while this loaded
   const head = el("div", { class: "page-head" },
     el("div", { class: "page-title" }, el("h1", {}, "Your swings"),
@@ -36,7 +37,8 @@ export async function renderHistory(view, isCurrent) {
     return el("a", { class: "card", href: swingUrl(s.id) },
       thumb,
       el("div", { class: "body" },
-        el("div", { class: "title" }, s.name),
+        el("div", { class: "title" }, s.name,
+          s.id === reference.id ? el("span", { class: "badge ref-badge", title: "Shown beside each marking step" }, "Marking reference") : null),
         el("div", { class: "meta" }, formatDate(s.created) + (s.view ? ` · ${VIEW_NAMES[s.view]}` : "")),
         results,
         nextStep ? el("span", { class: "next-step" }, nextStep) : null));

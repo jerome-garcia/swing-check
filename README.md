@@ -430,10 +430,14 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
 
 1. **New swing.** Choose a down-the-line video (or drop it on the page). It
    uploads and converts with a progress bar; the conversion straightens rotated
-   phone video and keeps the slo-mo frame rate. (Face-on is shown but disabled
-   until a future release.)
-2. **Mark your address.** Scrub to your address position with the slider, the
-   ‹ › buttons or the arrow keys (Shift = 10 frames). Then click:
+   phone video and keeps the slo-mo frame rate. It then takes a quick look
+   through the clip (about 5–20 s) to find your swing, so each marking step can
+   open on a **suggested frame**. (Face-on is shown but disabled until a future
+   release.)
+2. **Mark your address.** Each step opens on its suggested frame (the caption
+   says *Suggested frame*); check it and scrub to the exact frame if needed with
+   the slider, the ‹ › buttons or the arrow keys (Shift = 10 frames). **Back to
+   the suggested frame** returns to it. Then click:
    - the **ball**
    - the **club neck**, where the shaft goes into the clubhead (the hosel), not
      the clubface: the shaft line through it is your swing plane
@@ -448,15 +452,14 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
 
    **Takeaway (optional).** Switch to the **Takeaway** step, scrub to where the
    shaft is parallel to the target line (from behind it points at the camera),
-   and click the **clubhead**. That frame becomes the takeaway checkpoint. It starts near the automatically detected takeaway.
+   and click the **clubhead**. That frame becomes the takeaway checkpoint.
 
    **Halfway back (optional).** Switch to the **Halfway back** step, scrub to
    where your lead arm is parallel to the ground, and click the **clubhead**
    (or the highest point of the shaft you can see) and then your **hands**.
 
-   **Top (optional).** Switch to the **Top** step (it starts on the detected
-   top), scrub to where the club stops going back, and click the **clubhead**
-   and then your **hands**.
+   **Top (optional).** Switch to the **Top** step, scrub to where the club stops
+   going back, and click the **clubhead** and then your **hands**.
 
    **Downswing (optional).** Switch to the **Downswing** step, scrub to where
    the shaft is parallel to the ground coming down, and click the
@@ -466,6 +469,18 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    to where your trail arm is parallel to the ground after impact, and click
    the **clubhead** and then your **hands** (or the lowest point of the shaft
    you can see, if your hands are hidden).
+
+   **Reference swing.** Open a swing you'd like to copy (a pro's clip you've
+   marked, say) and choose **⋯ → Use as marking reference**. Every marking step
+   then shows that swing's frame for the same step, with its marks, beside the
+   instructions. It's labelled *Marking reference* in your swings list.
+
+   **Mark checks.** Marks that look wrong get a yellow note under the points and
+   a **!** on the step: hands below the club neck at address, the club neck far
+   from the ball, the clubhead below your hands at halfway back or the
+   follow-through, a step whose frame comes before the previous one, or a
+   clubhead much too far from your hands. They never block saving; **Save and
+   analyze** asks once whether to go ahead.
 
    **Trim the clip** (below the points) cuts out practice swings or idle time:
    scrub to a frame, press **Start here** or **End here**, then **Apply trim**.
@@ -498,7 +513,8 @@ other checkpoint uses the frame you marked; change those with **Edit marks**.
 
 Each swing is a folder in `runs/` in the project. It holds the original upload,
 the converted video, your marks, the analysis, `annotated.mp4`, the key frame
-images and `report.txt`. Back up or delete that folder like any other files.
+images and `report.txt`. `runs/settings.json` remembers which swing is the
+marking reference. Back up or delete that folder like any other files.
 
 ---
 

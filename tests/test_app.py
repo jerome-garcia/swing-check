@@ -195,3 +195,36 @@ def test_store_ids_are_unique_and_safe(runs):
     assert store.summary(a.id)["status"] == "uploaded"
     with pytest.raises(SwingNotFound):
         store.path("../etc")
+
+
+def test_marking_reference(client, runs):
+    assert client.get("/api/reference").json() == {"id": None}
+    assert client.put("/api/reference", json={"id": "nope"}).status_code == 404
+    ref = client.put("/api/reference", json={"id": "old_swing"}).json()
+    assert ref["id"] == "old_swing" and ref["name"] == "old swing"
+    assert ref["width"] == 1080 and ref["height"] == 1920
+    assert ref["steps"]["address"] == {"frame": 5, "points": {"ball": [1, 2], "clubhead": [3, 4], "grip": [5, 6]}}
+    assert client.get("/api/reference").json()["id"] == "old_swing"  # remembered
+    assert client.put("/api/reference", json={"id": None}).json() == {"id": None}
+    client.put("/api/reference", json={"id": "old_swing"})
+    client.delete("/api/swings/old_swing")
+    assert client.get("/api/reference").json() == {"id": None}  # deleting it clears it
+
+
+def test_reference_must_be_marked(client, runs):
+    (runs / "old_swing" / "marks.json").unlink()
+    r = client.put("/api/reference", json={"id": "old_swing"})
+    assert r.status_code == 409 and "Mark" in r.json()["detail"]
+
+
+def test_detail_includes_suggested_frames_for_this_video(client, runs):
+    from swingcheck.ingest import VideoInfo
+    from swingcheck.pipeline import SUGGEST_FILE, video_signature
+
+    folder = runs / "old_swing"
+    assert client.get("/api/swings/old_swing").json()["suggested"] is None
+    sig = video_signature(VideoInfo.load(folder / "video.json"))
+    (folder / SUGGEST_FILE).write_text(json.dumps({"video_signature": sig, "phases": {"address": 3, "top": 50}}))
+    assert client.get("/api/swings/old_swing").json()["suggested"] == {"address": 3, "top": 50}
+    (folder / SUGGEST_FILE).write_text(json.dumps({"video_signature": {**sig, "frame_count": 1}, "phases": {"top": 50}}))
+    assert client.get("/api/swings/old_swing").json()["suggested"] is None

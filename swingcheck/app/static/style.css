@@ -429,6 +429,7 @@ button.score-item:hover { background: var(--surface-2); }
 .choice:disabled { cursor: not-allowed; opacity: 0.6; }
 .choice:disabled:hover { border-color: var(--border); }
 .badge.soon { margin-top: 6px; }
+.ref-badge { margin-left: 6px; vertical-align: middle; }
 
 .progress-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; max-width: 560px; box-shadow: var(--shadow); }
 .bar { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin: 8px 0 10px; }
@@ -484,6 +485,18 @@ button.score-item:hover { background: var(--surface-2); }
 .step-tab.complete .step-tab-state { color: var(--ok); }
 .step-tab-state { font-size: 12px; font-weight: 700; color: var(--muted); min-width: 0.6em; }
 .step-tab-state:empty { display: none; }
+.step-tab.warned .step-tab-state { color: var(--warn); }
+/* Marking: the suggested starting frame, the reference swing, and mark checks. */
+.suggested-tag { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+.suggested-tag[hidden] { display: none; }
+.linkish { background: none; border: 0; padding: 0; color: var(--accent, var(--ok)); text-decoration: underline; cursor: pointer; font: inherit; }
+.linkish[hidden] { display: none; }
+.ref-frame { margin: 0; }
+.ref-frame a { display: block; max-width: 220px; border-radius: var(--radius-sm); overflow: hidden; background: #000; }
+.ref-frame svg { display: block; width: 100%; height: auto; }
+.ref-frame figcaption { margin-top: 4px; }
+.mark-warnings p { margin: 0; }
+.mark-warnings p + p { margin-top: 6px; }
 .point-list { list-style: none; padding: 0; margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
 .point-list li {
   display: grid;

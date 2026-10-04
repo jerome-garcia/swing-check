@@ -61,3 +61,38 @@ def test_takeaway_marks_saved_and_validated(tmp_path):
     with pytest.raises(PipelineError, match="Unknown"):
         save_marks(tmp_path, "dtl", 10, address, info, checkpoints={"finish": {"frame": 50, "points": {"clubhead": (1, 1)}}})
     assert marks.view == "dtl"
+
+
+def test_suggest_frames_saves_detected_phases_for_this_video(tmp_path, monkeypatch):
+    import numpy as np
+
+    from swingcheck import pipeline
+    from swingcheck.phases import Phases
+
+    info = make_info(frame_count=480)
+    calls = {}
+
+    def fake_extract(video, info_, config, select=None, **kw):
+        calls["sampled"] = [i for i in range(16) if select(i)]
+        return np.full((info_.frame_count, 33, 4), np.nan)
+
+    monkeypatch.setattr(pipeline, "extract_pose", fake_extract)
+    monkeypatch.setattr(pipeline, "detect_phases",
+                        lambda *a, **k: Phases(address=10, takeaway=40, top=200, early_downswing=260, impact=300))
+    frames = pipeline.suggest_frames(tmp_path, info, load_config())
+    assert frames == {"address": 10, "takeaway": 40, "top": 200, "early_downswing": 260, "impact": 300}
+    assert calls["sampled"] == [0, 8]  # 240 fps clip, quick pass at 30 fps
+    assert pipeline.load_suggested(tmp_path, info) == frames
+    assert pipeline.load_suggested(tmp_path, make_info(frame_count=200)) is None  # re-trimmed: stale
+
+
+def test_suggest_frames_gives_up_quietly_when_no_swing_found(tmp_path, monkeypatch):
+    import numpy as np
+
+    from swingcheck import pipeline
+
+    info = make_info()
+    (tmp_path / pipeline.SUGGEST_FILE).write_text("{}")  # left over from an earlier conversion
+    monkeypatch.setattr(pipeline, "extract_pose", lambda video, i, c, **kw: np.full((i.frame_count, 33, 4), np.nan))
+    assert pipeline.suggest_frames(tmp_path, info, load_config()) is None
+    assert not (tmp_path / pipeline.SUGGEST_FILE).exists()

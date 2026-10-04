@@ -54,10 +54,11 @@ const STEP_POINT_INFO = {
     grip: { label: "Hands", hint: "Center of your hands, or the lowest point of the shaft you can see if they're hidden behind you" },
   },
 };
-// Where to start a checkpoint step that has no detected phase of its own.
+// Where to start a checkpoint step that has no detected phase of its own (checked against
+// hand-marked McIlroy, Tiger and amateur clips).
 const FRAME_GUESS = {
-  // Lead arm parallel comes about 40% of the way from takeaway to the top.
-  halfway_back: p => (p.takeaway !== undefined && p.top !== undefined ? p.takeaway + 0.4 * (p.top - p.takeaway) : undefined),
+  // Lead arm parallel comes about 30% of the way from takeaway to the top.
+  halfway_back: p => (p.takeaway !== undefined && p.top !== undefined ? p.takeaway + 0.3 * (p.top - p.takeaway) : undefined),
   // Shaft parallel coming down is about halfway from the early downswing to impact.
   downswing: p => (p.early_downswing !== undefined && p.impact !== undefined ? (p.early_downswing + p.impact) / 2 : undefined),
   // Trail arm parallel after impact: about as long after impact as the downswing took from the top.
@@ -68,7 +69,10 @@ const LOUPE_SIZE = 150;
 const LOUPE_ZOOM = 4;
 
 export async function renderMark(view, id, isCurrent) {
-  const s = await api(`/api/swings/${encodeURIComponent(id)}`);
+  const [s, reference] = await Promise.all([
+    api(`/api/swings/${encodeURIComponent(id)}`),
+    api("/api/reference").catch(() => ({ id: null })),
+  ]);
   if (!isCurrent()) return;
   if (!s.video || (s.job && ["queued", "running"].includes(s.job.state))) {
     location.replace(swingUrl(id));
@@ -79,22 +83,29 @@ export async function renderMark(view, id, isCurrent) {
   const steps = STEPS[s.view];
   const marksValid = s.status === "marked" || s.status === "analyzed";
   const clampFrame = f => Math.max(0, Math.min(v.frame_count - 1, Math.round(f)));
+  // Where each step opens: the frames from the last analysis, else the suggestions found
+  // right after conversion (a quick pass over the clip), else a guess just after address.
+  const phases = (marksValid && s.analysis && s.analysis.phases) || s.suggested || null;
+  const phaseFrame = key => (phases ? (phases[key] ?? (FRAME_GUESS[key] || (() => undefined))(phases)) : undefined);
   // Address point positions survive a re-trim or a view change (the camera didn't move),
-  // so keep the ones this view uses as a starting point.
-  const addressFrame = s.marks ? clampFrame(s.marks.address_frame) : 0;
+  // so keep the ones this view uses as a starting point. The frame only if it still fits.
+  const savedAddress = Boolean(s.marks) && (marksValid || !s.suggested);
+  const addressSuggested = !savedAddress && s.suggested ? clampFrame(s.suggested.address) : undefined;
+  const addressFrame = savedAddress ? clampFrame(s.marks.address_frame) : addressSuggested ?? 0;
   const stepState = {};
   for (const st of steps) {
     if (st.key === "address") {
-      stepState.address = { frame: addressFrame, points: pick((s.marks && s.marks.points) || {}, st.points) };
+      stepState.address = { frame: addressFrame, suggested: addressSuggested,
+        points: pick((s.marks && s.marks.points) || {}, st.points) };
       continue;
     }
-    // Later checkpoints: saved marks (only if still valid for this trim), else the detected
-    // frame from the last analysis, else a guess just after address.
+    // Later checkpoints: saved marks (only if still valid for this trim), else where it opens.
     const saved = marksValid && s.marks && s.marks.checkpoints ? s.marks.checkpoints[st.key] : null;
-    const phases = marksValid && s.analysis && s.analysis.phases ? s.analysis.phases : null;
-    const detected = phases ? (phases[st.key] ?? (FRAME_GUESS[st.key] || (() => undefined))(phases)) : undefined;
+    const detected = phaseFrame(st.key);
+    const suggested = !saved && detected !== undefined ? clampFrame(detected) : undefined;
     stepState[st.key] = {
-      frame: clampFrame(saved ? saved.frame : detected !== undefined ? detected : addressFrame + 0.6 * v.fps),
+      frame: clampFrame(saved ? saved.frame : suggested ?? addressFrame + 0.6 * v.fps),
+      suggested,
       points: saved ? pick(saved.points, st.points) : {},
     };
   }
@@ -304,15 +315,108 @@ export async function renderMark(view, id, isCurrent) {
   const frameLabel = el("span", { class: "frame-label" });
   slider.addEventListener("input", () => setFrame(Number(slider.value)));
 
+  // The step opened on a suggested frame: say so, and offer a way back to it after scrubbing.
+  const suggestedTag = el("span", { class: "suggested-tag", hidden: true,
+    title: "Found automatically. Check it and scrub to the exact frame if needed." }, "Suggested frame");
+  const backToSuggested = el("button", { class: "linkish", type: "button", hidden: true,
+    onclick: () => setFrame(cur().suggested) }, "Back to the suggested frame");
+
   function setFrame(f) {
     cur().frame = clampFrame(f);
     slider.value = cur().frame;
     frameLabel.textContent = `Frame ${cur().frame} · ${(cur().frame / v.fps).toFixed(3)}s`;
+    const onSuggestion = cur().suggested !== undefined && cur().frame === cur().suggested;
+    suggestedTag.hidden = !onSuggestion;
+    backToSuggested.hidden = onSuggestion || cur().suggested === undefined;
     showFrame(cur().frame);
+    refresh(); // the frame-order check and the step tabs depend on the frame
   }
   const step = n => el("button", { class: "btn small", type: "button", onclick: () => setFrame(cur().frame + n),
     title: `${n > 0 ? "Forward" : "Back"} ${Math.abs(n)} frame${Math.abs(n) > 1 ? "s" : ""}` },
   n === -10 ? "«" : n === -1 ? "‹" : n === 1 ? "›" : "»");
+
+  // --- Reference swing ------------------------------------------------------
+  // The swing the user picked as a reference (⋯ → Use as marking reference on its page):
+  // its frame for this step, with its marks, next to the step's instructions.
+  const refBox = el("figure", { class: "ref-frame" });
+  let refShown = null; // the step it's showing; frames aren't cached, so redraw only on a step change
+  function renderRef() {
+    if (refShown === state.active) return;
+    refShown = state.active;
+    if (s.view !== "dtl" || reference.id === id) { refBox.hidden = true; return; }
+    refBox.hidden = false;
+    if (!reference.id) {
+      refBox.replaceChildren(el("figcaption", { class: "subtle small" },
+        "Tip: open a swing you'd like to copy (a pro's clip, say) and choose ⋯ → Use as marking reference. "
+        + "Its frame for each step then shows here."));
+      return;
+    }
+    const st = reference.steps[state.active];
+    if (!st) {
+      refBox.replaceChildren(el("figcaption", { class: "subtle small" },
+        `Your reference swing (${reference.name}) has no ${stepDef().title.toLowerCase()} marks.`));
+      return;
+    }
+    const url = `/api/swings/${encodeURIComponent(reference.id)}/frames/${st.frame}.jpg`;
+    const { width: w, height: h } = reference;
+    const r = Math.max(w, h) / 55;
+    const p = st.points;
+    const shaft = p.clubhead && p.grip
+      ? `<line x1="${p.clubhead[0]}" y1="${p.clubhead[1]}" x2="${p.grip[0]}" y2="${p.grip[1]}" stroke="${state.active === "address" ? PLANE_COLOR : "#fff"}" stroke-width="${r / 4}"/>` : "";
+    const mark = (name, [x, y]) => {
+      const outline = POINT_INFO[name].shape === "square"
+        ? `<rect x="${x - r}" y="${y - r}" width="${2 * r}" height="${2 * r}"/>` : `<circle cx="${x}" cy="${y}" r="${r}"/>`;
+      return `<g fill="none"><g stroke="rgba(0,0,0,.8)" stroke-width="${r / 1.8}">${outline}</g>`
+        + `<g stroke="#fff" stroke-width="${r / 3.5}">${outline}</g></g>`;
+    };
+    const link = el("a", { href: url, target: "_blank", rel: "noopener", title: "Open full size" });
+    link.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Reference frame">`
+      + `<image href="${url}?w=360" width="${w}" height="${h}"/>${shaft}`
+      + Object.entries(p).filter(([n]) => POINT_INFO[n]).map(([n, pt]) => mark(n, pt)).join("") + "</svg>";
+    refBox.replaceChildren(link, el("figcaption", { class: "subtle small" }, `Reference: ${reference.name}`));
+  }
+
+  // --- Mark checks ----------------------------------------------------------
+  // Quick sanity checks on the marks; they warn but never block saving.
+  const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  function markWarnings() {
+    const out = []; // [stepKey, sentence]
+    const a = state.steps.address.points;
+    if (a.clubhead && a.grip && a.grip[1] >= a.clubhead[1]) {
+      out.push(["address", "Your hands should be above the club neck. Check you clicked the club neck first, then your hands."]);
+    }
+    const shaft = a.clubhead && a.grip ? dist(a.clubhead, a.grip) : null;
+    if (a.ball && a.clubhead && shaft && dist(a.ball, a.clubhead) > 0.5 * shaft) {
+      out.push(["address", "The club neck should sit just behind the ball. Check the ball and club neck marks."]);
+    }
+    let prev = steps[0];
+    for (const st of steps.slice(1)) {
+      if (!started(st.key)) continue;
+      const here = state.steps[st.key];
+      if (here.frame <= state.steps[prev.key].frame) {
+        out.push([st.key, `This ${st.title.toLowerCase()} frame comes before your ${prev.title.toLowerCase()} frame. Check the frame.`]);
+      }
+      const p = here.points;
+      if (p.clubhead && p.grip) {
+        if (["halfway_back", "follow_through"].includes(st.key) && p.clubhead[1] >= p.grip[1]) {
+          out.push([st.key, "The clubhead should be above your hands here. Check you clicked the clubhead first, then your hands."]);
+        }
+        // From behind, the club looks shorter at address (it leans away from the camera) than
+        // upright at halfway back: real marks reach 1.5x, so only flag what can't be the club.
+        if (shaft && dist(p.clubhead, p.grip) > 2 * shaft) {
+          out.push([st.key, "The clubhead looks too far from your hands. Check the clubhead and hands marks."]);
+        }
+      }
+      prev = st;
+    }
+    return out;
+  }
+  const warningBox = el("div", { class: "notice warn mark-warnings", hidden: true });
+  function refreshWarnings() {
+    const here = markWarnings().filter(([key]) => key === state.active).map(([, text]) => text);
+    warningBox.hidden = !here.length;
+    warningBox.replaceChildren(...here.map(text => el("p", {}, text)));
+  }
 
   // --- Sidebar --------------------------------------------------------------
   const pointList = el("ol", { class: "point-list" });
@@ -349,12 +453,13 @@ export async function renderMark(view, id, isCurrent) {
   function refresh() {
     const next = nextPoint();
     renderHud(next);
+    const warned = new Set(markWarnings().map(([key]) => key));
     stepTabs.replaceChildren(...steps.map(st => el("button", {
-      type: "button", role: "tab", class: `step-tab ${st.key === state.active ? "selected" : ""} ${complete(st.key) ? "complete" : ""}`,
+      type: "button", role: "tab", class: `step-tab ${st.key === state.active ? "selected" : ""} ${complete(st.key) ? "complete" : ""} ${warned.has(st.key) ? "warned" : ""}`,
       "aria-selected": String(st.key === state.active), onclick: () => selectStep(st.key),
       title: st.optional ? "Optional" : "Required",
     },
-    el("span", { class: "step-tab-state" }, complete(st.key) ? "✓" : started(st.key) ? "…" : st.optional ? "" : "•"),
+    el("span", { class: "step-tab-state" }, warned.has(st.key) ? "!" : complete(st.key) ? "✓" : started(st.key) ? "…" : st.optional ? "" : "•"),
     el("span", {}, st.title))));
     stepIntro.textContent = stepDef().intro;
     pointList.replaceChildren(...stepDef().points.map(name => {
@@ -366,6 +471,8 @@ export async function renderMark(view, id, isCurrent) {
         el("span", { class: "check" }, done ? "✓" : name === next ? "Click it" : ""));
     }));
     saveBtn.disabled = !complete("address");
+    renderRef();
+    refreshWarnings();
     draw();
   }
 
@@ -376,6 +483,12 @@ export async function renderMark(view, id, isCurrent) {
       saveError.textContent = `Finish or clear the ${unfinished.map(st => st.title.toLowerCase()).join(", ")} marks first.`;
       saveError.hidden = false;
       return;
+    }
+    const warnings = markWarnings();
+    if (warnings.length) {
+      const titles = [...new Set(warnings.map(([key]) => steps.find(st => st.key === key).title))];
+      const list = warnings.map(([, t]) => `• ${t}`).join("\n");
+      if (!confirm(`Some marks look off (${titles.join(", ")}):\n\n${list}\n\nSave and analyze anyway?`)) return;
     }
     const checkpoints = Object.fromEntries(steps.filter(st => st.optional && complete(st.key))
       .map(st => [st.key, { frame: state.steps[st.key].frame, points: state.steps[st.key].points }]));
@@ -474,14 +587,17 @@ export async function renderMark(view, id, isCurrent) {
         hud,
         el("div", { class: "stage" }, canvas),
         el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),
-        el("div", { class: "subtle small center frame-caption" }, frameLabel, el("span", { class: "keys-hint" }, " · ← → step, Shift = 10 frames"))),
+        el("div", { class: "subtle small center frame-caption" }, frameLabel, " ", suggestedTag, " ", backToSuggested,
+          el("span", { class: "keys-hint" }, " · ← → step, Shift = 10 frames"))),
       el("aside", { class: "mark-side stack" },
         el("section", { class: "panel" },
           el("h2", {}, steps.length > 1 ? "Mark your swing" : "Mark your address"),
           steps.length > 1 ? el("p", { class: "subtle small" }, "Address is required (•); the other steps are optional, one per checkpoint.") : null,
           steps.length > 1 ? stepTabs : null,
           stepIntro,
+          refBox,
           pointList,
+          warningBox,
           el("div", { class: "actions" },
             el("button", { class: "btn small", type: "button", onclick: undo }, "Undo"),
             el("button", { class: "btn small", type: "button", onclick: () => { cur().points = {}; refresh(); } }, "Clear step")),

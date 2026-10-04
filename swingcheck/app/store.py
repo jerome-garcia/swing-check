@@ -18,6 +18,7 @@ from swingcheck.ingest import VideoInfo
 from swingcheck.pipeline import load_marks
 
 META = "swing.json"
+SETTINGS = "settings.json"  # app-wide choices, in the runs folder itself (e.g. the marking reference)
 ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,120}$")
 
 # Status, in order: uploaded -> converted -> marked -> analyzed.
@@ -139,6 +140,22 @@ class Store:
 
     def delete(self, swing_id: str) -> None:
         shutil.rmtree(self.path(swing_id))
+        if self.reference_id() == swing_id:
+            self.set_reference(None)
+
+    # --- marking reference ---------------------------------------------------
+    # One swing the user likes (say a pro's clip), shown beside each marking step.
+    def reference_id(self) -> str | None:
+        ref = (_read_json(self.root / SETTINGS) or {}).get("reference")
+        try:
+            return ref if ref and self.path(ref) else None
+        except SwingNotFound:
+            return None
+
+    def set_reference(self, swing_id: str | None) -> None:
+        settings = _read_json(self.root / SETTINGS) or {}
+        settings["reference"] = swing_id
+        (self.root / SETTINGS).write_text(json.dumps(settings, indent=2))
 
     # --- files ---------------------------------------------------------------
     def file(self, swing_id: str, name: str) -> Path:

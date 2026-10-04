@@ -34,7 +34,7 @@ def hands(pose: PoseSeq, config: dict[str, Any]) -> np.ndarray:
     """
     pose_cfg = config["pose"]
     min_vis = pose_cfg["hand_min_visibility"]
-    torso = _clip_torso_length(pose, config)
+    torso = clip_torso_length(pose, config)
     max_sep = pose_cfg["hand_max_separation"] * torso
     max_jump = pose_cfg["hand_max_jump"] * torso
 
@@ -94,7 +94,7 @@ def _predict(track: np.ndarray, i: int, window: int) -> np.ndarray | None:
     return track[last] + velocity * (i - last)
 
 
-def _clip_torso_length(pose: PoseSeq, config: dict[str, Any]) -> float:
+def clip_torso_length(pose: PoseSeq, config: dict[str, Any]) -> float:
     a = midpoint(pose, "left_shoulder", "right_shoulder", config)
     b = midpoint(pose, "left_hip", "right_hip", config)
     lengths = np.linalg.norm(a - b, axis=1)
