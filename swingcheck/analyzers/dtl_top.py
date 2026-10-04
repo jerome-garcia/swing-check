@@ -25,8 +25,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
-                                  pct, register)
+from swingcheck.analyzers import (MissingData, Overlay, REFERENCE_COLOR, Row, STATUS_COLORS, SwingContext, Verdict,
+                                  clubhead_mark, grade, hands_mark, pct, register, spot_mark)
 from swingcheck.analyzers.dtl_body import posture_kept, with_body
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.geometry import angle_between_deg
@@ -128,10 +128,10 @@ def top(ctx: SwingContext) -> Verdict:
     overlays = [
         Overlay("segment", [tuple(hip_mid), tuple(head)], REFERENCE_COLOR, "", show, 2),
         Overlay("segment", [tuple(lead_shoulder), tuple(hands)], col, "", show, 3),
-        Overlay("dashed", [tuple(lead_shoulder), tuple(target)], STATUS_COLORS["ok"], "90 deg" if arm_status != "ok" else "",
+        Overlay("dashed", [tuple(lead_shoulder), tuple(target)], REFERENCE_COLOR, "90 deg" if arm_status != "ok" else "",
                 show, 2),
-        Overlay("point", [tuple(hands)], col, "", show, 2),
-        Overlay("point", [tuple(clubhead)], REFERENCE_COLOR, "", show, 1),
+        hands_mark(hands, col, show),
+        clubhead_mark(clubhead, REFERENCE_COLOR, show),  # shown, not measured here
         Overlay("text", [(float(lead_shoulder[0]) - toward_golfer * 0.1 * s, float(lead_shoulder[1]) + 0.2 * s)], col,
                 f"arm {arm_angle:.0f} deg", show),
     ]
@@ -141,7 +141,7 @@ def top(ctx: SwingContext) -> Verdict:
         heel_col = STATUS_COLORS[heel_status]
         overlays += [
             Overlay("dashed", [(hx, hy), (hx, float(hands[1]) - 0.25 * s)], REFERENCE_COLOR, "trail heel", show, 2),
-            Overlay("point", [(hx, hy)], REFERENCE_COLOR, "", show, 1),
+            spot_mark((hx, hy), REFERENCE_COLOR, show),
             Overlay("segment", [(hx, float(hands[1])), (float(hands[0]), float(hands[1]))], heel_col, "", show, 2),
         ]
 

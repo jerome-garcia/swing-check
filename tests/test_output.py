@@ -22,7 +22,7 @@ def fo_verdicts():
 
 
 def test_every_overlay_kind_renders():
-    kinds = ["line", "ray", "segment", "point", "vline", "text"]
+    kinds = ["line", "ray", "segment", "point", "vline", "text", "circle", "square", "ring", "dashed"]
     overlays = [Overlay(k, [(100.0, 900.0), (300.0, 300.0)], label=k) for k in kinds]
     overlays.append(Overlay("point", [(50.0, 50.0)], thickness=1))  # ring marker
     overlays.append(Overlay("ray", [(-500.0, -500.0), (-400.0, -400.0)], label="off-frame"))  # misses frame
@@ -150,3 +150,13 @@ def test_whole_clip_overlays_dont_keep_a_check_in_the_header():
     ann = Annotator([plane, plane], PHASES, np.zeros((100, 2)), 240.0, 100, 100, CONFIG)
     assert len(ann._active(5)) == 2      # its own lines are on screen
     assert ann._active(50) == []         # only the background line is
+
+
+def test_marks_have_their_own_shapes():
+    from swingcheck.analyzers import (PAST_COLOR, PLANE_COLOR, STATUS_COLORS, clubhead_mark, hands_mark,
+                                      spot_mark)
+    assert clubhead_mark((1, 2), STATUS_COLORS["ok"], None).kind == "circle"
+    assert hands_mark((1, 2), STATUS_COLORS["ok"], None).kind == "square"
+    assert spot_mark((1, 2), STATUS_COLORS["ok"], None).kind == "ring"
+    # The plane and earlier-checkpoint colors stay clear of green / yellow / red.
+    assert {PLANE_COLOR, PAST_COLOR}.isdisjoint(STATUS_COLORS.values())

@@ -41,8 +41,18 @@ Color = tuple[int, int, int]  # BGR
 
 # Shared palette so the annotated video reads consistently across analyzers.
 STATUS_COLORS: dict[str, Color] = {"ok": (80, 200, 80), "warn": (0, 200, 255), "flag": (60, 60, 230), "error": (160, 160, 160)}
-REFERENCE_COLOR: Color = (255, 255, 255)  # address-position reference lines
-BALL_COLOR: Color = (255, 255, 0)
+# The drawing language, the same on every checkpoint:
+#   green / yellow / red  anything measured, colored by its result (line, tick, mark, label)
+#   white                 targets and address references: where it should be / where it was
+#   magenta + grey        the swing plane line and its on-plane boundaries
+#   cyan                  an earlier checkpoint's position (e.g. the clubhead at the takeaway)
+# Shapes: clubhead = solid circle, hands = solid square, ball and other spots
+# (a heel, where a shaft line lands) = hollow ring.
+REFERENCE_COLOR: Color = (255, 255, 255)
+PLANE_COLOR: Color = (255, 0, 255)       # magenta
+PLANE_BAND_COLOR: Color = (150, 150, 150)
+PAST_COLOR: Color = (255, 255, 0)        # cyan
+BALL_COLOR: Color = REFERENCE_COLOR
 
 
 class Grade(str):
@@ -61,6 +71,21 @@ class Grade(str):
 
     def __reduce__(self):  # copies (e.g. dataclasses.asdict) keep the depth
         return Grade, (str(self), self.depth)
+
+
+def clubhead_mark(xy, color: Color, show: tuple[int, int] | None, label: str = "") -> "Overlay":
+    """The clubhead: a solid circle."""
+    return Overlay("circle", [(float(xy[0]), float(xy[1]))], color, label, show, 2)
+
+
+def hands_mark(xy, color: Color, show: tuple[int, int] | None, label: str = "") -> "Overlay":
+    """The hands: a solid square."""
+    return Overlay("square", [(float(xy[0]), float(xy[1]))], color, label, show, 2)
+
+
+def spot_mark(xy, color: Color, show: tuple[int, int] | None, label: str = "") -> "Overlay":
+    """The ball, a heel, where a shaft line lands: a hollow ring."""
+    return Overlay("ring", [(float(xy[0]), float(xy[1]))], color, label, show, 2)
 
 
 def grade(value: float, ok_lo: float, ok_hi: float, watch_lo: float, watch_hi: float) -> Grade:

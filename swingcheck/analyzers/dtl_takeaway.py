@@ -35,7 +35,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
+from swingcheck.analyzers import (MissingData, Overlay, Row, STATUS_COLORS, SwingContext, Verdict, clubhead_mark, grade,
                                   pct, register)
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.analyzers.dtl_body import posture_kept, trail_knee_kept, with_body
@@ -134,8 +134,7 @@ def takeaway(ctx: SwingContext) -> Verdict:
         overlays += b.overlays
     # The clubhead last, on top of the body lines, with a white ring so it stands out
     # even where it crosses a line of the same color (e.g. a green spine).
-    overlays += [Overlay("point", [tuple(clubhead)], color, "", show, 2),
-                 Overlay("point", [tuple(clubhead)], REFERENCE_COLOR, "", show, 1)]
+    overlays.append(clubhead_mark(clubhead, color, show))
 
     return Verdict(
         status=status,

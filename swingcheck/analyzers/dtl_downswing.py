@@ -19,13 +19,12 @@ from __future__ import annotations
 
 import numpy as np
 
-from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
-                                  pct, register)
+from swingcheck.analyzers import (MissingData, Overlay, PAST_COLOR, Row, STATUS_COLORS, SwingContext, Verdict,
+                                  clubhead_mark, grade, pct, register)
 from swingcheck.analyzers.dtl_body import posture_kept, with_body
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.analyzers.dtl_takeaway import address_line
 
-TAKEAWAY_COLOR = (255, 170, 80)  # BGR light blue: the clubhead at the takeaway, apart from the status colors
 HOLD_MS = 400
 ORDER = {"ok": 0, "warn": 1, "flag": 2}
 
@@ -93,18 +92,18 @@ def downswing(ctx: SwingContext) -> Verdict:
     foot = clubhead - (under * s) * line.normal
     overlays = swing_plane_line(ctx, show) + [
         Overlay("segment", [tuple(clubhead), tuple(foot)], col, "", show, 2),
-        Overlay("point", [tuple(clubhead)], col, "", show, 2),
+        clubhead_mark(clubhead, col, show),
         Overlay("text", [(float(clubhead[0]) - line.toward_golfer * 0.15 * s, float(clubhead[1]) + 0.25 * s)], col,
                 plane_label, show),
     ]
     if take is not None:
         take_ch = np.asarray(take.points["clubhead"], float)
         overlays += [
-            Overlay("dashed", [tuple(take_ch), tuple(clubhead)], REFERENCE_COLOR, "", show, 1),
-            Overlay("point", [tuple(take_ch)], TAKEAWAY_COLOR, "", show, 2),
+            Overlay("dashed", [tuple(take_ch), tuple(clubhead)], PAST_COLOR, "", show, 1),
+            clubhead_mark(take_ch, PAST_COLOR, show),
             # Label on the golfer's side of the point, clear of the club and hands.
             Overlay("text", [(float(take_ch[0]) + line.toward_golfer * 0.9 * s, float(take_ch[1]) - 0.1 * s)],
-                    TAKEAWAY_COLOR, "clubhead at takeaway", show),
+                    PAST_COLOR, "clubhead at takeaway", show),
         ]
 
     side = "under" if under >= 0 else "above"

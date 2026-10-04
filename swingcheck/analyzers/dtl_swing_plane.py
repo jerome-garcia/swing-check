@@ -17,11 +17,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from swingcheck.analyzers import (STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade,
-                                  pct, register)
+from swingcheck.analyzers import (MissingData, Overlay, PLANE_BAND_COLOR, PLANE_COLOR, REFERENCE_COLOR, Row,
+                                  STATUS_COLORS, SwingContext, Verdict, grade, pct, register, spot_mark)
 
-PLANE_COLOR = (0, 140, 255)  # orange, like the classic drawn-on shaft line
-ZONE_COLOR = (80, 200, 80)
 
 
 def shaft_angle_deg(clubhead, grip) -> float:
@@ -42,7 +40,6 @@ def torso_crossing(clubhead, grip, hip, shoulder) -> float:
     return float(u)
 
 
-BAND_COLOR = (150, 150, 150)  # grey boundary lines either side of the swing plane line
 
 
 def swing_plane_line(ctx: SwingContext, show: tuple[int, int] | None) -> list[Overlay]:
@@ -57,8 +54,8 @@ def swing_plane_line(ctx: SwingContext, show: tuple[int, int] | None) -> list[Ov
         return []
     d = (gr0 - ch0) / np.linalg.norm(gr0 - ch0)
     off = np.array([-d[1], d[0]]) * ctx.config["analyzers"]["takeaway"]["line_tolerance"] * ctx.scale
-    return [Overlay("line", [tuple(ch0 + off), tuple(gr0 + off)], BAND_COLOR, "", show, 1),
-            Overlay("line", [tuple(ch0 - off), tuple(gr0 - off)], BAND_COLOR, "", show, 1),
+    return [Overlay("line", [tuple(ch0 + off), tuple(gr0 + off)], PLANE_BAND_COLOR, "", show, 1),
+            Overlay("line", [tuple(ch0 - off), tuple(gr0 - off)], PLANE_BAND_COLOR, "", show, 1),
             Overlay("line", [tuple(ch0), tuple(gr0)], PLANE_COLOR, "swing plane", show, 2)]
 
 
@@ -118,8 +115,8 @@ def swing_plane(ctx: SwingContext) -> Verdict:
     show = (0, max(f, ctx.frame("takeaway")))
     color = STATUS_COLORS[status]
     overlays = swing_plane_line(ctx, (0, len(ctx.pose) - 1)) + [
-        Overlay("segment", zone, ZONE_COLOR, "", show, 6),
-        Overlay("point", [tuple(cross)], color, "", show, 2),
+        Overlay("segment", zone, REFERENCE_COLOR, "", show, 6),  # the target
+        spot_mark(cross, color, show),
         Overlay("text", [(float(cross[0]) + 0.12 * s, float(cross[1]))], color, aim, show),
     ]
     tips = []

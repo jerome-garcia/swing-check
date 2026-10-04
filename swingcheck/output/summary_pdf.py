@@ -288,8 +288,11 @@ def summary_pdf(folder: Path, swing_name: str, created: str, analysis: dict[str,
     notes = [
         "Every reading has a green, yellow and red band, listed next to it. Green is a good range, "
         "yellow is worth watching, red is a fault to fix.",
-        "The orange line on each frame is the swing plane: the club shaft's line at address. The two grey "
+        "The magenta line on each frame is the swing plane: the club shaft's line at address. The two grey "
         "lines either side mark the on-plane zone.",
+        "On the frames, green / yellow / red marks what was measured, white dashed lines are targets or "
+        "where you were at address, and cyan is an earlier checkpoint. Circle = clubhead, square = hands, "
+        "ring = ball or another spot.",
         f"Distances are measured as a share of torso length and shown as rough centimetres, assuming a "
         f"{torso_cm:g} cm torso.",
     ] + list(analysis.get("warnings", []))

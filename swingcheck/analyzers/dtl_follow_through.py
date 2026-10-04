@@ -18,13 +18,11 @@ from __future__ import annotations
 
 import numpy as np
 
-from swingcheck.analyzers import (BALL_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade, pct,
-                                  register)
+from swingcheck.analyzers import (BALL_COLOR, MissingData, Overlay, PAST_COLOR, Row, STATUS_COLORS, SwingContext,
+                                  Verdict, clubhead_mark, grade, hands_mark, pct, register, spot_mark)
 from swingcheck.analyzers.dtl_halfway_back import shaft_landing
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 
-SHAFT_COLOR = (80, 230, 80)
-BACK_COLOR = (200, 200, 200)
 HOLD_MS = 400
 ORDER = {"ok": 0, "warn": 1, "flag": 2}
 
@@ -87,19 +85,20 @@ def follow_through(ctx: SwingContext) -> Verdict:
     show = (f, min(len(ctx.pose) - 1, f + int(round(HOLD_MS * ctx.fps / 1000))))
     col = STATUS_COLORS[shaft_status]
     overlays = [
-        Overlay("segment", [tuple(clubhead), tuple(landing)], SHAFT_COLOR, "", show, 3),
-        Overlay("point", [tuple(ball)], BALL_COLOR, "", show, 1),
-        Overlay("point", [tuple(landing)], col, "", show, 2),
-        Overlay("point", [tuple(hands)], SHAFT_COLOR, "", show, 1),
+        Overlay("segment", [tuple(clubhead), tuple(landing)], col, "", show, 3),
+        spot_mark(ball, BALL_COLOR, show),
+        spot_mark(landing, col, show),
+        hands_mark(hands, col, show),
+        clubhead_mark(clubhead, col, show),
         Overlay("text", [(float(landing[0]) - toward_golfer * 0.1 * s, float(landing[1]) + 0.2 * s)], col, shaft_label, show),
     ]
     if back_landing is not None:
         same_col = STATUS_COLORS[same_status]
         overlays += [
-            Overlay("point", [tuple(back_landing)], BACK_COLOR, "", show, 1),
+            spot_mark(back_landing, PAST_COLOR, show),
             Overlay("segment", [tuple(back_landing), tuple(landing)], same_col, "", show, 2),
             Overlay("text", [(float(back_landing[0]) - toward_golfer * 0.1 * s, float(back_landing[1]) + 0.35 * s)],
-                    BACK_COLOR, "backswing line", show),
+                    PAST_COLOR, "backswing line", show),
         ]
 
     side = "inside" if inside_by >= 0 else "outside"

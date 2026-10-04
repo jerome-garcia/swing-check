@@ -25,12 +25,11 @@ from __future__ import annotations
 
 import numpy as np
 
-from swingcheck.analyzers import (BALL_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade, pct,
-                                  register)
+from swingcheck.analyzers import (BALL_COLOR, MissingData, Overlay, Row, STATUS_COLORS, SwingContext, Verdict,
+                                  clubhead_mark, grade, hands_mark, pct, register, spot_mark)
 from swingcheck.analyzers.dtl_body import posture_kept, trail_knee_kept, with_body
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 
-SHAFT_COLOR = (80, 230, 80)
 HOLD_MS = 400  # how long the overlays stay up in the annotated video
 
 
@@ -93,12 +92,12 @@ def halfway_back(ctx: SwingContext) -> Verdict:
     body = [posture_kept(ctx, f, -toward_golfer, show), trail_knee_kept(ctx, f, -toward_golfer, show)]
     status, label, meaning, tip = with_body(status, label, f"Halfway back, {meaning}.", tip, body)
     overlays = [o for b in body for o in b.overlays] + [  # club lines last, on top
-        Overlay("segment", [tuple(clubhead), tuple(landing)], SHAFT_COLOR, "", show, 3),
+        Overlay("segment", [tuple(clubhead), tuple(landing)], col, "", show, 3),
         Overlay("segment", [tuple(landing), tuple(ball)], col, "", show, 2),
-        Overlay("point", [tuple(ball)], BALL_COLOR, "", show, 1),
-        Overlay("point", [tuple(landing)], col, "", show, 2),
-        Overlay("point", [tuple(hands)], SHAFT_COLOR, "", show, 1),
-        Overlay("point", [tuple(clubhead)], SHAFT_COLOR, "", show, 2),
+        spot_mark(ball, BALL_COLOR, show),
+        spot_mark(landing, col, show),
+        hands_mark(hands, col, show),
+        clubhead_mark(clubhead, col, show),
         Overlay("text", [(float(landing[0]) - toward_golfer * 0.1 * s, float(landing[1]) + 0.2 * s)], col, shaft_label, show),
     ]
 

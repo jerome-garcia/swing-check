@@ -118,6 +118,27 @@ def draw_line_overlay(img, kind: str, points, color, thickness: int, label: str,
         if label:
             p = _pt(points[0])
             draw_text(img, label, (p[0] + r + 6, p[1] + 5 + label_slot * int(18 * s)), 0.5 * s, color)
+    elif kind in ("circle", "square", "ring"):
+        # Marks (see swingcheck/analyzers/__init__.py): clubhead = solid circle, hands =
+        # solid square, ball and other spots = hollow ring. A black edge and, on the
+        # solid ones, a white rim keep them readable over lines of the same color.
+        p = _pt(points[0])
+        r = max(5, int(round(8 * s)))
+        if kind == "circle":
+            cv2.circle(img, p, r + 3, (0, 0, 0), -1, cv2.LINE_AA)
+            cv2.circle(img, p, r + 1, (255, 255, 255), -1, cv2.LINE_AA)
+            cv2.circle(img, p, r, color, -1, cv2.LINE_AA)
+        elif kind == "square":
+            h2 = max(4, int(round(r * 0.9)))
+            cv2.rectangle(img, (p[0] - h2 - 3, p[1] - h2 - 3), (p[0] + h2 + 3, p[1] + h2 + 3), (0, 0, 0), -1)
+            cv2.rectangle(img, (p[0] - h2 - 1, p[1] - h2 - 1), (p[0] + h2 + 1, p[1] + h2 + 1), (255, 255, 255), -1)
+            cv2.rectangle(img, (p[0] - h2, p[1] - h2), (p[0] + h2, p[1] + h2), color, -1)
+        else:
+            r = max(6, int(round(10 * s)))
+            cv2.circle(img, p, r, (0, 0, 0), 5, cv2.LINE_AA)
+            cv2.circle(img, p, r, color, 2, cv2.LINE_AA)
+        if label:
+            draw_text(img, label, (p[0] + r + 6, p[1] + 5 + label_slot * int(18 * s)), 0.5 * s, color)
     elif kind == "text":
         draw_text(img, label, _pt(points[0]), 0.5 * s, color)
     else:

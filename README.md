@@ -35,7 +35,7 @@ of the swing.
 
 **What "plane" means here.** The **swing plane line** is the one from
 checkpoint 2: your shaft at address (clubhead through grip), extended so it
-points at your belt buckle. It's drawn in orange and is the only line called
+points at your belt buckle. It's drawn in magenta and is the only line called
 "swing plane". Takeaway (3) and downswing (6) check that the **clubhead** stays
 on or near it. Halfway back (4) and follow-through (8) check where the shaft
 itself points at the ball's level. The top (5) checks the lead arm against the
@@ -77,7 +77,7 @@ yellow or red part at the middle of its green range: the spine at 37.5°, the ar
 down, and the thigh at 25° of knee flex (shin kept where it is).
 
 **2. Swing plane (implemented).** The line through the clubhead (hosel) and
-grip you click at address. Drawn in orange across the whole frame (and the
+grip you click at address. Drawn in magenta across the whole frame (and the
 whole video), with the belt-buckle zone in green on your torso and where the
 line crosses it. Settings live in `[analyzers.swing_plane]`.
 
@@ -123,7 +123,7 @@ so a camera pointed 5° off the target line moves it sideways by about 18% of
 torso length. The thresholds (`line_tolerance`, `flag_distance`) are a first
 guess from these few swings; tune them as more clips come in.
 
-The key frame shows the address shaft line (orange) with the on-plane band
+The key frame shows the address shaft line (magenta) with the on-plane band
 either side (grey), a tick from the clubhead square to the line, and the hands
 for reference. If the takeaway isn't marked, this checkpoint says so instead of
 guessing.
@@ -501,6 +501,19 @@ to watch / to fix, and **Work on first**: the one fault to work on, with its
 fix and the measurement behind it ("Biggest issue"). Tap a dot to jump to that
 checkpoint.
 
+**Reading the drawings.** Every key frame and the annotated video use one
+drawing language:
+
+| Look | Means |
+|---|---|
+| Green / yellow / red | something measured, colored by its result (its line, tick, mark and label) |
+| White, usually dashed | a target or an address reference: where it should be, or where it was at address |
+| Magenta line, grey lines either side | the swing plane (checkpoint 2) and its on-plane zone |
+| Cyan | an earlier checkpoint's position, e.g. the clubhead at the takeaway |
+| Solid circle | the clubhead |
+| Solid square | the hands |
+| Hollow ring | the ball, a heel, or where a shaft line lands |
+
 How **Work on first** is picked (`swingcheck/priority.py`): every yellow or red
 measurement gets a score = how deep into its band it is × how much that kind of
 fault matters.
@@ -559,7 +572,7 @@ the camera side (your trail side). Default ranges are in the [Roadmap](#roadmap)
 The address key frame draws each line with its value in its color (green,
 yellow or red), plus dashed green aim lines for anything not green.
 
-**Swing plane.** The orange line on the address key frame runs along your shaft,
+**Swing plane.** The magenta line on the address key frame runs along your shaft,
 from the clubhead up through your hands to where it meets your body; the green
 band on the torso is the belt-buckle zone it should hit. **Alignment** says
 whether it points at the belt buckle, above or below the belt, and what that

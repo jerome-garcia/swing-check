@@ -171,7 +171,7 @@ def address(ctx: SwingContext) -> Verdict:
         Overlay("text", [(float(knee[0]) + forward * 0.1 * s, float(knee[1]))], col["knees"], f"knee {knee_flex:.0f} deg", show),
     ]
     # Dashed target lines (middle of the good range) for whatever is out of range.
-    target = STATUS_COLORS["ok"]
+    target = REFERENCE_COLOR  # targets are white, like every other "where it should be" line
     if items["spine"][0] in ("warn", "flag"):
         aim = (cfg["spine_bend_min"] + cfg["spine_bend_max"]) / 2
         length = float(np.linalg.norm(sh_mid - hip_mid))
