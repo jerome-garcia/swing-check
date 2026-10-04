@@ -10,7 +10,13 @@ clubhead and hands you click there:
                  shaft too flat (laid off).
 
 A distance as a share of torso length, with green / yellow / red bands in
-[analyzers.halfway_back]. (A "hands split the biceps" check was tried and
+[analyzers.halfway_back].
+
+Plus two body checks from tracking (dtl_body.py), halfway-back frame vs address:
+spine bend kept (standing up) and trail knee flex kept (the trail leg
+straightening). Good players lose only a few degrees of either by here; most of
+the trail knee's straightening comes later, between halfway back and the top.
+The card shows the worst of the three. (A "hands split the biceps" check was tried and
 dropped: from behind the trail elbow is half hidden at this point, so the
 tracked biceps line wasn't reliable enough.)
 """
@@ -21,6 +27,7 @@ import numpy as np
 
 from swingcheck.analyzers import (BALL_COLOR, STATUS_COLORS, MissingData, Overlay, Row, SwingContext, Verdict, grade, pct,
                                   register)
+from swingcheck.analyzers.dtl_body import posture_kept, trail_knee_kept, with_body
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 
 SHAFT_COLOR = (80, 230, 80)
@@ -82,21 +89,24 @@ def halfway_back(ctx: SwingContext) -> Verdict:
     s = ctx.scale
     show = (f, min(len(ctx.pose) - 1, f + int(round(HOLD_MS * ctx.fps / 1000))))
     col = STATUS_COLORS[status]
-    overlays = [
+    shaft_status, shaft_label = status, label
+    body = [posture_kept(ctx, f, -toward_golfer, show), trail_knee_kept(ctx, f, -toward_golfer, show)]
+    status, label, meaning, tip = with_body(status, label, f"Halfway back, {meaning}.", tip, body)
+    overlays = [o for b in body for o in b.overlays] + [  # club lines last, on top
         Overlay("segment", [tuple(clubhead), tuple(landing)], SHAFT_COLOR, "", show, 3),
         Overlay("segment", [tuple(landing), tuple(ball)], col, "", show, 2),
         Overlay("point", [tuple(ball)], BALL_COLOR, "", show, 1),
         Overlay("point", [tuple(landing)], col, "", show, 2),
         Overlay("point", [tuple(hands)], SHAFT_COLOR, "", show, 1),
         Overlay("point", [tuple(clubhead)], SHAFT_COLOR, "", show, 2),
-        Overlay("text", [(float(landing[0]) - toward_golfer * 0.1 * s, float(landing[1]) + 0.2 * s)], col, label, show),
+        Overlay("text", [(float(landing[0]) - toward_golfer * 0.1 * s, float(landing[1]) + 0.2 * s)], col, shaft_label, show),
     ]
 
     side = "inside" if inside_by >= 0 else "outside"
     return Verdict(
         status=status,
         label=label,
-        summary=f"Halfway back, {meaning}.",
+        summary=meaning,
         tip=tip,
         frame=f,
         measurements={
@@ -107,9 +117,9 @@ def halfway_back(ctx: SwingContext) -> Verdict:
         },
         rows=[
             Row("Shaft points", f"{ctx.distance_text(inside_by)} {side} the ball",
-                f"{pct(abs(inside_by))} of torso length · {label.lower()} "
+                f"{pct(abs(inside_by))} of torso length · {shaft_label.lower()} "
                 f"(green {pct(-cfg['inside_min'])} outside to {pct(cfg['inside_max'])} inside, "
-                f"red past {pct(cfg['inside_watch_max'])} inside or {pct(-cfg['inside_watch_min'])} outside)", status),
-        ],
+                f"red past {pct(cfg['inside_watch_max'])} inside or {pct(-cfg['inside_watch_min'])} outside)", shaft_status),
+        ] + [b.row for b in body],
         overlays=swing_plane_line(ctx, show) + overlays,
     )

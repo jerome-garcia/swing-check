@@ -180,6 +180,17 @@ inside_min = -0.10        # green: 10% past the ball to 40% inside
 inside_max = 0.40
 inside_watch_min = -0.25  # yellow: up to 25% past the ball (a little flat)...
 inside_watch_max = 0.70   # ...or 40-70% inside (toward your feet, a little steep); red beyond
+# Body kept from address, degrees (as at the takeaway, a little looser: the
+# spine bend eases a little as the shoulders turn). McIlroy loses about 4° of
+# spine bend and 4° of trail knee flex by here, Tiger 6° and 2°.
+posture_loss_max = 8       # green up to 8° more upright...
+posture_loss_watch = 12    # ...yellow to 12°; red beyond (standing up)
+posture_gain_max = 5       # green up to 5° more bent...
+posture_gain_watch = 10    # ...yellow to 10°; red beyond (bending over)
+knee_straighten_max = 6    # green up to 6° straighter...
+knee_straighten_watch = 10 # ...yellow to 10°; red beyond (locking out)
+knee_bend_max = 8          # green up to 8° more bent...
+knee_bend_watch = 15       # ...yellow to 15°; red beyond (sinking)
 
 [analyzers.top]
 # DTL checkpoint 5, on the top frame you mark.

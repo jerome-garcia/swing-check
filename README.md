@@ -133,6 +133,13 @@ Settings live in `[analyzers.halfway_back]`.
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
 | **Shaft points** | the line from the clubhead through the hands, carried down to the ball's level: where it lands vs the ball, as % of torso length | 10% past the ball to 40% inside (between the ball and your feet): **Points at the ball** / **just inside the ball** | 40–70% inside (*a little steep*) or 10–25% past the ball (*a little flat*) | past 70% inside: **Points at your feet** (too steep / upright); more than 25% past the ball: **Points outside the ball** (too flat / laid off) |
+| **Spine bend kept** | as at the takeaway: spine bend on this frame vs address, from tracking | up to 8° more upright or 5° more bent | 8–12° more upright (*slightly standing up*) or 5–10° more bent | more than 12° more upright: **standing up**; more than 10° more bent: **bending over** |
+| **Trail knee flex kept** | as at the takeaway: trail knee flex on this frame vs address | up to 6° straighter or 8° more bent | 6–10° straighter (*slightly straightening*) or 8–15° more bent | more than 10° straighter: trail leg **straightening**; more than 15° more bent: **sinking** |
+
+The card shows the worst of the three. Good players lose only a few degrees of
+either by here (McIlroy about 4° and 4°, Tiger 6° and 2°); most of the trail
+knee's straightening comes later, between halfway back and the top (McIlroy's
+goes from 27° at address to 15° at the top), and it never locks.
 
 Set from a reference photo (a scratch golfer: shaft 26% inside the ball,
 green). McIlroy at lead arm parallel reads 30% inside (green); an amateur swing

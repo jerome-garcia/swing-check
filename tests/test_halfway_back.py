@@ -18,11 +18,27 @@ BALL = np.array([806.0, 1484.0])
 HANDS = np.array([450.0, 865.0])
 
 
-def pose(mirror=False):
+SPINE_BEND, KNEE_FLEX = 35.0, 25.0  # degrees at address
+
+
+def pose(mirror=False, spine_lost=0.0, knee_lost=0.0):
+    """spine_lost / knee_lost: degrees of spine bend / trail knee flex lost by halfway
+    back (from frame 15, clear of smoothing)."""
     data = np.full((80, len(LANDMARKS), 4), np.nan)
-    for name, p in {"left_hip": HIP + (45, 5), "right_hip": HIP - (45, 5)}.items():
-        x = WIDTH - 1 - p[0] if mirror else p[0]
-        data[:, LANDMARK_INDEX[name]] = (x, p[1], 0.0, 0.95)
+    trail = "left" if mirror else "right"
+    for f in range(80):
+        bend = np.radians(SPINE_BEND - (spine_lost if f >= 15 else 0.0))
+        flex = np.radians(KNEE_FLEX - (knee_lost if f >= 15 else 0.0))
+        sh = HIP + 258.0 * np.array([np.sin(bend), -np.cos(bend)])
+        trail_hip = HIP - (45, 5)  # right hip in the right-handed scene
+        knee = trail_hip + 230.0 * np.array([np.sin(flex), np.cos(flex)])
+        pts = {"left_hip": HIP + (45, 5), "right_hip": HIP - (45, 5), "left_shoulder": sh + (45, 5),
+               "right_shoulder": sh - (45, 5), "right_knee": knee, "right_ankle": knee + (0.0, 230.0)}
+        for name, p in pts.items():
+            if mirror:  # flip the scene and swap sides: the trail leg is then the left one
+                name = name.replace("left", "tmp").replace("right", "left").replace("tmp", "right")
+            x = WIDTH - 1 - p[0] if mirror else p[0]
+            data[f, LANDMARK_INDEX[name]] = (x, p[1], 0.0, 0.95)
     return PoseSeq(fps=240.0, width=WIDTH, height=1920, data=data)
 
 
@@ -32,7 +48,7 @@ def clubhead_for(inside_by, hands=HANDS):
     return hands + (hands - landing) * 0.9
 
 
-def run(inside_by=0.25, mirror=False, config=None, marked=True, clubhead=None):
+def run(inside_by=0.25, mirror=False, config=None, marked=True, clubhead=None, spine_lost=0.0, knee_lost=0.0):
     config = copy.deepcopy(config or CONFIG)
     flip = (lambda p: (WIDTH - 1 - float(p[0]), float(p[1]))) if mirror else (lambda p: (float(p[0]), float(p[1])))
     if mirror:
@@ -44,7 +60,7 @@ def run(inside_by=0.25, mirror=False, config=None, marked=True, clubhead=None):
     marks = Marks(view="dtl", address_frame=0,
                   points={"ball": flip(BALL), "clubhead": flip(BALL + (-25, 10)), "grip": flip((560, 820))},
                   checkpoints=checkpoints)
-    ctx = SwingContext(view="dtl", pose=pose(mirror), marks=marks, phases=PHASES, scale=SCALE, config=config)
+    ctx = SwingContext(view="dtl", pose=pose(mirror, spine_lost, knee_lost), marks=marks, phases=PHASES, scale=SCALE, config=config)
     (v,) = [v for v in run_analyzers(ctx) if v.name == "halfway_back"]
     return v
 
@@ -54,7 +70,7 @@ def test_reference_photo_is_green():
     assert v.status == "ok" and v.label == "Points just inside the ball"
     assert v.measurements["shaft_inside_ball"] == pytest.approx(0.26, abs=0.01)
     assert v.frame == 30  # key frame is the marked frame
-    assert [r.label for r in v.rows] == ["Shaft points"]  # no biceps check
+    assert [r.label for r in v.rows] == ["Shaft points", "Spine bend kept", "Trail knee flex kept"]  # no biceps check
 
 
 @pytest.mark.parametrize("inside_by, status, label", [
@@ -103,3 +119,23 @@ def test_clubhead_below_hands_is_a_marking_error():
 
 def test_key_frame_shows_the_swing_plane_line():
     assert any(o.kind == "line" and o.label == "swing plane" for o in run().overlays)
+
+
+@pytest.mark.parametrize("spine, knee, status, extra", [
+    (4, 4, "ok", None),                                   # McIlroy
+    (6, 2, "ok", None),                                   # Tiger
+    (10, 0, "warn", "slightly standing up"),              # jolo
+    (14, 0, "flag", "standing up"),
+    (0, 9, "warn", "trail knee slightly straightening"),  # the user's indoor swing
+    (0, 11, "flag", "trail knee straightening"),          # the user's latest swing
+])
+def test_body_rows(spine, knee, status, extra):
+    for mirror in (False, True):
+        v = run(inside_by=0.2, spine_lost=spine, knee_lost=knee, mirror=mirror)
+        assert v.rows[0].status == "ok"  # the shaft row keeps its own grade
+        assert v.status == status
+        assert v.rows[1].value == f"{SPINE_BEND - spine:.0f}° (address {SPINE_BEND:.0f}°)"
+        assert v.rows[2].value == f"{KNEE_FLEX - knee:.0f}° (address {KNEE_FLEX:.0f}°)"
+        assert "green up to 8° lost" in v.rows[1].note and "green up to 6° straighter" in v.rows[2].note
+        assert v.label == "Points just inside the ball" + (f", {extra}" if extra else "")
+        assert (v.tip == "") == (status == "ok")
