@@ -1,25 +1,25 @@
 import { api, el, features, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
 import { swingHeader } from "./swing.js";
 
-// Marking steps per view. Address is required; later checkpoints are optional and
+// Marking steps per view, all required. After address, one step per checkpoint, and
 // each has its own frame (the pose model can't see the club, so you click it).
 const STEPS = {
   dtl: [
-    { key: "address", title: "Address", points: ["ball", "clubhead", "grip"], optional: false,
+    { key: "address", title: "Address", points: ["ball", "clubhead", "grip"],
       intro: "Scrub to your address position (set up and still), then click the points. This frame is used for the address checks." },
-    { key: "takeaway", title: "Takeaway", points: ["clubhead"], optional: true,
+    { key: "takeaway", title: "Takeaway", points: ["clubhead"],
       intro: "Scrub to where the shaft is parallel to the target line (from behind, it points at the camera). Click the clubhead. This frame is the takeaway checkpoint." },
-    { key: "halfway_back", title: "Halfway back", points: ["clubhead", "grip"], optional: true,
+    { key: "halfway_back", title: "Halfway back", points: ["clubhead", "grip"],
       intro: "Scrub to where your front arm is parallel to the ground (hands about level with your front shoulder). Click the clubhead, then your hands. This frame is the halfway-back checkpoint." },
-    { key: "top", title: "Top", points: ["clubhead", "grip"], optional: true,
+    { key: "top", title: "Top", points: ["clubhead", "grip"],
       intro: "Scrub to the top of your backswing (the moment the club stops going back). Click the clubhead, then your hands. This frame is the top checkpoint." },
-    { key: "downswing", title: "Downswing", points: ["clubhead"], optional: true,
+    { key: "downswing", title: "Downswing", points: ["clubhead"],
       intro: "Scrub to where the shaft is parallel to the ground on the way down (hands about hip height). Click the clubhead. This frame is the downswing checkpoint." },
-    { key: "follow_through", title: "Follow-through", points: ["clubhead", "grip"], optional: true,
+    { key: "follow_through", title: "Follow-through", points: ["clubhead", "grip"],
       intro: "Scrub to where your back arm is parallel to the ground after impact (hands about shoulder height, the mirror of halfway back; if your arms are hidden, pick where the shaft looks about as steep as at halfway back). Click the clubhead, then your hands. This frame is the follow-through checkpoint." },
   ],
   fo: [
-    { key: "address", title: "Address", points: ["ball"], optional: false,
+    { key: "address", title: "Address", points: ["ball"],
       intro: "Scrub to your address position, then click the ball." },
   ],
 };
@@ -274,6 +274,7 @@ export async function renderMark(view, id, isCurrent) {
   const nextPoint = () => stepDef().points.find(n => !cur().points[n]) || null;
   const complete = key => steps.find(st => st.key === key).points.every(n => state.steps[key].points[n]);
   const started = key => Object.keys(state.steps[key].points).length > 0;
+  const unfinished = () => steps.filter(st => !complete(st.key));
 
   function placePoint(p) {
     const name = nextPoint();
@@ -414,6 +415,7 @@ export async function renderMark(view, id, isCurrent) {
   const stepTabs = el("div", { class: "step-tabs", role: "tablist" });
   const saveBtn = el("button", { class: "btn primary block", type: "button", onclick: save }, "Save and analyze");
   const saveError = el("div", { class: "notice error", hidden: true });
+  const saveHint = el("p", { class: "subtle small save-hint" });
   // Instruction bar over the frame: which step, what to click next, and what comes after.
   const hud = el("div", { class: "mark-hud", "aria-live": "polite" });
 
@@ -437,7 +439,10 @@ export async function renderMark(view, id, isCurrent) {
       el("div", { class: "actions" },
         el("button", { class: "btn small", type: "button", onclick: undo, disabled: !started(state.active) }, "Undo"),
         !next && after ? el("button", { class: "btn small primary", type: "button", onclick: () => selectStep(after.key) }, `Next: ${after.title} ›`) : null,
-        !next && !after && complete("address") ? el("button", { class: "btn small primary", type: "button", onclick: save }, "Save and analyze") : null));
+        // Last step done: save once every step is marked, else go back to the first one left.
+        !next && !after && !unfinished().length ? el("button", { class: "btn small primary", type: "button", onclick: save }, "Save and analyze") : null,
+        !next && !after && unfinished().length
+          ? el("button", { class: "btn small primary", type: "button", onclick: () => selectStep(unfinished()[0].key) }, `Finish: ${unfinished()[0].title} ›`) : null));
   }
 
   function refresh() {
@@ -447,9 +452,9 @@ export async function renderMark(view, id, isCurrent) {
     stepTabs.replaceChildren(...steps.map(st => el("button", {
       type: "button", role: "tab", class: `step-tab ${st.key === state.active ? "selected" : ""} ${complete(st.key) ? "complete" : ""} ${warned.has(st.key) ? "warned" : ""}`,
       "aria-selected": String(st.key === state.active), onclick: () => selectStep(st.key),
-      title: st.optional ? "Optional" : "Required",
+      title: complete(st.key) ? "Marked" : "Still to mark",
     },
-    el("span", { class: "step-tab-state" }, warned.has(st.key) ? "!" : complete(st.key) ? "✓" : started(st.key) ? "…" : st.optional ? "" : "•"),
+    el("span", { class: "step-tab-state" }, warned.has(st.key) ? "!" : complete(st.key) ? "✓" : started(st.key) ? "…" : "•"),
     el("span", {}, st.title))));
     stepIntro.textContent = stepDef().intro;
     pointList.replaceChildren(...stepDef().points.map(name => {
@@ -460,7 +465,9 @@ export async function renderMark(view, id, isCurrent) {
         el("div", {}, el("strong", {}, info.label), el("div", { class: "subtle small" }, info.hint)),
         el("span", { class: "check" }, done ? "✓" : name === next ? "Click it" : ""));
     }));
-    saveBtn.disabled = !complete("address");
+    saveBtn.disabled = unfinished().length > 0;
+    saveHint.textContent = unfinished().length
+      ? `Still to mark: ${unfinished().map(st => st.title.toLowerCase()).join(", ")}.` : "";
     renderRef();
     refreshWarnings();
     draw();
@@ -468,9 +475,9 @@ export async function renderMark(view, id, isCurrent) {
 
   async function save() {
     saveError.hidden = true;
-    const unfinished = steps.filter(st => st.optional && started(st.key) && !complete(st.key));
-    if (unfinished.length) {
-      saveError.textContent = `Finish or clear the ${unfinished.map(st => st.title.toLowerCase()).join(", ")} marks first.`;
+    const left = unfinished();
+    if (left.length) {
+      saveError.textContent = `Mark every step first. Still to mark: ${left.map(st => st.title.toLowerCase()).join(", ")}.`;
       saveError.hidden = false;
       return;
     }
@@ -480,7 +487,7 @@ export async function renderMark(view, id, isCurrent) {
       const list = warnings.map(([, t]) => `• ${t}`).join("\n");
       if (!confirm(`Some marks look off (${titles.join(", ")}):\n\n${list}\n\nSave and analyze anyway?`)) return;
     }
-    const checkpoints = Object.fromEntries(steps.filter(st => st.optional && complete(st.key))
+    const checkpoints = Object.fromEntries(steps.filter(st => st.key !== "address")
       .map(st => [st.key, { frame: state.steps[st.key].frame, points: state.steps[st.key].points }]));
     saveBtn.disabled = true;
     try {
@@ -561,7 +568,7 @@ export async function renderMark(view, id, isCurrent) {
     } else if (e.key === "Backspace" || e.key === "u") {
       e.preventDefault();
       undo();
-    } else if (e.key === "Enter" && complete("address")) {
+    } else if (e.key === "Enter" && !unfinished().length) {
       save();
     }
   }
@@ -582,7 +589,7 @@ export async function renderMark(view, id, isCurrent) {
       el("aside", { class: "mark-side stack" },
         el("section", { class: "panel" },
           el("h2", {}, steps.length > 1 ? "Mark your swing" : "Mark your address"),
-          steps.length > 1 ? el("p", { class: "subtle small" }, "Address is required (•); the other steps are optional, one per checkpoint.") : null,
+          steps.length > 1 ? el("p", { class: "subtle small" }, `Mark all ${steps.length} steps, one per checkpoint (• = still to mark).`) : null,
           steps.length > 1 ? stepTabs : null,
           stepIntro,
           refBox,
@@ -591,7 +598,7 @@ export async function renderMark(view, id, isCurrent) {
           el("div", { class: "actions" },
             el("button", { class: "btn small", type: "button", onclick: undo }, "Undo"),
             el("button", { class: "btn small", type: "button", onclick: () => { cur().points = {}; refresh(); } }, "Clear step")),
-          saveError, saveBtn),
+          saveError, saveBtn, saveHint),
         el("details", { class: "panel" },
           el("summary", {}, el("strong", {}, "Trim the clip")),
           el("p", { class: "subtle small" }, "Cut out practice swings or idle time. Scrub to a frame and set the start or end there."),

@@ -434,10 +434,14 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    through the clip (about 5–20 s) to find your swing, so each marking step can
    open on a **suggested frame**. (Face-on is shown but disabled until a future
    release.)
-2. **Mark your address.** Each step opens on its suggested frame (the caption
-   says *Suggested frame*); check it and scrub to the exact frame if needed with
-   the slider, the ‹ › buttons or the arrow keys (Shift = 10 frames). **Back to
-   the suggested frame** returns to it. Then click:
+2. **Mark your swing.** There are six steps, all required: address, then one
+   per checkpoint. **Save and analyze** unlocks once every step is marked, and
+   the line under it lists what's still to mark. Each step opens on its
+   suggested frame (the caption says *Suggested frame*); check it and scrub to
+   the exact frame if needed with the slider, the ‹ › buttons or the arrow keys
+   (Shift = 10 frames). **Back to the suggested frame** returns to it.
+
+   **Address.** Scrub to your set-up position, then click:
    - the **ball**
    - the **club neck**, where the shaft goes into the clubhead (the hosel), not
      the clubface: the shaft line through it is your swing plane
@@ -450,22 +454,22 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    up and still. If a swing was saved with the wrong camera view, switch it
    under **Camera view** at the top of this screen.
 
-   **Takeaway (optional).** Switch to the **Takeaway** step, scrub to where the
+   **Takeaway.** Switch to the **Takeaway** step, scrub to where the
    shaft is parallel to the target line (from behind it points at the camera),
    and click the **clubhead**. That frame becomes the takeaway checkpoint.
 
-   **Halfway back (optional).** Switch to the **Halfway back** step, scrub to
+   **Halfway back.** Switch to the **Halfway back** step, scrub to
    where your lead arm is parallel to the ground, and click the **clubhead**
    (or the highest point of the shaft you can see) and then your **hands**.
 
-   **Top (optional).** Switch to the **Top** step, scrub to where the club stops
+   **Top.** Switch to the **Top** step, scrub to where the club stops
    going back, and click the **clubhead** and then your **hands**.
 
-   **Downswing (optional).** Switch to the **Downswing** step, scrub to where
+   **Downswing.** Switch to the **Downswing** step, scrub to where
    the shaft is parallel to the ground coming down, and click the
    **clubhead**.
 
-   **Follow-through (optional).** Switch to the **Follow-through** step, scrub
+   **Follow-through.** Switch to the **Follow-through** step, scrub
    to where your trail arm is parallel to the ground after impact, and click
    the **clubhead** and then your **hands** (or the lowest point of the shaft
    you can see, if your hands are hidden).
