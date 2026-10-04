@@ -93,8 +93,8 @@ short irons and wedges 55–65°. The reference photo used to set these measured
 
 **3. Takeaway (implemented).** On the **Takeaway** step of the marking screen,
 you scrub to where the shaft is parallel to the target line (from behind it
-points at the camera) and click the clubhead and your hands; that frame is the
-takeaway checkpoint. Settings live in `[analyzers.takeaway]`.
+points at the camera) and click the clubhead (only the clubhead: the hands
+don't matter here); that frame is the takeaway checkpoint. Settings live in `[analyzers.takeaway]`.
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
@@ -427,8 +427,7 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
 
    **Takeaway (optional).** Switch to the **Takeaway** step, scrub to where the
    shaft is parallel to the target line (from behind it points at the camera),
-   and click the **clubhead** and then your **hands**. That frame becomes the
-   takeaway checkpoint. It starts near the automatically detected takeaway.
+   and click the **clubhead**. That frame becomes the takeaway checkpoint. It starts near the automatically detected takeaway.
 
    **Halfway back (optional).** Switch to the **Halfway back** step, scrub to
    where your lead arm is parallel to the ground, and click the **clubhead**
@@ -440,7 +439,7 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
 
    **Downswing (optional).** Switch to the **Downswing** step, scrub to where
    the shaft is parallel to the ground coming down, and click the
-   **clubhead** and then your **hands**.
+   **clubhead**.
 
    **Follow-through (optional).** Switch to the **Follow-through** step, scrub
    to where your trail arm is parallel to the ground after impact, and click

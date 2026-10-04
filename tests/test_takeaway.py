@@ -14,7 +14,6 @@ WIDTH = 1080
 PHASES = Phases(address=0, takeaway=20, top=40, early_downswing=50, impact=60)
 HIP = np.array([300.0, 700.0])  # golfer on the left, ball on the right (right-hander, DTL)
 BALL = np.array([800.0, 1150.0])
-HANDS = np.array([520.0, 760.0])
 
 
 SPINE_BEND, KNEE_FLEX = 35.0, 25.0  # degrees at address
@@ -52,7 +51,7 @@ def on_line(inside_by):
     return ADDR_CLUBHEAD + 0.6 * (ADDR_GRIP - ADDR_CLUBHEAD) + inside_by * SCALE * normal
 
 
-def run(inside_by=None, mirror=False, config=None, hands=HANDS, spine_lost=0.0, knee_lost=0.0, legs=True):
+def run(inside_by=None, mirror=False, config=None, spine_lost=0.0, knee_lost=0.0, legs=True):
     """inside_by: the clubhead's distance from the address shaft line in body lengths
     (+ = golfer's side; None = takeaway not marked). mirror=True flips the whole scene
     for a left-hander."""
@@ -62,7 +61,7 @@ def run(inside_by=None, mirror=False, config=None, hands=HANDS, spine_lost=0.0, 
         config["golfer"]["handedness"] = "left"
     checkpoints = {}
     if inside_by is not None:
-        checkpoints["takeaway"] = CheckpointMark(frame=20, points={"clubhead": flip(on_line(inside_by)), "grip": flip(hands)})
+        checkpoints["takeaway"] = CheckpointMark(frame=20, points={"clubhead": flip(on_line(inside_by))})
     marks = Marks(view="dtl", address_frame=0,
                   points={"ball": flip(BALL), "clubhead": flip(ADDR_CLUBHEAD), "grip": flip(ADDR_GRIP)},
                   checkpoints=checkpoints)
@@ -97,9 +96,10 @@ def test_row_shows_offset_with_units():
     assert run(inside_by=-0.6).rows[0].value == "≈30 cm outside"
 
 
-def test_hands_position_doesnt_matter():
-    # Clubhead right over the hands but well inside the line: still inside.
-    assert run(inside_by=0.6, hands=on_line(0.6)).label == "Clubhead well inside the swing plane"
+def test_only_the_clubhead_is_clicked():
+    from swingcheck.models import CHECKPOINT_MARKS
+    assert CHECKPOINT_MARKS["dtl"]["takeaway"] == ("clubhead",)
+    assert run(inside_by=0.6).label == "Clubhead well inside the swing plane"
 
 
 def test_tolerance_from_config():

@@ -48,10 +48,11 @@ def test_takeaway_marks_saved_and_validated(tmp_path):
                        checkpoints={"takeaway": {"frame": 60, "points": {"clubhead": (7, 8), "grip": (9, 10), "x": (0, 0)}}})
     loaded = load_marks(tmp_path / "marks.json", "dtl", info)
     assert loaded.checkpoint("takeaway").frame == 60
-    assert loaded.checkpoint("takeaway").points == {"clubhead": (7.0, 8.0), "grip": (9.0, 10.0)}
-    # Partly marked: kept in the file, but doesn't count as a usable checkpoint.
-    save_marks(tmp_path, "dtl", 10, address, info, checkpoints={"takeaway": {"frame": 60, "points": {"clubhead": (7, 8)}}})
-    assert load_marks(tmp_path / "marks.json", "dtl", info).checkpoint("takeaway") is None
+    assert loaded.checkpoint("takeaway").points == {"clubhead": (7.0, 8.0)}  # a hands click is no longer kept
+    # Partly marked (the top takes clubhead and hands): kept in the file, but doesn't
+    # count as a usable checkpoint.
+    save_marks(tmp_path, "dtl", 10, address, info, checkpoints={"top": {"frame": 60, "points": {"clubhead": (7, 8)}}})
+    assert load_marks(tmp_path / "marks.json", "dtl", info).checkpoint("top") is None
     # Nothing clicked: dropped. Old marks files without checkpoints still load.
     save_marks(tmp_path, "dtl", 10, address, info, checkpoints={"takeaway": {"frame": 60, "points": {}}})
     assert load_marks(tmp_path / "marks.json", "dtl", info).checkpoints == {}

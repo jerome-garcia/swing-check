@@ -16,8 +16,7 @@ Camera aim matters here: the clubhead is about a metre closer to the camera
 than at address, so a camera pointed a few degrees off the target line shifts
 it sideways. That's one reason for the Watch band.
 
-Where the hands are doesn't matter for this; the key frame shows them for
-reference.
+Where the hands are doesn't matter for this, so only the clubhead is clicked.
 
 Two body checks from tracking, takeaway frame vs address (no extra marks):
 
@@ -91,11 +90,10 @@ def address_line(ctx: SwingContext) -> AddressLine:
 def takeaway(ctx: SwingContext) -> Verdict:
     mark = ctx.marks.checkpoint("takeaway")
     if mark is None:
-        raise MissingData("the takeaway isn't marked yet: Edit marks → Takeaway, then click the clubhead and hands")
+        raise MissingData("the takeaway isn't marked yet: Edit marks → Takeaway, then click the clubhead")
     tol = ctx.cfg["line_tolerance"]
     flag_at = ctx.cfg["flag_distance"]
     clubhead = np.asarray(mark.points["clubhead"], float)
-    hands = np.asarray(mark.points["grip"], float)
     f = mark.frame
     line = address_line(ctx)
     ch0, gr0, normal, toward_golfer = line.clubhead, line.grip, line.normal, line.toward_golfer
@@ -122,14 +120,13 @@ def takeaway(ctx: SwingContext) -> Verdict:
 
     # Drawing on the takeaway frame: the address shaft line (as in checkpoint 2) with
     # the tolerance band either side, a square-on tick from the clubhead to the line,
-    # and the clicked points.
+    # and the clicked clubhead.
     s = ctx.scale
     show = (f, min(len(ctx.pose) - 1, f + int(round(HOLD_MS * ctx.fps / 1000))))
     color = STATUS_COLORS[status]
     foot = clubhead - np.dot(clubhead - ch0, normal) * normal
     overlays = swing_plane_line(ctx, show) + [
         Overlay("segment", [tuple(clubhead), tuple(foot)], color, "", show, 2),
-        Overlay("point", [tuple(hands)], REFERENCE_COLOR, "", show, 1),
         Overlay("point", [tuple(clubhead)], color, "", show, 2),
         # Label on the ball side of the clubhead, away from the body.
         Overlay("text", [(float(clubhead[0]) - toward_golfer * 0.15 * s, float(clubhead[1]) + 0.25 * s)], color, label, show),

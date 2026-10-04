@@ -7,8 +7,8 @@ const STEPS = {
   dtl: [
     { key: "address", title: "Address", points: ["ball", "clubhead", "grip"], optional: false,
       intro: "Scrub to your address position (set up and still), then click the points. This frame is used for the address checks." },
-    { key: "takeaway", title: "Takeaway", points: ["clubhead", "grip"], optional: true,
-      intro: "Scrub to where the shaft is parallel to the target line (from behind, it points at the camera). Click the clubhead, then your hands. This frame is the takeaway checkpoint." },
+    { key: "takeaway", title: "Takeaway", points: ["clubhead"], optional: true,
+      intro: "Scrub to where the shaft is parallel to the target line (from behind, it points at the camera). Click the clubhead. This frame is the takeaway checkpoint." },
     { key: "halfway_back", title: "Halfway back", points: ["clubhead", "grip"], optional: true,
       intro: "Scrub to where your lead arm is parallel to the ground (hands about level with your lead shoulder). Click the clubhead, then your hands. This frame is the halfway-back checkpoint." },
     { key: "top", title: "Top", points: ["clubhead", "grip"], optional: true,
@@ -33,7 +33,6 @@ const POINT_INFO = {
 const STEP_POINT_INFO = {
   takeaway: {
     clubhead: { label: "Clubhead", hint: "Center of the clubhead" },
-    grip: { label: "Hands", hint: "Center of your hands" },
   },
   halfway_back: {
     clubhead: { label: "Clubhead", hint: "Center of the clubhead, or the highest point of the shaft you can see if it's out of frame" },
