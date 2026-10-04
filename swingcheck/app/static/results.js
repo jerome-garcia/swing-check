@@ -265,6 +265,8 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
   const checkpoints = ((await features()).checkpoints || {})[s.view] || [];
   if (!isCurrent()) return;
   const reanalyze = el("button", { class: "btn primary", type: "button", onclick: () => startAnalysis() }, "Re-analyze");
+  const pdf = el("a", { class: "btn", href: `/api/swings/${encodeURIComponent(s.id)}/summary.pdf`, download: "" },
+    "Download summary");
   const report = { label: "Text report", href: fileUrl(s.id, "report.txt"), newTab: true };
 
   let main;
@@ -285,7 +287,7 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
     main = [el("section", { class: "stack-sm" }, (a.verdicts || []).map(verdictCard)), freezeFrames(s)];
   }
   view.replaceChildren(
-    header([reanalyze], [report]),
+    header([pdf, reanalyze], [report]),
     clipNotes(warnings) || "",
     el("div", { class: "results-layout" },
       el("div", { class: "stack main-col" }, ...main),

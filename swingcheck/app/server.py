@@ -19,6 +19,7 @@ from swingcheck.app.jobs import JobManager
 from swingcheck.app.store import Store, SwingNotFound
 from swingcheck.config import PROJECT_ROOT, load_config
 from swingcheck.ingest import VideoInfo
+from swingcheck.output.summary_pdf import summary_pdf
 from swingcheck.pipeline import PipelineError, analyze, ingest, save_marks
 
 STATIC = Path(__file__).parent / "static"
@@ -213,6 +214,20 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
         job = jobs.active_for(swing_id) or jobs.latest_for(swing_id)
         detail["job"] = job.to_json() if job else None
         return detail
+
+    @app.get("/api/swings/{swing_id}/summary.pdf")
+    def summary_download(swing_id: str) -> Response:
+        folder = swing_or_404(swing_id)
+        analysis_path = folder / "analysis.json"
+        if not analysis_path.exists():
+            raise HTTPException(409, "Analyze this swing first, then download its summary.")
+        meta = store.meta(swing_id)
+        pdf = summary_pdf(folder, meta.name, meta.created or "", json.loads(analysis_path.read_text()),
+                          config["golfer"]["torso_cm"])
+        filename = "".join(c if c.isalnum() or c in "-_" else "-" for c in meta.name).strip("-") or "swing"
+        return Response(pdf, media_type="application/pdf",
+                        headers={"Content-Disposition": f'attachment; filename="{filename}-summary.pdf"',
+                                 "Cache-Control": "no-store"})
 
     @app.delete("/api/swings/{swing_id}")
     def delete_swing(swing_id: str) -> dict[str, str]:

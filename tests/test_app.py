@@ -55,6 +55,15 @@ def test_detail_and_files(client):
     assert client.get("/files/old_swing/address.png").content == b"png"
 
 
+def test_summary_pdf_download(client, runs):
+    r = client.get("/api/swings/old_swing/summary.pdf")
+    assert r.status_code == 200 and r.content.startswith(b"%PDF")
+    assert r.headers["content-type"] == "application/pdf"
+    assert 'filename="old-swing-summary.pdf"' in r.headers["content-disposition"]
+    (runs / "old_swing" / "analysis.json").unlink()
+    assert client.get("/api/swings/old_swing/summary.pdf").status_code == 409
+
+
 def test_unknown_and_unsafe_paths_404(client):
     assert client.get("/api/swings/nope").status_code == 404
     assert client.get("/files/old_swing/..%2F..%2Fsecret.txt").status_code == 404

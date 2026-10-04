@@ -477,8 +477,11 @@ checkpoint. Below it, the checkpoints go one at a time (‹ › or the arrow key
 the checkpoint's key frame next to its card, which gives the result, what it
 means, **How to fix** when it's yellow or red, and each measurement with its
 limits. The annotated video and the detected phases sit beside it on a wide
-screen and below it on a phone. **Re-analyze** is the main button; **Edit marks**,
-the text report and **Delete** are in the ⋯ menu. In the annotated video, the
+screen and below it on a phone. **Re-analyze** is the main button; **Download
+summary** saves a PDF to share outside the app (scorecard, the one thing to work
+on first, then each checkpoint's key frame, readings with their limits, and how
+to fix), built from the last analysis; **Edit marks**, the text report and
+**Delete** are in the ⋯ menu. In the annotated video, the
 header names only the checkpoint whose lines are on screen.
 
 On the swing list, each analyzed swing shows the same 8 dots under its
