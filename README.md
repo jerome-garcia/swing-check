@@ -74,11 +74,11 @@ camera side (your trail side). Settings live in `[analyzers.address]` in
 | Upper back (rounding) | how far the outline of your back bulges beyond a straight line from hip to shoulder level, from the body silhouette (MediaPipe segmentation), as % of torso length | up to 6% (≈3 cm) | 6–9% | past 9% (≈4.5 cm) |
 
 When something is out of range, the card says how far and which way to move,
-rounded up so following it lands you in green (e.g. *Spine bend 28.8° — bend
-2° more (green 30–45°, red outside 25–50°)*), and the summary gives a plain
-fix, leading with the hips:
+rounded up so following it lands you in green (e.g. *Spine bend 29°: Bend 2°
+more*, with *Good 30–45°* and *Fix under 25° or over 50°* below it), and the
+summary gives a plain fix, leading with the hips:
 standing tall with straight knees and reaching arms usually comes from too
-little hip hinge. The key frame adds a dashed green **aim** line for each
+little hip hinge. The key frame adds a dashed white **aim** line for each
 yellow or red part at the middle of its green range: the spine at 37.5°, the arm straight
 down, and the thigh at 25° of knee flex (shin kept where it is).
 
@@ -158,8 +158,8 @@ Your spec also asked for "the hands split the biceps"; that check was built and
 then dropped: from behind, the trail elbow is half hidden at this point, so the
 tracked biceps line moved too much to judge a few centimetres reliably.
 
-The key frame shows the shaft line (green) carried down to the ball's level and
-a tick from where it lands to the ball.
+The key frame shows the shaft line, in its result color, carried down to the
+ball's level, and a tick from where it lands to the ball.
 
 **5. Top (implemented).** On the **Top** marking step, scrub to the top of your
 backswing (the moment the club stops going back) and click the **clubhead** and
@@ -558,35 +558,35 @@ header names only the checkpoint whose lines are on screen.
 On the swing list, each analyzed swing shows the same 8 dots under its
 thumbnail; swings still to mark or analyze say what's next.
 
-Every measurement is 🟢 **OK**, 🟡 **Watch** (just outside good, worth a look)
-or 🔴 **Flag**, and each card row says the green and red limits it was judged
-against. Angles are in degrees. Distances are a **percent of your torso
-length** (hip center to shoulder center, measured at address), so `10%` means a
-tenth of your torso whatever the camera distance; the card adds rough cm
-(`≈5 cm`) from `[golfer] torso_cm` in the config (50 cm unless you set yours).
+Every measurement is 🟢 **Good**, 🟡 **Watch** (just outside good, worth a
+look) or 🔴 **Fix**. Under each value the card lists its **Good** range (green)
+and its **Fix** range (red); anything in between is Watch. Angles are in whole
+degrees. Distances are rough whole **centimetres**, worked out from a **percent
+of your torso length** (hip center to shoulder center, at address), so they
+don't depend on the camera distance. The cm come from `[golfer] torso_cm` in
+the config (50 cm unless you set yours).
 
 **Address posture.** Measured on the frame you marked, using the body points on
 the camera side (your trail side). Default ranges are in the [Roadmap](#roadmap).
 
-- **Arms:** the shoulder-to-wrist line should hang straight down. Reported in
-  degrees from vertical; + means the hands reach out toward the ball, - means
-  they're tucked in toward the body.
-- **Spine:** forward bend of the hip-to-shoulder line from vertical.
-- **Knees:** knee flex, 0 = straight leg.
-- **Back:** how far the outline of your back bulges beyond a straight line
-  between hip and shoulder level (% of torso length), measured from the body
-  silhouette. A rounded upper back (hump) reads higher.
+- **Arms:** the shoulder-to-wrist line should hang straight down. Shown in
+  degrees from vertical, *out* (hands reaching toward the ball) or *in* (tucked
+  in toward the body).
+- **Spine bend:** forward bend of the hip-to-shoulder line from vertical.
+- **Knee bend:** 0° = straight leg.
+- **Upper back:** how far the outline of your back curves out beyond a straight
+  line between hip and shoulder level, in cm, measured from the body silhouette.
+  A rounded upper back (hump) reads higher.
 
 The address key frame draws each line with its value in its color (green,
-yellow or red), plus dashed green aim lines for anything not green.
+yellow or red), plus dashed white aim lines for anything not green.
 
 **Swing plane.** The magenta line on the address key frame runs along your shaft,
-from the clubhead up through your hands to where it meets your body; the green
-band on the torso is the belt-buckle zone it should hit. **Alignment** says
-whether it points at the belt buckle, above or below the belt, and what that
-means; the value is how far up the torso it crosses (0% = hip center, 100% =
-shoulder center). The shaft angle has a broad range, since it changes with
-the club and camera height.
+from the clubhead up through your hands to where it meets your body; the white
+band on the torso is the belt-buckle zone it should hit. **Shaft points at**
+says whether it points at your belt buckle, above or below your belt, and what
+that means; the value is how far above your hips it crosses, in cm. The shaft
+angle has a broad range, since it changes with the club and camera height.
 
 Face-on checks are described in the [Roadmap](#roadmap) (future release).
 
@@ -641,9 +641,9 @@ Other useful settings:
 | Phone can't open the app | Start with `swingcheck --phone`, check the phone is on the same Wi-Fi, and allow Python through the Windows firewall on private networks. |
 | "Can't reach the swing-check app" or "The app was restarted while this was running" | The app stopped (its terminal was closed or it was restarted) during a conversion or analysis. Analysis runs inside the app, so closing it stops the job. Start `swingcheck` again and press **Try again**. |
 | Address checks measured on the wrong frame | **Edit marks**, scrub to your set-up position, and save again. |
-| Back reads rounded but isn't | Loose clothing changes the outline; check the line drawn on the address key frame. |
+| Upper back reads rounded but isn't | Loose clothing changes the outline; check the line drawn on the address key frame. |
 | Wrong top/impact | **Adjust** it under Phases on the results page. |
-| A check says "No data" | A body point wasn't tracked at that moment: usually lighting, part of the body out of frame, or baggy clothing. |
+| A check says "Not measured" | A body point wasn't tracked at that moment: usually lighting, part of the body out of frame, or baggy clothing. |
 | Practice swing detected instead of the real one | **Edit marks** → **Trim the clip**. |
 | Page looks broken after updating the code | Reload the page (Ctrl+R). |
 
@@ -659,24 +659,28 @@ needs to change. An illustration (not the real top-of-backswing check):
 
 ```python
 # swingcheck/analyzers/dtl_top.py
-from swingcheck.analyzers import STATUS_COLORS, Overlay, Row, SwingContext, Verdict, register
+from swingcheck.analyzers import STATUS_COLORS, Overlay, Row, SwingContext, Verdict, deg_text, grade, register
 from swingcheck.geometry import angle_between_deg
 
 @register("top", view="dtl", title="Top", phase="top")  # name and phase from checkpoints.py
 def top(ctx: SwingContext) -> Verdict:
+    cfg = ctx.cfg  # [analyzers.top] in the config
     f = ctx.frame("top")
-    shoulder = ctx.value(ctx.track(ctx.side("shoulder", "lead")), f, "lead shoulder")
-    wrist = ctx.value(ctx.track(ctx.side("wrist", "lead")), f, "lead wrist")
-    hip = ctx.value(ctx.track(ctx.side("hip", "lead")), f, "lead hip")
+    shoulder = ctx.value(ctx.track(ctx.side("shoulder", "lead")), f, "front shoulder")
+    wrist = ctx.value(ctx.track(ctx.side("wrist", "lead")), f, "front wrist")
+    hip = ctx.value(ctx.track(ctx.side("hip", "lead")), f, "front hip")
     angle = angle_between_deg(wrist - shoulder, hip - shoulder)
-    ok = abs(angle - 90) <= ctx.cfg["tolerance"]  # from [analyzers.top] in the config
-    status = "ok" if ok else "flag"
+    status = grade(angle, cfg["min"], cfg["max"], cfg["watch_min"], cfg["watch_max"])  # green / yellow / red
+    label = "Front arm square to your body" if status == "ok" else "Front arm off square"
     return Verdict(
         status=status,
-        label="lead arm square to the torso" if ok else "lead arm off 90°",
-        summary=f"Lead arm is {angle:.0f}° from the torso at the top.",
-        measurements={"lead_arm_to_torso_deg": round(angle, 1)},          # for the report
-        rows=[Row("Lead arm to torso", f"{angle:.0f}°", "good" if ok else "off 90°", status)],  # for the card
+        label=label,                                                     # sentence case, no period
+        summary=f"At the top, your front arm is {deg_text(angle)} from your body.",  # a full sentence
+        tip="" if status == "ok" else "Keep your front arm across your chest as you turn.",
+        measurements={"front_arm_to_torso_deg": round(angle, 1)},        # saved with the analysis
+        rows=[Row("Front arm vs body", deg_text(angle), label.removeprefix("Front arm ").capitalize(), status,
+                  good=f"{cfg['min']:g}–{cfg['max']:g}°",                # the card's Good line
+                  fix=f"under {cfg['watch_min']:g}° or over {cfg['watch_max']:g}°")],  # and its Fix line
         overlays=[Overlay("segment", [tuple(shoulder), tuple(wrist)], STATUS_COLORS[status], frames=(f, f))],
     )
 ```
@@ -684,6 +688,13 @@ def top(ctx: SwingContext) -> Verdict:
 Then add its settings under `[analyzers.top]` in `config/default.toml`, mark it
 ✅ in the [Roadmap](#roadmap), and update the expected list in
 `tests/test_app.py::test_checkpoint_list_marks_built_ones`.
+
+Keep the app's wording and drawing style: plain words (*front* / *back*,
+*toward you* / *toward the ball*, golf terms in brackets in the summary),
+distances with `ctx.distance_text()` (whole cm) and angles with `deg_text()`,
+each row's ranges in its `good` and `fix`, sentence case for labels and notes,
+and full sentences for summaries and tips. Draw marks with `clubhead_mark()`,
+`hands_mark()` and `spot_mark()`, in the colors under **Reading the drawings**.
 
 The context gives you the pose (`ctx.track(name)` for any MediaPipe landmark,
 `ctx.hands()`, `ctx.midpoint(a, b)`), your marks (`ctx.marks.points`), phase
