@@ -39,7 +39,7 @@ points at your belt buckle. It's drawn in orange and is the only line called
 "swing plane". Takeaway (3) and downswing (6) check that the **clubhead** stays
 on or near it. At the top (5) the hands are much higher and good players vary,
 so that check uses the **plane zone**: between the swing plane line and the
-**shoulder line** (ball to your trail shoulder at address, drawn in blue).
+**shoulder plane** (ball to your trail shoulder at address, drawn in blue).
 Halfway back (4) and follow-through (8) don't use these lines; they check where
 the shaft itself points at the ball's level.
 
@@ -147,13 +147,17 @@ your **hands**. Body points come from tracking. Settings live in
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Lead arm vs spine** | angle between the lead arm (lead shoulder → hands) and the spine (hip center → shoulder center) on the top frame; 90° = the arm matches the shoulders | 80–100°: **Lead arm matches the shoulders** | 70–80° (*slightly above*) or 100–110° (*slightly below*) | under 70°: arm lifted **above the shoulders** (upright); over 110°: **below the shoulders** (flat, around the body) |
-| **Hands vs plane zone** | the hands vs two lines from the ball: the swing plane line (lower, orange) and the shoulder line, to your trail shoulder at address (upper, blue); across, at the hands' height, as % of torso length | between the lines: **Hands in the plane zone** | up to 15% outside either line (*slightly above / below the plane*) | more than 15% above the upper line (too steep) or below the lower line (too flat) |
+| **Lead arm vs spine** | angle between the lead arm (lead shoulder → hands) and the spine, drawn from the hip center through the head, on the top frame; 90° = the arm matches the shoulders | 75–105°: **Lead arm matches the shoulders** | 65–75° (*slightly above*) or 105–115° (*slightly below*) | under 65°: arm lifted **above the shoulders** (upright); over 115°: **below the shoulders** (flat, around the body) |
+| **Hands vs plane zone** | the hands vs two lines from the ball: the swing plane line (lower, orange) and the shoulder plane, to your trail shoulder at address (upper, blue); across, at the hands' height, as % of torso length | between the lines: **Hands in the plane zone** | up to 15% outside either line (*slightly above / below the plane zone*) | more than 15% above the upper line (too steep) or below the lower line (too flat) |
 
-Set from a reference photo of a scratch golfer: lead arm at 87–91° to the
-spine. McIlroy reads 84° with his hands between the lines (green); an amateur
-swing reads 66° (arm lifted, red) with the hands 10% above the upper line
-(yellow). The key frame shows both plane lines, the spine (white), the lead arm
+The spine runs from the hips **through the head**, the way golf instruction
+draws the spine angle (it matched the coach's spine marker on the reference
+photo within a few degrees). A line to the middle of the shoulders came out too
+upright at the top, because the turned shoulders' midpoint slides across the
+upper back: Tiger read 70° that way although his arm is visibly about square to
+his spine. Seen from behind the lead arm points partly at the camera, so green
+is 75–105°. Readings: McIlroy 91°, Tiger 77° (green); an amateur swing 73°
+(slightly lifted, yellow) with the hands 10% above the shoulder plane (yellow). The key frame shows both plane lines, the spine (white), the lead arm
 in its color, and a dashed green line square to the spine where the arm should
 be.
 

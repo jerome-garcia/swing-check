@@ -178,15 +178,16 @@ inside_watch_max = 0.70   # ...or 40-70% inside (toward your feet, a little stee
 [analyzers.top]
 # DTL checkpoint 5, on the top frame you mark.
 #
-# Lead arm (lead shoulder -> hands) vs spine (hip center -> shoulder center),
-# degrees. 90 = the arm matches the shoulders. Under = arm lifted above the
-# shoulder plane (upright); over = below it (flat, around the body).
-arm_spine_min = 80
-arm_spine_max = 100
-arm_spine_watch_min = 70
-arm_spine_watch_max = 110
-# Hands vs the plane: they should sit between the address shaft line (lower)
-# and the line from the ball to your trail shoulder at address (upper). Up to
+# Lead arm (lead shoulder -> hands) vs spine (hip center -> head), degrees.
+# 90 = the arm matches the shoulders. Under = arm lifted above the shoulder
+# plane (upright); over = below it (flat, around the body). Seen from behind,
+# the lead arm points partly at the camera, so the green band is generous.
+arm_spine_min = 75
+arm_spine_max = 105
+arm_spine_watch_min = 65
+arm_spine_watch_max = 115
+# Hands vs the plane zone: they should sit between the swing plane line (lower)
+# and the shoulder plane, from the ball to your trail shoulder at address (upper). Up to
 # this far outside either line (share of torso length) is yellow; beyond, red.
 plane_watch = 0.15
 

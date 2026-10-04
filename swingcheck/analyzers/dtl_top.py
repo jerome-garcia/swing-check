@@ -3,13 +3,18 @@
 On the top frame you mark, using the clubhead and hands you click there:
 
   lead arm   the lead arm (lead shoulder -> hands) should match the shoulders:
-             about 90° to the spine (hip center -> shoulder center). Under 90°
-             = arm above the shoulder plane (lifted, upright); over 90° = below
-             it (flat, around the body).
-  plane      the hands should sit between two lines from the ball (Hogan's
-             "pane of glass"): the address shaft line (lower, checkpoint 2) and
-             the line from the ball to your trail shoulder at address (upper).
-             Above the upper line = too steep; below the lower line = too flat.
+             about 90° to the spine. The spine is drawn from the hip center
+             through the head (between the ears), the way golf instruction
+             draws the spine angle; a line to the middle of the shoulders
+             comes out too upright at the top, because the turned shoulders'
+             midpoint slides across the upper back. Under 90° = arm above the
+             shoulder plane (lifted, upright); over 90° = below it (flat,
+             around the body).
+  plane      the hands should sit in the plane zone, between two lines from
+             the ball (Hogan's "pane of glass"): the swing plane line (lower,
+             checkpoint 2) and the shoulder plane, from the ball to your trail
+             shoulder at address (upper). Above the shoulder plane = too
+             steep; below the swing plane line = too flat.
 
 Body points come from tracking. Bands are in [analyzers.top].
 """
@@ -24,7 +29,7 @@ from swingcheck.analyzers.dtl_swing_plane import plane_oval
 from swingcheck.geometry import angle_between_deg
 
 PLANE_COLOR = (0, 140, 255)  # address shaft line, as in checkpoint 2
-UPPER_COLOR = (255, 200, 80)  # ball -> trail shoulder line
+UPPER_COLOR = (255, 200, 80)  # shoulder plane: ball -> trail shoulder at address
 HOLD_MS = 400
 ORDER = {"ok": 0, "warn": 1, "flag": 2}
 
@@ -57,11 +62,14 @@ def top(ctx: SwingContext) -> Verdict:
 
     # 1. Lead arm vs spine on the top frame.
     lead_shoulder = ctx.value(ctx.track(ctx.side("shoulder", "lead")), f, "lead shoulder")
-    sh_mid = ctx.midpoint("left_shoulder", "right_shoulder")[f]
     hip_mid = ctx.midpoint("left_hip", "right_hip")[f]
-    if not (np.all(np.isfinite(sh_mid)) and np.all(np.isfinite(hip_mid))):
-        raise MissingData(f"shoulders or hips not tracked on the top frame ({f})")
-    arm_angle = angle_between_deg(hands - lead_shoulder, sh_mid - hip_mid)
+    # Spine: hip center through the head (between the ears; the nose if the ears are lost).
+    head = ctx.midpoint("left_ear", "right_ear")[f]
+    if not np.all(np.isfinite(head)):
+        head = ctx.track("nose")[f]
+    if not (np.all(np.isfinite(head)) and np.all(np.isfinite(hip_mid))):
+        raise MissingData(f"head or hips not tracked on the top frame ({f})")
+    arm_angle = angle_between_deg(hands - lead_shoulder, head - hip_mid)
     arm_status = grade(arm_angle, cfg["arm_spine_min"], cfg["arm_spine_max"],
                        cfg["arm_spine_watch_min"], cfg["arm_spine_watch_max"])
     soft = arm_status == "warn"
@@ -74,7 +82,7 @@ def top(ctx: SwingContext) -> Verdict:
         arm_label = "Lead arm slightly below the shoulders" if soft else "Lead arm below the shoulders"
         arm_meaning = "your lead arm is below the shoulder plane (flat, around your body)"
 
-    # 2. Hands between the address shaft line and the ball -> trail shoulder line, across at the hands' height.
+    # 2. Hands between the swing plane line and the shoulder plane, across at the hands' height.
     trail_shoulder0 = ctx.value(ctx.track(ctx.side("shoulder", "trail")), a, "trail shoulder at address")
     x_lower = _x_at(ch0, gr0, hands[1])
     x_upper = _x_at(ball, trail_shoulder0, hands[1])
@@ -85,11 +93,11 @@ def top(ctx: SwingContext) -> Verdict:
     plane_status = "ok" if outside == 0 else ("warn" if outside <= cfg["plane_watch"] else "flag")
     soft = plane_status == "warn"
     if plane_status == "ok":
-        plane_label, plane_meaning = "Hands in the plane zone", "your hands are between your swing plane line and your shoulder line"
+        plane_label, plane_meaning = "Hands in the plane zone", "your hands are between your swing plane line and your shoulder plane"
         plane_value = "between the lines"
     elif above_upper > 0:
         plane_label = "Hands slightly above the plane zone" if soft else "Hands above the plane zone"
-        plane_meaning = "your hands are above your shoulder line (steep / upright)"
+        plane_meaning = "your hands are above your shoulder plane (steep / upright)"
         plane_value = f"{ctx.distance_text(above_upper)} above"
     else:
         plane_label = "Hands slightly below the plane zone" if soft else "Hands below the plane zone"
@@ -110,7 +118,7 @@ def top(ctx: SwingContext) -> Verdict:
     def up_to(p, q):
         return (_x_at(p, q, reach_y), reach_y)
 
-    spine = sh_mid - hip_mid
+    spine = head - hip_mid
     square = np.array([-spine[1], spine[0]]) / np.linalg.norm(spine)
     if np.dot(square, hands - lead_shoulder) < 0:
         square = -square
@@ -119,8 +127,8 @@ def top(ctx: SwingContext) -> Verdict:
         Overlay("segment", [tuple(ch0), up_to(ch0, gr0)], PLANE_COLOR, "", show, 2),
         Overlay("segment", [tuple(ball), up_to(ball, trail_shoulder0)], UPPER_COLOR, "", show, 2),
         Overlay("text", [(up_to(ch0, gr0)[0] - toward_golfer * 0.05 * s, reach_y - 0.06 * s)], PLANE_COLOR, "swing plane", show),
-        Overlay("text", [(up_to(ball, trail_shoulder0)[0] + 0.03 * s, reach_y - 0.06 * s)], UPPER_COLOR, "shoulder line", show),
-        Overlay("segment", [tuple(hip_mid), tuple(sh_mid)], REFERENCE_COLOR, "", show, 2),
+        Overlay("text", [(up_to(ball, trail_shoulder0)[0] + 0.03 * s, reach_y - 0.06 * s)], UPPER_COLOR, "shoulder plane", show),
+        Overlay("segment", [tuple(hip_mid), tuple(head)], REFERENCE_COLOR, "", show, 2),
         Overlay("segment", [tuple(lead_shoulder), tuple(hands)], arm_col, "", show, 3),
         Overlay("dashed", [tuple(lead_shoulder), tuple(target)], STATUS_COLORS["ok"], "90 deg" if arm_status != "ok" else "",
                 show, 2),
@@ -161,7 +169,7 @@ def top(ctx: SwingContext) -> Verdict:
                 f"red outside {cfg['arm_spine_watch_min']:g}–{cfg['arm_spine_watch_max']:g}°)", arm_status),
             Row("Hands vs plane zone", plane_value,
                 (f"{pct(outside)} of torso length · " if outside else "") +
-                f"{plane_label.lower()} (green between the swing plane and shoulder lines, red past {pct(cfg['plane_watch'])} outside)",
+                f"{plane_label.lower()} (green between the swing plane line and the shoulder plane, red past {pct(cfg['plane_watch'])} outside)",
                 plane_status),
             Row("Top frame", str(f), "marked by you", "ok"),
         ],

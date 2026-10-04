@@ -20,12 +20,15 @@ HIP = np.array([360.0, 1070.0])
 SHOULDER_MID = np.array([530.0, 840.0])  # spine leans toward the ball
 TRAIL_SHOULDER_ADDR = np.array([480.0, 800.0])
 LEAD_SHOULDER_TOP = np.array([590.0, 880.0])
+HEAD = HIP + 1.3 * (SHOULDER_MID - HIP)  # the spine runs from the hips through the head
 
 
-def pose(mirror=False):
+def pose(mirror=False, head=None):
+    head = HEAD if head is None else head
     data = np.full((60, len(LANDMARKS), 4), np.nan)
     for f in range(60):
         pts = {"left_hip": HIP + (40, 0), "right_hip": HIP - (40, 0),
+               "left_ear": head + (6, 0), "right_ear": head - (6, 0),
                "left_shoulder": LEAD_SHOULDER_TOP if f >= 20 else SHOULDER_MID + (60, 40),
                "right_shoulder": 2 * SHOULDER_MID - LEAD_SHOULDER_TOP if f >= 20 else TRAIL_SHOULDER_ADDR}
         for name, p in pts.items():
@@ -45,7 +48,7 @@ def hands_at(arm_deg, length=300.0):
     return LEAD_SHOULDER_TOP + length * (rot @ spine)
 
 
-def run(hands, mirror=False, config=None, marked=True):
+def run(hands, mirror=False, config=None, marked=True, head=None):
     config = copy.deepcopy(config or CONFIG)
     flip = (lambda p: (WIDTH - 1 - float(p[0]), float(p[1]))) if mirror else (lambda p: (float(p[0]), float(p[1])))
     if mirror:
@@ -55,7 +58,7 @@ def run(hands, mirror=False, config=None, marked=True):
     marks = Marks(view="dtl", address_frame=0,
                   points={"ball": flip(BALL), "clubhead": flip(ADDR_CLUBHEAD), "grip": flip(ADDR_GRIP)},
                   checkpoints=checkpoints)
-    ctx = SwingContext(view="dtl", pose=pose(mirror), marks=marks, phases=PHASES, scale=SCALE, config=config)
+    ctx = SwingContext(view="dtl", pose=pose(mirror, head), marks=marks, phases=PHASES, scale=SCALE, config=config)
     (v,) = [v for v in run_analyzers(ctx) if v.name == "top"]
     return v
 
@@ -69,11 +72,21 @@ def test_helper_places_the_arm_angle():
     assert angle_between_deg(h - LEAD_SHOULDER_TOP, SHOULDER_MID - HIP) == pytest.approx(90)
 
 
+def test_spine_runs_through_the_head_not_the_shoulders():
+    # Same arm; tilt the head line 10 degrees further forward: the arm-to-spine angle follows the head.
+    h = hands_at(90)
+    base = run(h).measurements["arm_to_spine_deg"]
+    a = np.radians(10)
+    rot = np.array([[np.cos(a), -np.sin(a)], [np.sin(a), np.cos(a)]])
+    tilted = HIP + rot @ (HEAD - HIP)
+    assert abs(run(h, head=tilted).measurements["arm_to_spine_deg"] - base) == pytest.approx(10, abs=0.2)
+
+
 @pytest.mark.parametrize("arm, status, label", [
     (90, "ok", "Lead arm matches the shoulders"),
-    (75, "warn", "Lead arm slightly above the shoulders"),
+    (70, "warn", "Lead arm slightly above the shoulders"),
     (60, "flag", "Lead arm above the shoulders"),
-    (105, "warn", "Lead arm slightly below the shoulders"),
+    (110, "warn", "Lead arm slightly below the shoulders"),
     (120, "flag", "Lead arm below the shoulders"),
 ])
 def test_arm_bands(arm, status, label):
