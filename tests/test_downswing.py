@@ -126,3 +126,10 @@ def test_dashed_line_joins_takeaway_and_downswing_clubheads():
     v = run(under=0.15, takeaway=-0.04)
     (dash,) = [o for o in v.overlays if o.kind == "dashed"]
     assert dash.points[0] == pytest.approx(on_line(-0.04)) and dash.points[1] == pytest.approx(on_line(0.15))
+
+
+def test_takeaway_clubhead_is_a_solid_dot_in_its_own_color():
+    from swingcheck.analyzers.dtl_downswing import TAKEAWAY_COLOR
+    v = run(under=0.15, takeaway=-0.04)
+    (dot,) = [o for o in v.overlays if o.kind == "point" and o.points[0] == pytest.approx(on_line(-0.04))]
+    assert dot.color == TAKEAWAY_COLOR and dot.thickness >= 2  # filled, not a ring

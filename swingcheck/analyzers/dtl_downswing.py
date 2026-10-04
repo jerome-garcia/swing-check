@@ -24,6 +24,7 @@ from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, MissingData, O
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.analyzers.dtl_takeaway import address_line
 
+TAKEAWAY_COLOR = (255, 170, 80)  # BGR light blue: the clubhead at the takeaway, apart from the status colors
 HOLD_MS = 400
 ORDER = {"ok": 0, "warn": 1, "flag": 2}
 
@@ -99,10 +100,10 @@ def downswing(ctx: SwingContext) -> Verdict:
         take_ch = np.asarray(take.points["clubhead"], float)
         overlays += [
             Overlay("dashed", [tuple(take_ch), tuple(clubhead)], REFERENCE_COLOR, "", show, 1),
-            Overlay("point", [tuple(take_ch)], REFERENCE_COLOR, "", show, 1),
+            Overlay("point", [tuple(take_ch)], TAKEAWAY_COLOR, "", show, 2),
             # Label on the golfer's side of the point, clear of the club and hands.
             Overlay("text", [(float(take_ch[0]) + line.toward_golfer * 0.9 * s, float(take_ch[1]) - 0.1 * s)],
-                    REFERENCE_COLOR, "clubhead at takeaway", show),
+                    TAKEAWAY_COLOR, "clubhead at takeaway", show),
         ]
 
     side = "under" if under >= 0 else "above"
