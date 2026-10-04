@@ -254,10 +254,13 @@ shaft row. The key frame shows the shaft line carried to the ball's level and
 where the halfway-back line landed (grey), joined by a tick.
 
 **Notes:**
-- Each club-based checkpoint (3, 4, 5, 6, 8) has a marking step where you
-  pick the frame and click the clubhead and hands (stored in `marks.json`
-  under `checkpoints`), because the pose model only tracks the body. Address
-  and impact use the detected frames (adjustable on the results page).
+- Each club-based checkpoint (3, 4, 5, 6, 8) has a required marking step where
+  you pick the frame and click the clubhead (and hands, where the check needs
+  them), stored in `marks.json` under `checkpoints`, because the pose model only
+  tracks the body. Address is the frame you mark the ball and club on; impact
+  is found automatically (adjustable on the results page). Swings marked before
+  every step was required still open; their unmarked checkpoints show as not
+  measured.
 - Drawing the hand path (wrist trail) on the video and key frames is switched
   off (`[output] show_hand_path = false`): no current check uses it, and wrist
   tracking makes it jittery.
@@ -476,9 +479,9 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
 
    **Example to follow.** Under each step's instructions, Rory McIlroy is shown
    in the same position with that step's marks, so you can see what to look for
-   and where to click. The frames ship with the app (`swingcheck/app/static/reference/`);
-   rebuild them from any fully marked swing with
-   `python -m swingcheck.app.make_reference runs/<swing-folder> "Name"`.
+   and where to click. The frames ship with the app
+   (`swingcheck/app/static/reference/`); rebuild them from any fully marked
+   swing with `python -m swingcheck.app.make_reference runs/<swing-folder> "Name"`.
 
    **Mark checks.** Marks that look wrong get a yellow note under the points and
    a **!** on the step: hands below the club neck at address, the club neck far
@@ -737,12 +740,15 @@ skipped without it.
 ```
 swingcheck/
   app/                web app: server, background jobs, swing storage, frontend (static/)
+    make_reference.py builds the McIlroy example frames in static/reference/
   pipeline.py         convert -> mark -> pose -> phases -> checks -> outputs
   config.py           loads config/default.toml + config/local.toml
   ingest.py           ffmpeg conversion
   pose.py             MediaPipe pose tracking + cache, body silhouette
   body.py             hand path, body scale, cleaned keypoint tracks
   phases.py           address / takeaway / top / early downswing / impact
+  checkpoints.py      the 8 down-the-line checkpoints, in swing order
+  priority.py         picks the one fault to work on first
   geometry.py         line, angle and outline math
   analyzers/          one file per check (auto-discovered)
   output/             annotated video, key frames, report
