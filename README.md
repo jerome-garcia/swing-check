@@ -214,7 +214,7 @@ In dim, low-frame-rate footage the clubhead can be a streak and the exact P6
 frame can be missing; pick the nearest frame.
 
 **7. Impact (implemented).** Automatic, on the detected impact frame (adjust it
-under **Phases** on the results page if it's off); no extra marks. Settings live
+under **Impact frame** on the results page if it's off); no extra marks. Settings live
 in `[analyzers.impact]`. No reference photo: defined from the two classic
 down-the-line impact checks.
 
@@ -469,27 +469,29 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    **Trim the clip** (below the points) cuts out practice swings or idle time:
    scrub to a frame, press **Start here** or **End here**, then **Apply trim**.
    Your points are kept.
-3. **Analyze.** Tracking your body takes about a minute for a few seconds of
-   240 fps slo-mo on a laptop, with live progress. You can leave the page and
-   come back.
+3. **Save and analyze.** Saving your marks starts the analysis straight away.
+   Tracking your body takes about a minute for a few seconds of 240 fps slo-mo
+   on a laptop, with live progress. You can leave the page and come back.
 4. **Results.** The annotated video (with 0.25× and 0.5× speeds) on one side;
    on the other, the **checkpoints**: a strip of the eight down-the-line
    checkpoints in swing order, each colored by its result (dashed = coming
-   soon). Pick one, or use ‹ › / the arrow keys, to see its key frame (drawn with
-   only that check's lines) next to its card. Each card lists its measurements
-   one per row with a status dot. **Phases** (collapsed) lets you fix a frame,
-   and **Report** opens a plain-text summary.
+   soon). It opens on the checkpoint to work on first. Pick another, or use ‹ ›
+   / the arrow keys, to see its key frame (drawn with only that check's lines)
+   next to its card. Each card lists its measurements one per row with a status
+   dot, with the biggest issue highlighted. **Impact frame** (collapsed) lets
+   you fix the impact frame, and **Text report** opens a plain-text summary.
 
 Your swings are listed on the home page, newest first, with their verdicts. Open
 one to see it again, **Edit marks** to re-mark, **Re-analyze** after changing
 settings, or **Delete** to remove it and its files.
 
-### When a phase is wrong
+### When the impact frame is wrong
 
-In **Phases** on the results page, press **Adjust** next to top or impact,
-scrub to the right frame, and press **Set as …**. The swing is re-analyzed with
-your frame, which is remembered. **Reset to automatic** goes back to detection.
-Address is the frame you marked on; change it with **Edit marks**.
+Impact is the one checkpoint found automatically. If its frame is off, open
+**Impact frame** on the results page, press **Adjust impact**, scrub to the
+right frame, and press **Set as impact**. The swing is re-analyzed with your
+frame, which is remembered. **Reset to automatic** goes back to detection. Every
+other checkpoint uses the frame you marked; change those with **Edit marks**.
 
 ### Where your swings are stored
 
@@ -544,10 +546,11 @@ but a position that's far into red (say the shaft pointing well past the ball)
 still comes first. Swings analyzed before this change use the old rule (first
 red in swing order) until re-analyzed.
 
-Below it, the checkpoints go one at a time (‹ › or the arrow keys):
-the checkpoint's key frame next to its card, which gives the result, what it
-means, **How to fix** when it's yellow or red, and each measurement with its
-limits. The annotated video and the detected phases sit beside it on a wide
+Below it, the checkpoints go one at a time (‹ › or the arrow keys), opening
+on the one to work on first: the checkpoint's key frame next to its card, which
+gives the result, what it means, **How to fix** when it's yellow or red, and
+each measurement with its limits (the biggest issue is highlighted). The
+annotated video and the impact frame setting sit beside it on a wide
 screen and below it on a phone. **Re-analyze** is the main button; **Download
 summary** saves a PDF to share outside the app (scorecard, the one thing to work
 on first, then each checkpoint's key frame, readings with their limits, and how
@@ -642,7 +645,7 @@ Other useful settings:
 | "Can't reach the swing-check app" or "The app was restarted while this was running" | The app stopped (its terminal was closed or it was restarted) during a conversion or analysis. Analysis runs inside the app, so closing it stops the job. Start `swingcheck` again and press **Try again**. |
 | Address checks measured on the wrong frame | **Edit marks**, scrub to your set-up position, and save again. |
 | Upper back reads rounded but isn't | Loose clothing changes the outline; check the line drawn on the address key frame. |
-| Wrong top/impact | **Adjust** it under Phases on the results page. |
+| Wrong impact frame | **Adjust impact** under Impact frame on the results page. |
 | A check says "Not measured" | A body point wasn't tracked at that moment: usually lighting, part of the body out of frame, or baggy clothing. |
 | Practice swing detected instead of the real one | **Edit marks** → **Trim the clip**. |
 | Page looks broken after updating the code | Reload the page (Ctrl+R). |

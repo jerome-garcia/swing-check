@@ -6,7 +6,8 @@ const PHASE_LABELS = {
   address: "Address", takeaway: "Takeaway", top: "Top", early_downswing: "Early downswing", impact: "Impact",
 };
 // Phases the user can set directly; the others are worked out between them.
-const ADJUSTABLE = { dtl: ["top", "impact"], fo: ["address", "top", "impact"] };
+// Down-the-line: only impact; every other checkpoint frame is one the user marked (Edit marks).
+const ADJUSTABLE = { dtl: ["impact"], fo: ["address", "top", "impact"] };
 const HIDDEN_MEASUREMENTS = new Set(["units", "traceback"]);
 
 function prettyKey(key) {
@@ -28,7 +29,8 @@ function measurementRows(v) {
     .map(([k, val]) => ({ label: prettyKey(k), value: prettyValue(val), note: "", status: null }));
 }
 
-function verdictCard(v) {
+// focusLabel: the row picked as the biggest issue, highlighted in its card.
+function verdictCard(v, focusLabel = null) {
   const rows = measurementRows(v);
   const showTip = v.tip && (v.status === "warn" || v.status === "flag");
   return el("article", { class: `verdict ${v.status}` },
@@ -38,7 +40,7 @@ function verdictCard(v) {
     el("div", { class: "verdict-label" }, v.status === "error" ? "Not measured" : v.label),
     el("p", { class: "verdict-summary" }, v.summary),
     showTip ? el("div", { class: "tip" }, el("strong", {}, "How to fix "), v.tip) : null,
-    rows.length ? el("ul", { class: "rows" }, rows.map(r => el("li", {},
+    rows.length ? el("ul", { class: "rows" }, rows.map(r => el("li", { class: focusLabel && r.label === focusLabel ? "focus-row" : null },
       r.status ? el("span", { class: `dot ${r.status}`, title: STATUS_WORD[r.status] }) : el("span", {}),
       el("span", { class: "row-label" }, r.label),
       el("span", { class: "row-value" }, r.value),
@@ -49,19 +51,26 @@ function verdictCard(v) {
 }
 
 // --- Summary: the whole swing at a glance ------------------------------------
-function summaryPanel(s, states, onSelect) {
+// The one thing to work on: picked at analysis time from importance tiers and how far
+// into red each fault is (swingcheck/priority.py). Older analyses without a pick: the
+// first red checkpoint in swing order, else the first yellow. Returns
+// { index, row } (index -1 when everything measured is green).
+function pickFocus(s, states) {
+  const picked = s.analysis && s.analysis.focus;
+  let index = picked ? states.findIndex(x => x.cp.analyzer === picked.checkpoint) : -1;
+  if (index < 0) index = ["flag", "warn"].map(st => states.findIndex(x => x.state === st)).find(i => i >= 0) ?? -1;
+  const focus = index >= 0 ? states[index] : null;
+  const row = focus && picked && picked.checkpoint === focus.cp.analyzer
+    ? (focus.verdict.rows || []).find(r => r.label === picked.row) || null : null;
+  return { index, row, status: picked ? picked.status : focus && focus.state };
+}
+
+function summaryPanel(s, states, focusPick, onSelect) {
   const counts = { ok: 0, warn: 0, flag: 0 };
   for (const { state } of states) if (state in counts) counts[state] += 1;
   const notMarked = states.filter(({ state }) => state === "error" || state === "missing");
-  // The one thing to work on: picked at analysis time from importance tiers and how far
-  // into red each fault is (swingcheck/priority.py). Older analyses without a pick: the
-  // first red checkpoint in swing order, else the first yellow.
-  const picked = s.analysis && s.analysis.focus;
-  let focusIndex = picked ? states.findIndex(x => x.cp.analyzer === picked.checkpoint) : -1;
-  if (focusIndex < 0) focusIndex = ["flag", "warn"].map(st => states.findIndex(x => x.state === st)).find(i => i >= 0);
-  const focus = focusIndex !== undefined && focusIndex >= 0 ? states[focusIndex] : null;
-  const focusRow = focus && picked && picked.checkpoint === focus.cp.analyzer
-    ? (focus.verdict.rows || []).find(r => r.label === picked.row) : null;
+  const { index: focusIndex, row: focusRow } = focusPick;
+  const focus = focusIndex >= 0 ? states[focusIndex] : null;
 
   const tally = el("div", { class: "tally" },
     ...[["ok", "good"], ["warn", "to watch"], ["flag", "to fix"]].map(([st, word]) =>
@@ -71,7 +80,7 @@ function summaryPanel(s, states, onSelect) {
   if (focus) {
     const v = focus.verdict;
     focusBox = el("div", { class: `focus ${focus.state}` },
-      el("div", { class: "focus-kicker" }, (picked ? picked.status : focus.state) === "flag" ? "Work on first" : "Worth a look"),
+      el("div", { class: "focus-kicker" }, focusPick.status === "flag" ? "Work on first" : "Worth a look"),
       el("div", { class: "focus-title" }, `${focus.cp.number}. ${focus.cp.title}: ${v.label}`),
       focusRow ? el("p", { class: "focus-row small" }, `Biggest issue: ${focusRow.label}, ${focusRow.value}`) : null,
       v.tip ? el("p", { class: "focus-tip" }, v.tip) : null,
@@ -115,9 +124,9 @@ function drawingLegend() {
   return d;
 }
 
-function checkpointStepper(s, states) {
-  // Start on the first red checkpoint, else the first one with a result.
-  let index = states.findIndex(x => x.state === "flag");
+function checkpointStepper(s, states, focusPick) {
+  // Start where the summary points (Work on first), else the first one with a result.
+  let index = focusPick.index;
   if (index < 0) index = Math.max(0, states.findIndex(x => x.verdict));
   const prev = el("button", { class: "btn small", type: "button", "aria-label": "Previous checkpoint", onclick: () => select(index - 1) }, "‹");
   const next = el("button", { class: "btn small", type: "button", "aria-label": "Next checkpoint", onclick: () => select(index + 1) }, "›");
@@ -138,8 +147,8 @@ function checkpointStepper(s, states) {
       el("img", { src: url, alt: `${cp.title} frame` }));
   }
 
-  function card({ cp, verdict, state }) {
-    if (verdict) return verdictCard(verdict);
+  function card({ cp, verdict, state }, i) {
+    if (verdict) return verdictCard(verdict, i === focusPick.index && focusPick.row ? focusPick.row.label : null);
     return el("article", { class: "verdict soon" },
       el("div", { class: "verdict-head" }, el("h3", {}, cp.title),
         el("span", { class: "status-pill soon" }, STATUS_WORD[state])),
@@ -153,7 +162,7 @@ function checkpointStepper(s, states) {
     prev.disabled = index === 0;
     next.disabled = index === states.length - 1;
     heading.replaceChildren(el("span", { class: "subtle" }, `${cp.number} / ${states.length}`), el("strong", {}, cp.title));
-    body.replaceChildren(el("div", { class: "step-media" }, keyFrame(cp), drawingLegend()), card(states[index]));
+    body.replaceChildren(el("div", { class: "step-media" }, keyFrame(cp), drawingLegend()), card(states[index], index));
     listeners.forEach(fn => fn(index));
   }
 
@@ -230,7 +239,20 @@ function phasesPanel(s, startAnalysis) {
   const adjustable = ADJUSTABLE[s.view] || [];
   const body = el("div", {});
 
+  // Down-the-line: just the impact frame, the one checkpoint found automatically.
+  function impactOnly() {
+    const setByYou = manual.has("impact");
+    body.replaceChildren(
+      el("p", { class: "small" }, setByYou
+        ? "You set the impact frame."
+        : "Impact is found automatically. If the impact frame looks wrong, pick it yourself."),
+      el("div", { class: "actions" },
+        s.video ? el("button", { class: "btn small", type: "button", onclick: () => adjust("impact", a.phases.impact) }, "Adjust impact") : null,
+        setByYou ? el("button", { class: "btn small", type: "button", onclick: () => startAnalysis({ reset_phases: true }) }, "Reset to automatic") : null));
+  }
+
   function list() {
+    if (s.view === "dtl") return impactOnly();
     body.replaceChildren(
       el("table", { class: "phases" }, el("tbody", {}, Object.entries(a.phases).map(([name, frame]) =>
         el("tr", {},
@@ -240,8 +262,7 @@ function phasesPanel(s, startAnalysis) {
           el("td", {}, adjustable.includes(name) && s.video
             ? el("button", { class: "btn small", type: "button", onclick: () => adjust(name, frame) }, "Adjust") : ""))))),
       [...manual].some(n => adjustable.includes(n))
-        ? el("button", { class: "btn small", type: "button", onclick: () => startAnalysis({ reset_phases: true }) }, "Reset to automatic") : null,
-      s.view === "dtl" ? el("p", { class: "subtle small" }, "Address and the marked checkpoints use the frames you marked; change them with Edit marks.") : null);
+        ? el("button", { class: "btn small", type: "button", onclick: () => startAnalysis({ reset_phases: true }) }, "Reset to automatic") : null);
   }
 
   function adjust(name, frame) {
@@ -252,8 +273,10 @@ function phasesPanel(s, startAnalysis) {
 
   list();
   // Collapsed by default: it's only needed when a detected phase is wrong.
+  const title = s.view === "dtl" ? "Impact frame" : "Detected phases";
+  const hint = s.view === "dtl" ? " · adjust if it's off" : " · adjust if impact or the top is off";
   return el("details", { class: "panel phases-panel" },
-    el("summary", {}, el("strong", {}, "Detected phases"), el("span", { class: "subtle small" }, " · adjust if impact or the top is off")),
+    el("summary", {}, el("strong", {}, title), el("span", { class: "subtle small" }, hint)),
     body);
 }
 
@@ -306,8 +329,9 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
   if (checkpoints.length) {
     // Down-the-line: summary on top, then one checkpoint at a time.
     const states = checkpointStates(checkpoints, a.verdicts);
-    const stepper = checkpointStepper(s, states);
-    const summary = summaryPanel(s, states, i => {
+    const focusPick = pickFocus(s, states);
+    const stepper = checkpointStepper(s, states, focusPick);
+    const summary = summaryPanel(s, states, focusPick, i => {
       stepper.select(i);
       stepper.node.scrollIntoView({ behavior: "smooth", block: "start" });
     });

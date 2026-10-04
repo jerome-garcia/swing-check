@@ -317,7 +317,7 @@ export async function renderMark(view, id, isCurrent) {
   const pointList = el("ol", { class: "point-list" });
   const stepIntro = el("p", { class: "subtle small" });
   const stepTabs = el("div", { class: "step-tabs", role: "tablist" });
-  const saveBtn = el("button", { class: "btn primary block", type: "button", onclick: save }, "Save marks");
+  const saveBtn = el("button", { class: "btn primary block", type: "button", onclick: save }, "Save and analyze");
   const saveError = el("div", { class: "notice error", hidden: true });
   // Instruction bar over the frame: which step, what to click next, and what comes after.
   const hud = el("div", { class: "mark-hud", "aria-live": "polite" });
@@ -342,7 +342,7 @@ export async function renderMark(view, id, isCurrent) {
       el("div", { class: "actions" },
         el("button", { class: "btn small", type: "button", onclick: undo, disabled: !started(state.active) }, "Undo"),
         !next && after ? el("button", { class: "btn small primary", type: "button", onclick: () => selectStep(after.key) }, `Next: ${after.title} ›`) : null,
-        !next && !after && complete("address") ? el("button", { class: "btn small primary", type: "button", onclick: save }, "Save marks") : null));
+        !next && !after && complete("address") ? el("button", { class: "btn small primary", type: "button", onclick: save }, "Save and analyze") : null));
   }
 
   function refresh() {
@@ -382,6 +382,9 @@ export async function renderMark(view, id, isCurrent) {
     try {
       await postJSON(`/api/swings/${encodeURIComponent(id)}/marks`,
         { address_frame: state.steps.address.frame, points: state.steps.address.points, checkpoints });
+      // Analyze straight away; the swing page shows the job's progress. If it can't start,
+      // the marks are still saved and the swing page offers Analyze.
+      try { await postJSON(`/api/swings/${encodeURIComponent(id)}/analyze`, {}); } catch { /* see above */ }
       location.hash = swingUrl(id);
     } catch (err) {
       saveError.textContent = err.message;

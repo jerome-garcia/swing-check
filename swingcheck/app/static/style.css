@@ -333,6 +333,9 @@ button.score-item:hover { background: var(--surface-2); }
   padding: 8px 0;
   border-top: 1px solid var(--border);
 }
+/* The row picked as the biggest issue (Work on first). */
+.rows li.focus-row { background: var(--surface-2); border-radius: var(--radius-sm); padding: 8px; margin: 0 -8px; }
+.rows li.focus-row .row-label { color: var(--text); font-weight: 700; }
 .rows .dot { grid-area: dot; }
 .rows .row-label { grid-area: label; color: var(--muted); }
 .rows .row-value { grid-area: value; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
