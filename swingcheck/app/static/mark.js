@@ -472,8 +472,9 @@ export async function renderMark(view, id, isCurrent) {
     // Labelled as an example on the picture itself too, so it's never mistaken for your swing.
     link.append(el("span", { class: "ref-tag" }, "Example"));
     refBox.replaceChildren(
-      el("div", { class: "ref-head" }, el("strong", {}, "Example to follow"),
-        el("button", { class: "btn small ref-back", type: "button", onclick: () => scrollToEl(hud) }, "↑ Back to marking"),
+      el("div", { class: "ref-head" },
+        el("div", { class: "ref-title" }, el("strong", {}, "Example to follow"),
+          el("button", { class: "btn small ref-back", type: "button", onclick: () => scrollToEl(hud) }, "↑ Back to marking")),
         el("div", { class: "subtle small" }, `${reference.name} at ${stepDef().title.toLowerCase()}`
           + (s.handedness === "left" ? " (mirrored to match a left-handed swing)" : "")
           + ", for comparison. Not your swing: mark yours on your own video.")),

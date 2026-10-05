@@ -647,5 +647,6 @@ button.score-item:hover { background: var(--surface-2); }
 .save-hint:empty { display: none; }
 
 /* "Back to marking" under the example: only where the example sits below the frame (phones). */
-.ref-back { display: none; margin: 6px 0 2px; }
+.ref-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ref-back { display: none; }
 @media (max-width: 820px) { .ref-back { display: inline-flex; } }
