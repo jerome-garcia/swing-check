@@ -107,7 +107,10 @@ export async function renderMark(view, id, isCurrent) {
   // Address point positions survive a re-trim or a view change (the camera didn't move),
   // so keep the ones this view uses as a starting point. The frame only if it still fits.
   const savedAddress = Boolean(s.marks) && (marksValid || !s.suggested);
-  const addressSuggested = !savedAddress && s.suggested ? clampFrame(s.suggested.address) : undefined;
+  // Address opens on the first frame: the golfer is set up and still there in most clips,
+  // and it's easy to step forward from. (The detected address is still used behind the
+  // scenes, for the camera check and to find the later checkpoints.)
+  const addressSuggested = !savedAddress && s.suggested ? 0 : undefined;
   const addressFrame = savedAddress ? clampFrame(s.marks.address_frame) : addressSuggested ?? 0;
   const stepState = {};
   for (const st of steps) {
