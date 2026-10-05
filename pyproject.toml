@@ -31,6 +31,7 @@ include = ["swingcheck*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]  # tests import shared helpers as tests.helpers
 
 [tool.ruff]
 line-length = 120
