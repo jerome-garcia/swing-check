@@ -362,13 +362,23 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
   }, "Share PDF");
   const copied = justShared && shareUrl && justShared.url.endsWith(`/s/${shared.code}`) ? justShared.how : null;
   justShared = null;
+  // One sentence and one button: "Copy link" reads "✓ Copied" for a moment after a copy
+  // (also right after Share PDF copied it), then goes back.
+  let copyTimer = null;
+  const copyBtn = el("button", { class: "btn small", type: "button" }, "Copy link");
+  const showCopied = () => {
+    copyBtn.textContent = "✓ Copied";
+    clearTimeout(copyTimer);
+    copyTimer = setTimeout(() => { copyBtn.textContent = "Copy link"; }, 2000);
+  };
+  copyBtn.onclick = async () => { if ((await sendLink(shareUrl)) === "copied") showCopied(); };
+  if (copied === "copied") showCopied();
+  const until = s.expires ? new Date(s.expires) : null;
+  const untilText = until && !Number.isNaN(until.getTime())
+    ? `until ${until.toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "until the swing is deleted";
   const shareNote = shared ? el("div", { class: "notice ok share-note" },
-    "Shared: anyone with ", el("a", { href: shareUrl, target: "_blank", rel: "noopener" }, "the link"),
-    " sees your latest results until the swing is deleted. ",
-    copied === "copied" ? el("strong", {}, "Link copied. ") : null,
-    el("button", { class: "linkish", type: "button", onclick: async e => {
-      e.target.textContent = (await sendLink(shareUrl)) === "copied" ? "Copied" : "Copy link";
-    } }, "Copy link")) : null;
+    el("span", {}, el("strong", {}, "✓ Shared. "), `Anyone with the link sees your latest results ${untilText}.`),
+    copyBtn) : null;
   const stopSharing = shared ? {
     label: "Stop sharing", onclick: async () => {
       await api(`/api/swings/${encodeURIComponent(s.id)}/share`, { method: "DELETE" });

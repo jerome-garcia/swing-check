@@ -260,6 +260,7 @@ details.panel[open] > summary { margin-bottom: 10px; }
 }
 .notice.error { background: var(--flag-soft); border-left-color: var(--flag); }
 .notice.ok { background: var(--ok-soft); border-left-color: var(--ok); }  /* good news, e.g. "Shared" */
+.share-note { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
 .clip-notes summary { cursor: pointer; font-weight: 600; }
 .clip-notes ul { margin: 8px 0 0; padding-left: 18px; }
 
