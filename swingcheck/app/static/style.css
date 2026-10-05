@@ -94,7 +94,8 @@ main { max-width: 1160px; margin: 0 auto; padding: 24px 20px 72px; }
 .support-card h2, .support-card h3, .support-card p { margin: 0; }
 .support-card p { font-size: 14px; color: var(--on-deep-soft); }
 .support-intro { display: flex; flex-direction: column; justify-content: center; gap: 4px; }
-.support-intro h2 { font-size: 16px; }
+.support-intro h2 { font-size: 21px; font-weight: 750; letter-spacing: -0.03em; line-height: 1.2; }
+.support-card .support-eyebrow { color: var(--bright); font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
 .support-option { display: flex; flex-direction: column; justify-content: center; gap: 12px 16px; padding: 14px 16px;
   border: 1px solid var(--on-deep-line); border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.05); }
 .support-option h3 { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
