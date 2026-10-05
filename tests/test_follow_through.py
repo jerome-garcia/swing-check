@@ -61,10 +61,10 @@ def test_reference_like_exit_is_green():
 
 @pytest.mark.parametrize("inside_by, status, label", [
     (0.3, "ok", "Exits on the swing plane"),
-    (0.7, "warn", "Exits slightly steep"),
-    (1.0, "flag", "Exits steep"),
-    (-0.2, "warn", "Exits slightly flat"),
-    (-0.4, "flag", "Exits flat"),
+    (0.9, "warn", "Exits slightly steep"),
+    (1.3, "flag", "Exits steep"),
+    (-0.35, "warn", "Exits slightly flat"),
+    (-0.6, "flag", "Exits flat"),
 ])
 def test_shaft_bands(inside_by, status, label):
     v = run(inside_by=inside_by, back=None)
@@ -74,8 +74,9 @@ def test_shaft_bands(inside_by, status, label):
 
 @pytest.mark.parametrize("back, status, label", [
     (0.1, "ok", "same line as going back"),
-    (-0.4, "warn", "slightly steeper than going back"),
-    (0.45, "warn", "slightly flatter than going back"),
+    (-0.45, "ok", "same line as going back"),  # a club golfer's ~50%: fine after impact
+    (-0.8, "warn", "slightly steeper than going back"),
+    (0.8, "warn", "slightly flatter than going back"),
     (-1.17, "flag", "steeper than going back"),  # the amateur swing: laid off going back
 ])
 def test_same_line_bands(back, status, label):

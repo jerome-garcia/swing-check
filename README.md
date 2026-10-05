@@ -263,12 +263,17 @@ where the shaft looks about as steep as at halfway back. Settings live in
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Shaft points at** | the shaft line carried down to the ball's level, as at halfway back | 15% past the ball to 60% inside: **Exits on the swing plane** | to 30% past (*slightly flat*) or 60–85% inside (*slightly steep*) | beyond: **Exits flat** / **Exits steep** |
-| **Vs halfway back** | this landing vs the halfway-back landing, as % of torso length | within ±30%: **Same line as going back** | 30–55% apart (*slightly steeper / flatter than going back*) | more than 55% apart |
+| **Shaft points at** | the shaft line carried down to the ball's level, as at halfway back | 25% past the ball to 75% inside: **Exits on the swing plane** | to 50% past (*slightly flat*) or 75–110% inside (*slightly steep*) | beyond: **Exits flat** / **Exits steep** |
+| **Vs halfway back** | this landing vs the halfway-back landing, as % of torso length | within ±60%: **Same line as going back** | 60–100% apart (*slightly steeper / flatter than going back*) | more than 100% apart |
+
+The bands are loose on purpose: the ball is gone by the follow-through, so it
+mostly reflects what came before. Only a clearly different exit turns red, and
+these rows rank lowest when picking **Work on first** (a red follow-through is
+only the focus when nothing else is red).
 
 Set from the same reference golfer (follow-through on the ball, halfway back
 16–26% inside: about 20% apart, green). McIlroy exits 48% inside, 18% steeper
-than his halfway back (green); an amateur swing exits on the ball but its
+than his halfway back (green); Jolo exits 51% steeper (green); an amateur swing exits on the ball but its
 halfway back was laid off 117% past the ball, so the exit is 117% steeper than
 the way back (red). Same-line needs halfway back marked; otherwise only the
 shaft row. The key frame shows the shaft line carried to the ball's level and

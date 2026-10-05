@@ -9,7 +9,8 @@ green, 0-1 across the yellow band, and 1 plus how far past the red limit
      dipping at impact
   2  positions (the default): setup, the club at each checkpoint
   3  contributors: posture and trail knee kept through the backswing and
-     downswing (the impact posture row is tier 1)
+     downswing (the impact posture row is tier 1), and the follow-through, which
+     mostly reflects what came before impact
 
 The score is severity x the tier's weight. A red row always outranks a yellow
 one, so "Work on first" is always a red when there is one; within the same
@@ -34,6 +35,8 @@ TIERS: dict[tuple[str, str], int] = {
     ("downswing", "Spine bend kept"): 3,
     ("takeaway", "Back knee bend kept"): 3,
     ("halfway_back", "Back knee bend kept"): 3,
+    ("follow_through", "Shaft points at"): 3,
+    ("follow_through", "Vs halfway back"): 3,
 }
 
 

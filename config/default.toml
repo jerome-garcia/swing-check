@@ -270,17 +270,22 @@ posture_gain_watch = 12    # ...yellow to 12°; red beyond (dipping)
 # DTL checkpoint 8, on the frame you mark where the trail arm is parallel to
 # the ground after impact. Distances as a share of torso length.
 #
+# Bands are loose on purpose: the ball is gone by now, so the follow-through mostly
+# reflects what came before. Only a clearly off exit turns red, and its rows rank
+# low for "Work on first" (swingcheck/priority.py).
+#
 # Shaft points: the clubhead->hands line carried down to the ball's level.
 # + = lands inside the ball (between the ball and your feet), - = past it.
-inside_min = -0.15        # green: 15% past the ball to 60% inside
-inside_max = 0.60
-inside_watch_min = -0.30  # yellow: to 30% past (a little flat) or 85% inside
-inside_watch_max = 0.85   # (a little steep); red beyond
+inside_min = -0.25        # green: 25% past the ball to 75% inside
+inside_max = 0.75
+inside_watch_min = -0.50  # yellow: to 50% past (a little flat) or 110% inside
+inside_watch_max = 1.10   # (a little steep); red beyond
 # Same line as the backswing: this landing vs the halfway-back one, either way.
 # Good players differ by up to about 25% (McIlroy 21% steeper, the reference
-# photo 14-24% flatter).
-same_line_max = 0.30      # green within ±30%
-same_line_watch = 0.55    # yellow to ±55%; red beyond
+# photo 14-24% flatter); club golfers often by ~50% (Jolo 51%). Red is for a
+# clearly different line, like the 117% steeper exit after a laid-off backswing.
+same_line_max = 0.60      # green within ±60%
+same_line_watch = 1.00    # yellow to ±100%; red beyond
 
 [analyzers.hands_at_impact]
 # Lead wrist x minus ball x along the target direction, body units.

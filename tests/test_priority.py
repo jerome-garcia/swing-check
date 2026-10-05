@@ -58,6 +58,17 @@ def test_ties_go_to_swing_order_and_green_means_nothing():
     assert pick_focus([v("top", ("Front arm vs spine", "error", None))], ORDER) is None
 
 
+def test_follow_through_ranks_low():
+    # A deeper red follow-through (2.0 x 0.6 = 1.2) loses to a red position at the top (1.5).
+    focus = pick_focus([v("top", ("Front arm vs spine", "flag", 1.5)),
+                        v("follow_through", ("Vs halfway back", "flag", 2.0))], ORDER)
+    assert focus["checkpoint"] == "top"
+    # But when it's the only red, it's still the one to work on.
+    focus = pick_focus([v("impact", ("Hips vs address", "warn", 1.0)),
+                        v("follow_through", ("Vs halfway back", "flag", 2.0))], ORDER)
+    assert focus["checkpoint"] == "follow_through"
+
+
 def test_tiers():
     assert tier("impact", "Hips vs address") == 1
     assert tier("downswing", "Clubhead vs swing plane") == 1
