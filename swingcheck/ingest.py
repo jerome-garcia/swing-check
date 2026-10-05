@@ -184,8 +184,8 @@ def normalize(
     ingest_cfg = config["ingest"]
     if fps <= ingest_cfg["low_fps_warning"]:
         warnings.append(
-            f"Clip is {fps:g} fps. If you filmed slo-mo, this is the phone's shared copy, slowed down "
-            "for playback, not the original: copy the original file off the phone to get 120-240 fps "
+            f"Filmed at {fps:g} fps. That works, but slo-mo (120-240 fps) pins down impact more "
+            "precisely. If you did film slo-mo, upload the original file rather than a shared copy "
             "(see Filming in the README)."
         )
     if hdr:
