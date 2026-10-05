@@ -463,7 +463,9 @@ button.score-item:hover { background: var(--surface-2); }
   cursor: pointer;
 }
 .dropzone:hover, .dropzone.over { border-color: var(--accent); background: var(--accent-soft); }
-.dropzone.chosen { border-style: solid; border-color: var(--accent); }
+.dropzone.chosen { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
+.file-status { margin-top: 6px; }
+.file-ok { color: var(--ok); font-weight: 650; overflow-wrap: anywhere; }
 .dropzone-title { font-weight: 650; font-size: 16px; }
 #file-input:focus-visible + .dropzone { box-shadow: var(--focus); }
 

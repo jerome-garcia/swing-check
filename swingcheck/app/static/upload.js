@@ -52,13 +52,20 @@ export async function renderUpload(view, isCurrent) {
   let viewChoice = faceOn ? null : "dtl";
   let hand = rememberedHand();
 
-  const fileName = el("div", { class: "subtle" }, "No video chosen");
+  const fileName = el("div", { class: "file-status subtle" }, "No video chosen");
+  const dropTitle = el("div", { class: "dropzone-title" }, "Choose a video");
   const input = el("input", {
     type: "file", accept: "video/*,.mov,.mp4", id: "file-input", class: "visually-hidden",
     onchange: () => setFile(input.files[0]),
+    // A phone can take a while to hand over a video (slo-mo is prepared first): say so.
+    onclick: () => {
+      fileName.className = "file-status subtle";
+      fileName.textContent = "Opening your video… On a phone, a slo-mo clip can take a moment to prepare.";
+    },
   });
+  input.addEventListener("cancel", () => setFile(file)); // closed the picker: back to what was chosen
   const drop = el("label", { class: "dropzone", for: "file-input" },
-    el("div", { class: "dropzone-title" }, "Choose a video"),
+    dropTitle,
     el("div", { class: "subtle" }, "or drop it here · .mov or .mp4 · one swing per clip"),
     hosted ? el("div", { class: "subtle small" },
       `Up to ${hosted.max_clip_seconds} seconds and ${hosted.max_upload_mb} MB · `
@@ -100,15 +107,23 @@ export async function renderUpload(view, isCurrent) {
       error.hidden = false;
       file = null;
     }
-    fileName.textContent = file ? `${file.name} · ${(file.size / 1e6).toFixed(1)} MB` : "No video chosen";
+    fileName.className = file ? "file-status file-ok" : "file-status subtle";
+    fileName.textContent = file ? `✓ ${file.name} · ${(file.size / 1e6).toFixed(1)} MB` : "No video chosen";
+    dropTitle.textContent = file ? "Video ready · choose a different one" : "Choose a video";
     drop.classList.toggle("chosen", Boolean(file));
     refresh();
   }
 
+  // Says what's still missing, so a grey Upload button isn't a mystery.
+  const submitHint = el("span", { class: "subtle small" });
+
   function refresh() {
     for (const b of viewButtons) b.classList.toggle("selected", b.dataset.view === viewChoice);
     for (const b of handButtons) b.classList.toggle("selected", b.dataset.hand === hand);
-    submit.disabled = !(file && viewChoice && (!agreeBox || agreeBox.checked));
+    const missing = [!file && "choose a video", !viewChoice && "pick the camera view",
+      agreeBox && !agreeBox.checked && "tick the agreement"].filter(Boolean);
+    submit.disabled = missing.length > 0;
+    submitHint.textContent = missing.length ? `To upload, ${missing.join(" and ")}.` : "";
   }
 
   const form = el("form", {
@@ -121,7 +136,9 @@ export async function renderUpload(view, isCurrent) {
       try {
         rememberHand(hand);
         const res = await uploadWithProgress(file, viewChoice, hand, agreeBox ? agreeBox.checked : false,
-          f => progress.update(f, `${Math.round(f * 100)}% uploaded`));
+          // At 100% the server still saves and checks the file: don't leave the bar looking stuck.
+          f => (f < 1 ? progress.update(f, `${Math.round(f * 100)}% uploaded`)
+            : progress.update(null, "Uploaded. Saving and checking your video…")));
         location.hash = swingUrl(res.id);
       } catch (err) {
         progress.node.replaceWith(form);
@@ -138,7 +155,7 @@ export async function renderUpload(view, isCurrent) {
     el("span", {}, "I agree to the ", el("a", { href: "#/terms", target: "_blank" }, "Terms of use"), " and ",
       el("a", { href: "#/privacy", target: "_blank" }, "Privacy notice"),
       ", and I have the right to upload this video (it's of me, or of someone who agreed).")) : null,
-  el("div", { class: "actions" }, el("a", { class: "btn", href: "#/" }, "Cancel"), submit));
+  el("div", { class: "actions" }, el("a", { class: "btn", href: "#/" }, "Cancel"), submit, submitHint));
 
   view.replaceChildren(title, form);
   refresh();
