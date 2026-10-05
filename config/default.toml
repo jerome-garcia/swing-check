@@ -296,3 +296,12 @@ freeze_frames = ["address", "top", "impact"]
 # The annotated video plays at most this many frames per second, so a 240 fps
 # clip comes out as 4x slow motion at 60.
 max_playback_fps = 60
+
+[hosted]
+# Only used when the app runs on a public server (`swingcheck --hosted`); see
+# swingcheck/app/hosted.py. Each visitor sees only their own swings.
+max_swings = 3                # swings a visitor can keep; delete one to add another
+keep_days = 3                 # swings are deleted this long after upload
+max_upload_mb = 200           # largest video file accepted
+max_clip_seconds = 20         # longest clip accepted (real time, as the phone recorded it)
+max_queued_jobs = 10          # conversions/analyses waiting; past this, "busy, try again"

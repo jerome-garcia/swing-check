@@ -1,4 +1,5 @@
-import { api, checkpointStates, el, features, fileUrl, formatDate, scorecard, STATUS_TEXT, swingUrl, VIEW_NAMES } from "./util.js";
+import { api, checkpointStates, el, expiryText, features, fileUrl, formatDate, plural, scorecard, STATUS_TEXT, swingUrl,
+  VIEW_NAMES } from "./util.js";
 
 // Brand band at the top of the list, like the Ko-fi cover: swing plane lines on deep green.
 const HERO_ART = `<svg class="hero-art" viewBox="0 0 1160 180" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
@@ -8,24 +9,52 @@ const HERO_ART = `<svg class="hero-art" viewBox="0 0 1160 180" preserveAspectRat
     <line x1="700" y1="210" x2="900" y2="-30" stroke="#fff" stroke-width="1.5" opacity="0.12"/>
   </g></svg>`;
 
-function hero(count) {
+function hero(count, hosted) {
+  // Hosted: how many of the allowed swings are used, and how long they're kept.
+  const countText = hosted
+    ? `${count} of ${plural(hosted.max_swings, "swing")} · each is deleted ${plural(hosted.keep_days, "day")} after upload`
+    : count ? `${count} saved` : null;
   const node = el("section", { class: "hero" },
     el("div", {},
       el("h1", {}, "Your swings"),
       el("p", {}, "Film your swing. See 8 checkpoints. Fix the one that matters first."),
-      count ? el("p", { class: "hero-count" }, `${count} saved`) : null));
+      countText ? el("p", { class: "hero-count" }, countText) : null,
+      hosted && count >= hosted.max_swings
+        ? el("p", { class: "hero-count" }, "That's the limit: delete one to add a new swing.") : null));
   node.insertAdjacentHTML("afterbegin", HERO_ART);
   return node;
+}
+
+// Hosted: swings belong to this browser. The private link opens them elsewhere; it's
+// the owner key itself, in the URL fragment so it never reaches a server log.
+function privateLink() {
+  const status = el("span", { class: "subtle small", role: "status" });
+  const copy = el("button", {
+    class: "btn small", type: "button", onclick: async () => {
+      try {
+        const { key } = await api("/api/owner");
+        await navigator.clipboard.writeText(`${location.origin}/#/claim/${key}`);
+        status.textContent = "Copied. Keep it private: anyone with it can see your swings.";
+      } catch {
+        status.textContent = "Couldn't copy the link. Try again.";
+      }
+    },
+  }, "Copy private link");
+  return el("div", { class: "private-link" },
+    el("p", {}, el("strong", {}, "Your swings are private to this browser. "),
+      "To open them on another device, copy your private link and open it there."),
+    el("div", { class: "actions" }, copy, status));
 }
 
 export async function renderHistory(view, isCurrent) {
   view.replaceChildren(el("p", { class: "subtle" }, "Loading swings…"));
   const [swings, feats] = await Promise.all([api("/api/swings"), features()]);
   if (!isCurrent()) return; // the user navigated away while this loaded
-  const head = hero(swings.length);
+  const hosted = feats.hosted;
+  const head = [hero(swings.length, hosted), hosted ? privateLink() : null];
 
   if (!swings.length) {
-    view.replaceChildren(head, el("div", { class: "empty" },
+    view.replaceChildren(...head.filter(Boolean), el("div", { class: "empty" },
       el("h2", {}, "No swings yet"),
       el("p", {}, "Film one swing from behind (down-the-line), then upload the video to get started."),
       el("a", { class: "btn primary", href: "#/new" }, "New swing")));
@@ -53,9 +82,10 @@ export async function renderHistory(view, isCurrent) {
       thumb,
       el("div", { class: "body" },
         el("div", { class: "title" }, s.name),
-        el("div", { class: "meta" }, formatDate(s.created) + (s.view ? ` · ${VIEW_NAMES[s.view]}` : "")),
+        el("div", { class: "meta" }, formatDate(s.created) + (s.view ? ` · ${VIEW_NAMES[s.view]}` : "")
+          + (expiryText(s) ? ` · ${expiryText(s)}` : "")),
         results,
         nextStep ? el("span", { class: "next-step" }, nextStep) : null));
   }));
-  view.replaceChildren(head, grid);
+  view.replaceChildren(...head.filter(Boolean), grid);
 }

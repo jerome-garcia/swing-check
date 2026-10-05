@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import re
+import secrets
 import shutil
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
@@ -34,6 +35,7 @@ class SwingMeta:
     trim_start: float | None = None
     trim_end: float | None = None
     notes: dict[str, Any] = field(default_factory=dict)
+    owner: str | None = None  # hosted mode: hash of the uploader's owner key (swingcheck/app/hosted.py)
 
 
 class SwingNotFound(KeyError):
@@ -63,11 +65,12 @@ class Store:
         return candidate
 
     # --- metadata ------------------------------------------------------------
-    def create(self, filename: str, view: str) -> SwingMeta:
-        swing_id = self.new_id(filename)
+    def create(self, filename: str, view: str, owner: str | None = None) -> SwingMeta:
+        """A new swing folder. An owned (hosted) swing gets a random, unguessable id."""
+        swing_id = secrets.token_hex(16) if owner else self.new_id(filename)
         (self.root / swing_id).mkdir()
         meta = SwingMeta(id=swing_id, name=Path(filename).stem, created=datetime.now().isoformat(timespec="seconds"),
-                         view=view)
+                         view=view, owner=owner)
         self.save_meta(meta)
         return meta
 
@@ -113,12 +116,15 @@ class Store:
         return "marked"
 
     # --- listing ------------------------------------------------------------
-    def list(self) -> list[dict[str, Any]]:
+    def list(self, owner: str | None = None) -> list[dict[str, Any]]:
+        """Every swing, or with `owner` only that owner's."""
         items = []
         for folder in self.root.iterdir():
             if not folder.is_dir() or not ID_PATTERN.match(folder.name):
                 continue
             try:
+                if owner is not None and self.meta(folder.name).owner != owner:
+                    continue
                 items.append(self.summary(folder.name))
             except SwingNotFound:
                 continue
@@ -135,7 +141,9 @@ class Store:
             verdicts = [{"name": v.get("name"), "title": v.get("title"), "status": v.get("status"), "label": v.get("label")}
                         for v in analysis.get("verdicts", [])]
         thumb = next((n for n in ("address.png", "top.png") if (folder / n).exists()), None)
-        return {**asdict(meta), "status": status, "verdicts": verdicts, "thumbnail": thumb}
+        summary = {**asdict(meta), "status": status, "verdicts": verdicts, "thumbnail": thumb}
+        summary.pop("owner")  # never sent to the page
+        return summary
 
     def delete(self, swing_id: str) -> None:
         shutil.rmtree(self.path(swing_id))

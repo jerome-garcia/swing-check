@@ -30,12 +30,22 @@ def main(argv: list[str] | None = None) -> None:
                         help="also allow devices on your Wi-Fi (e.g. your iPhone) to open the app; there is no login")
     parser.add_argument("--no-browser", action="store_true", help="don't open a browser tab")
     parser.add_argument("--runs-dir", type=Path, help="where swings are stored (default: runs/ in the project)")
+    parser.add_argument("--hosted", action="store_true",
+                        help="run as a public server behind an HTTPS proxy: each visitor sees only their own "
+                             "swings, with the limits in config [hosted]")
     args = parser.parse_args(argv)
 
     try:
-        app = create_app(args.runs_dir)
+        app = create_app(args.runs_dir, hosted=args.hosted)
     except KeyError as e:  # unknown key in config/local.toml
         raise SystemExit(f"Config error: {e.args[0]}") from None
+
+    if args.hosted:
+        # Listens on this machine only; the HTTPS proxy (e.g. Caddy) in front forwards to it
+        # and is trusted for the original scheme (uvicorn's proxy headers, from 127.0.0.1).
+        print(f"SwingCheck (hosted) is listening on http://127.0.0.1:{args.port} for the proxy in front.")
+        uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning", proxy_headers=True)
+        return
 
     host = "0.0.0.0" if args.phone else "127.0.0.1"
     url = f"http://localhost:{args.port}"

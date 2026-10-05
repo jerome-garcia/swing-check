@@ -3,11 +3,12 @@
 //   #/new              upload a swing
 //   #/swing/<id>       the swing (progress, results, or the next step)
 //   #/swing/<id>/mark  mark points
+//   #/claim/<key>      hosted: a private link, opening that owner's swings here
 
 import { renderHistory } from "./history.js";
 import { renderSwing } from "./swing.js";
 import { renderUpload } from "./upload.js";
-import { el } from "./util.js";
+import { el, postJSON } from "./util.js";
 
 // Ko-fi page for the footer's support link, e.g. "https://ko-fi.com/yourname".
 // Empty hides the footer.
@@ -26,7 +27,12 @@ async function route() {
   const hash = location.hash.replace(/^#/, "") || "/";
   const parts = hash.split("/").filter(Boolean).map(decodeURIComponent);
   try {
-    if (parts.length === 0) await renderHistory(view, isCurrent);
+    if (parts[0] === "claim" && parts[1]) {
+      // Take the key out of the address bar and history first, then claim it.
+      history.replaceState(null, "", "#/");
+      await postJSON("/api/owner/claim", { key: parts[1] });
+      await renderHistory(view, isCurrent);
+    } else if (parts.length === 0) await renderHistory(view, isCurrent);
     else if (parts[0] === "new") await renderUpload(view, isCurrent);
     else if (parts[0] === "swing" && parts[1] && parts[2] === "mark") {
       const { renderMark } = await import("./mark.js");

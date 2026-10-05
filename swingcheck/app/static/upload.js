@@ -1,4 +1,4 @@
-import { el, features, progressBlock, swingUrl } from "./util.js";
+import { api, el, features, plural, progressBlock, swingUrl } from "./util.js";
 
 // Upload with XMLHttpRequest: fetch() can't report upload progress.
 function uploadWithProgress(file, viewChoice, onProgress) {
@@ -21,8 +21,19 @@ function uploadWithProgress(file, viewChoice, onProgress) {
 }
 
 export async function renderUpload(view, isCurrent) {
-  const { face_on: faceOn } = await features();
+  const { face_on: faceOn, hosted } = await features();
+  const used = hosted ? (await api("/api/owner")).swings : 0;
   if (!isCurrent()) return;
+  const title = el("div", { class: "page-head" }, el("div", {}, el("h1", {}, "New swing"),
+    el("div", { class: "subtle" }, "Use the original file from your phone so slo-mo keeps its frame rate.")));
+  // Hosted: at the swing limit, say so instead of offering an upload that would be refused.
+  if (hosted && used >= hosted.max_swings) {
+    view.replaceChildren(title,
+      el("div", { class: "notice warn" },
+        `You already have ${plural(used, "swing")}, the most you can keep. Delete one to add a new swing.`),
+      el("a", { class: "btn primary", href: "#/" }, "Go to your swings"));
+    return;
+  }
   let file = null;
   // With face-on held back, down-the-line is the only choice, so preselect it.
   let viewChoice = faceOn ? null : "dtl";
@@ -35,6 +46,9 @@ export async function renderUpload(view, isCurrent) {
   const drop = el("label", { class: "dropzone", for: "file-input" },
     el("div", { class: "dropzone-title" }, "Choose a video"),
     el("div", { class: "subtle" }, "or drop it here · .mov or .mp4 · one swing per clip"),
+    hosted ? el("div", { class: "subtle small" },
+      `Up to ${hosted.max_clip_seconds} seconds and ${hosted.max_upload_mb} MB · `
+      + `deleted ${plural(hosted.keep_days, "day")} after upload`) : null,
     fileName);
   drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
   drop.addEventListener("dragleave", () => drop.classList.remove("over"));
@@ -60,6 +74,12 @@ export async function renderUpload(view, isCurrent) {
 
   function setFile(f) {
     file = f || null;
+    error.hidden = true;
+    if (file && hosted && file.size > hosted.max_upload_mb * 1024 * 1024) {
+      error.textContent = `That video is over ${hosted.max_upload_mb} MB. Trim it to just the swing on your phone, then upload it again.`;
+      error.hidden = false;
+      file = null;
+    }
     fileName.textContent = file ? `${file.name} · ${(file.size / 1e6).toFixed(1)} MB` : "No video chosen";
     drop.classList.toggle("chosen", Boolean(file));
     refresh();
@@ -93,9 +113,6 @@ export async function renderUpload(view, isCurrent) {
   el("section", { class: "panel" }, el("h2", {}, "2. Camera view"), el("div", { class: "choices" }, viewButtons)),
   el("div", { class: "actions" }, el("a", { class: "btn", href: "#/" }, "Cancel"), submit));
 
-  view.replaceChildren(
-    el("div", { class: "page-head" }, el("div", {}, el("h1", {}, "New swing"),
-      el("div", { class: "subtle" }, "Use the original file from your phone so slo-mo keeps its frame rate."))),
-    form);
+  view.replaceChildren(title, form);
   refresh();
 }

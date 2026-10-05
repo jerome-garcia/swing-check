@@ -323,36 +323,50 @@ server fits.
 Plus a domain (~$10/year) with Cloudflare's free plan in front for HTTPS,
 caching and basic abuse protection.
 
-**Before going public (needs code):**
+**Before going public:**
 
-1. **Privacy between users.** Today everyone sees every swing. Decided: an
-   **owner key in a cookie**, with no sign-in and no database (see below).
-2. **Limits.** Maximum file size and clip length, one job at a time with a queue,
-   and a cap on swings per visitor.
-3. **Automatic cleanup.** Delete the original upload once converted, and expire
-   swings after 30–90 days. Disk is what grows the bill.
+1. ✅ **Privacy between users.** Done: an owner key in a cookie, with no sign-in
+   and no database (see "Hosted mode" below).
+2. ✅ **Limits.** Done: each visitor keeps at most **3 swings** (delete one to add
+   another), uploads up to 200 MB and 20 seconds, one job at a time, and "busy,
+   try again" past 10 waiting jobs.
+3. ✅ **Automatic cleanup.** Done: swings are deleted **3 days** after upload. The
+   original upload is kept until then, so Trim still works; with 3 swings for 3
+   days the disk per visitor stays small.
 4. **Wording and legal.** Drop "Nothing is uploaded anywhere" and add a short
    privacy note (it stores videos of people). Replace the McIlroy broadcast
    frames in `static/reference/`.
 5. **Restarts.** Jobs are lost on restart; fine at first, since the app already
    says so.
 
-**Privacy design (decided: owner key, no accounts).** On the first visit the
-server gives the browser a random owner key in a cookie (HttpOnly, Secure,
-SameSite=Lax). Each new swing records a hash of that key in its own
-`swing.json`, so the swings folder stays the only storage: no database. Every
-swing route (list, detail, frames, files, PDF, marking, analysis, delete) checks
-the owner and answers "not found" for anyone else. Swing IDs become random
-(~128 bits) instead of date + name, with the name kept for display. The app
-shows a "Your private link" to save, which signs another device into the same
-owner. Losing both the cookie and the link loses the swings, which is fine
-since they expire anyway. The owner key also counts swings for the per-visitor
-limit. A "hosted" setting turns all of this on; run locally, the app stays
-single-user exactly as today. Pages are marked noindex and keys never go in
-logs. Sign-in with accounts is not planned (it would need a database to
-maintain).
+**Hosted mode (built).** `swingcheck --hosted` turns it on; run without it, the
+app stays single-user exactly as before. The code is in `swingcheck/app/hosted.py`
+and the limits in `[hosted]` in `config/default.toml`.
+
+- **Owner key.** On the first visit the server gives the browser a random key in
+  a cookie (HttpOnly, SameSite=Lax, Secure over HTTPS). Each new swing records a
+  hash of it in its own `swing.json`, so the swings folder stays the only
+  storage: no database. Every swing route (list, detail, frames, files, PDF,
+  marking, analysis, jobs, delete) checks the owner and answers "not found" for
+  anyone else's swing. Swing IDs are random (128 bits), with the name kept for
+  display.
+- **Private link.** Your swings shows "Copy private link"
+  (`/#/claim/<key>`). Opening it on another device shows the same swings there.
+  The key sits after the `#`, so it never reaches the server's or Caddy's logs,
+  and the app removes it from the address bar once used. Losing both the cookie
+  and the link loses the swings, which is fine since they expire anyway.
+- **Limits.** Too big, too many swings or too busy is refused before the upload
+  is received. A clip over the length limit is deleted right after upload. The
+  upload page shows the limits, and says so when you already have 3 swings.
+- **Expiry.** A background sweep deletes swings 3 days after upload, at startup
+  and every 30 minutes. Each card and swing page says when ("Deleted Oct 8").
+- **Search engines.** Every response is marked `noindex`.
+- Sign-in with accounts is not planned (it would need a database to maintain).
 
 **Running it.** Docker, run as a service, Caddy in front for automatic HTTPS.
+Start it with `swingcheck --hosted --runs-dir <folder>`: it listens on
+127.0.0.1:8765 for Caddy, which forwards to it (also set a request body limit in
+Caddy, a little over `max_upload_mb`).
 Back up the swings folder, or treat swings as disposable. Time one swing on a PC
 first to know how many swings a 2-CPU server handles per hour.
 
@@ -827,6 +841,7 @@ The app's footer Ko-fi link comes from `KOFI_URL` at the top of
 swingcheck/
   app/                web app: server, background jobs, swing storage, frontend (static/)
     make_reference.py builds the McIlroy example frames in static/reference/
+    hosted.py         hosted mode (--hosted): owner-key privacy, swing limits, expiry
   pipeline.py         convert -> mark -> pose -> phases -> checks -> outputs
   config.py           loads config/default.toml + config/local.toml
   ingest.py           ffmpeg conversion

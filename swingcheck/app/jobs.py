@@ -64,6 +64,11 @@ class JobManager:
                     return job
         return None
 
+    def pending(self) -> int:
+        """How many jobs are queued or running."""
+        with self._lock:
+            return sum(job.state in ("queued", "running") for job in self._jobs.values())
+
     def latest_for(self, swing_id: str) -> Job | None:
         with self._lock:
             jobs = [j for j in self._jobs.values() if j.swing_id == swing_id]
