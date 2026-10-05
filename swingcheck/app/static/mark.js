@@ -431,25 +431,37 @@ export async function renderMark(view, id, isCurrent) {
     refresh();
   }
 
+  let hudShown = null; // the step and point the bar last asked for, to flash it on a change
   function renderHud(next) {
     const i = steps.findIndex(st => st.key === state.active);
     const after = steps[i + 1];
     const info = next ? pointInfo(state.active, next) : null;
+    const doneHint = after ? `Next step: ${after.title}.`
+      : unfinished().length ? `Still to mark: ${unfinished()[0].title.toLowerCase()}.` : "Every step is marked.";
     hud.replaceChildren(
       el("div", { class: "hud-text" },
-        el("span", { class: "hud-step" }, steps.length > 1 ? `${i + 1}/${steps.length} · ${stepDef().title}` : stepDef().title),
+        el("span", { class: "hud-step" }, steps.length > 1 ? `Step ${i + 1} of ${steps.length} · ${stepDef().title}` : stepDef().title),
         info
           ? el("span", { class: "hud-next" }, el("span", { class: `swatch ${info.shape}` }), `Click the ${info.label.toLowerCase()}`)
-          : el("span", { class: "hud-next done" }, "✓ Done")),
+          : el("span", { class: "hud-next done" }, "✓ Step done"),
+        el("span", { class: "hud-hint" }, info ? info.hint : doneHint)),
       el("div", { class: "actions" },
-        el("button", { class: "btn small", type: "button", onclick: undo, disabled: !started(state.active) }, "Undo"),
-        el("button", { class: "btn small", type: "button", disabled: !started(state.active),
+        el("button", { class: "btn small hud-btn", type: "button", onclick: undo, disabled: !started(state.active) }, "Undo"),
+        el("button", { class: "btn small hud-btn", type: "button", disabled: !started(state.active),
           onclick: () => { cur().points = {}; refresh(); } }, "Clear step"),
         !next && after ? el("button", { class: "btn small primary", type: "button", onclick: () => selectStep(after.key) }, `Next: ${after.title} ›`) : null,
         // Last step done: save once every step is marked, else go back to the first one left.
         !next && !after && !unfinished().length ? el("button", { class: "btn small primary", type: "button", onclick: save }, "Save and analyze") : null,
         !next && !after && unfinished().length
           ? el("button", { class: "btn small primary", type: "button", onclick: () => selectStep(unfinished()[0].key) }, `Finish: ${unfinished()[0].title} ›`) : null));
+    // A new instruction flashes once, so it's noticed.
+    const shown = `${state.active}:${next || "done"}`;
+    if (hudShown !== null && shown !== hudShown) {
+      hud.classList.remove("flash");
+      void hud.offsetWidth; // restart the animation
+      hud.classList.add("flash");
+    }
+    hudShown = shown;
   }
 
   function refresh() {
