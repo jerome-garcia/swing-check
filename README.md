@@ -547,13 +547,22 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    uploads and converts with a progress bar; the conversion straightens rotated
    phone video and keeps the slo-mo frame rate. It then takes a quick look
    through the clip (about 5–20 s) to find your swing, so each marking step can
-   open on a **suggested frame**. (Face-on is shown but disabled until a future
-   release.)
+   open on a **suggested frame**, and checks the camera at address. (Face-on is
+   shown but disabled until a future release.)
+
+   **Camera check.** The marking screen opens with the result: a green "✓ a good
+   down-the-line view", or what to film differently: camera off to one side or
+   not behind you at all (your shoulders and hips look too wide), facing the wrong
+   way (camera on the target side), small in the frame, head or feet cut off, or
+   hard to see. A red one means results would likely be wrong, so film again.
+   Thresholds are in `[camera_check]` in `config/default.toml`.
 2. **Mark your swing.** There are six steps, all required: address, then one
    per checkpoint. Each step tab shows its number, turning into a green ✓ once
    it's marked. **Save and analyze** unlocks once every step is marked, and
-   the line under it lists what's still to mark. Each step opens on its
-   suggested frame (the caption says *Suggested frame*); check it and scrub to
+   the line under it lists what's still to mark. The dark bar above the frame
+   says what to click next in large type, with exactly where under it (for
+   example *Click the ball*, *Center of the ball*); it flashes when it changes.
+   Each step opens on its suggested frame (the caption says *Suggested frame*); check it and scrub to
    the exact frame if needed with the slider, the ‹ › buttons or the arrow keys
    (Shift = 10 frames). **Back to the suggested frame** returns to it.
 
