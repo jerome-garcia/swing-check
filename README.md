@@ -416,7 +416,7 @@ Full analysis takes about 1.3–1.4× a Ryzen 7 5800H laptop: 73 s for McIlroy
 (657 frames), 98 s for a 240 fps clip (774 frames). Releases go out with
 `deploy/deploy.sh` (see Development: Releasing).
 
-**Admin page (`/admin`).** Numbers only, never anyone's swings: what's running, the
+**Admin page (`/admin`).** Numbers only, never anyone's swings, in the brand's look (deep-green bar, tiles, an hour-of-day line chart): what's running, the
 queue, uploads in progress, disk, version; uploads, conversions, and analyses per day
 for a week (with failures); typical wait and analysis time; recent errors; the most common camera-check findings; and how many browsers
 uploaded each day (a code from the browser's key and a secret that changes daily and

@@ -42,9 +42,13 @@ def test_summary_counts_days_speed_and_problems():
     assert s["camera"] == [("You're small in the frame", 1)]
     page = admin.page(s)
     assert "SwingCheck admin" in page and "+1 failed" in page and "Boom" in page
-    assert "from the last 3 days" in page and "Idle" in page and "Waiting in line" in page
+    assert "Active browsers (3 days)" in page and "Idle" in page and "In line" in page
+    assert "one at a time" not in page and "since the last restart" not in page  # descriptions removed
     live["running"] = [{"kind": "analyze", "for_s": 45}]
-    assert "Analyzing a swing · 45 s" in admin.page(admin.summary(events, live, now))
+    assert "Analyzing · 45 s" in admin.page(admin.summary(events, live, now))
+    hour = admin.datetime.fromtimestamp(now, admin.LOCAL_TZ).hour
+    assert s["hours"]["upload"][hour] == 3 and s["hours"]["analyze"][hour] == 1 and sum(s["hours"]["analyze"]) == 1
+    assert page.count("<polyline") == 2  # the hour chart: uploads and analyses
 
 
 def test_admin_is_open_on_your_own_computer(tmp_path):

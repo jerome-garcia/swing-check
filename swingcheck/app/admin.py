@@ -105,6 +105,11 @@ def summary(events: list[dict[str, Any]], live: dict[str, Any], now: float | Non
     month_ago = now - 30 * 86400
     camera = Counter(title for e in events if e["event"] == "convert" and e["t"] >= month_ago
                      for title in e.get("camera", []))
+    # When people use it: uploads and finished analyses by hour of day (PHT), last 7 days.
+    hours = {"upload": [0] * 24, "analyze": [0] * 24}
+    for e in events:
+        if e["t"] >= week_ago and (e["event"] == "upload" or (e["event"] == "analyze" and e.get("ok"))):
+            hours[e["event"]][datetime.fromtimestamp(e["t"], LOCAL_TZ).hour] += 1
     return {
         "live": live,
         "days": [{"date": d.isoformat(), "uploaders": len(uploaders[d]), **{k: per_day[d][k] for k in (
@@ -118,6 +123,7 @@ def summary(events: list[dict[str, Any]], live: dict[str, Any], now: float | Non
                      for e in sorted(events, key=lambda e: e["t"], reverse=True)
                      if e["event"] in ("convert", "analyze") and not e.get("ok")][:15],
         "camera": camera.most_common(5),
+        "hours": hours,
     }
 
 
@@ -165,15 +171,104 @@ def _count(ok: int, failed: int) -> str:
     return f"{ok}" + (f' <span class="bad">+{failed} failed</span>' if failed else "")
 
 
+def _day(iso: str) -> str:
+    day = datetime.fromisoformat(iso)
+    return f"{day:%a} {day.day}"  # "Mon 5": short enough for a phone
+
+
+def _hour_chart(hours: dict[str, list[int]]) -> str:
+    """A small line chart of activity by hour of day: uploads (bright green), analyses (orange)."""
+    w, h, left, bottom, top = 640, 170, 28, 22, 10
+    peak = max(1, *hours["upload"], *hours["analyze"])
+
+    def x(i: int) -> float:
+        return left + i * (w - left - 8) / 23
+
+    def y(v: float) -> float:
+        return top + (h - top - bottom) * (1 - v / peak)
+
+    def line(values: list[int], color: str, dash: str = "") -> str:
+        points = " ".join(f"{x(i):.1f},{y(v):.1f}" for i, v in enumerate(values))
+        extra = f' stroke-dasharray="{dash}"' if dash else ""
+        return (f'<polyline points="{points}" fill="none" stroke="{color}" stroke-width="2.5" '
+                f'stroke-linejoin="round" stroke-linecap="round"{extra}/>')
+
+    grid = "".join(f'<line x1="{left}" x2="{w - 8}" y1="{y(v):.1f}" y2="{y(v):.1f}" class="grid"/>'
+                   f'<text x="{left - 6}" y="{y(v) + 4:.1f}" text-anchor="end">{v}</text>'
+                   for v in sorted({0, peak // 2, peak}))
+    ticks = ((0, "12a"), (3, "3a"), (6, "6a"), (9, "9a"), (12, "12p"), (15, "3p"), (18, "6p"), (21, "9p"))
+    labels = "".join(f'<text x="{x(i):.1f}" y="{h - 4}" text-anchor="middle">{t}</text>' for i, t in ticks)
+    return (f'<svg class="chart" viewBox="0 0 {w} {h}" role="img" '
+            f'aria-label="Uploads and analyses by hour of day, last {DAYS_SHOWN} days">{grid}{labels}'
+            f'{line(hours["analyze"], "var(--plane)", "5 5")}{line(hours["upload"], "var(--bright)")}</svg>')
+
+
+STYLE = """
+  main { max-width: 920px; }
+  .admin-bar .brand-sub { color: var(--on-deep-soft); font-size: 13px; font-weight: 500; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .tile .label, th { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .tile .value { font-size: 26px; font-weight: 750; letter-spacing: -.02em; line-height: 1.2; margin-top: 4px; }
+  .tile .sub { color: var(--muted); font-size: 13px; }
+  h2 { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; }
+  h2 small { color: var(--muted); font-size: 13px; font-weight: 500; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+  .bad { color: var(--flag); } .muted { color: var(--muted); font-size: 13px; }
+  ul { margin: 0; padding-left: 18px; } li { margin: 6px 0; overflow-wrap: anywhere; }
+  .table-wrap { overflow-x: auto; }
+  td, th { white-space: nowrap; }
+  .chart { width: 100%; height: auto; display: block; }
+  @media (max-width: 640px) {
+    .admin-bar .brand-sub { display: none; }
+    .tiles { grid-template-columns: 1fr 1fr; }
+    .tile .value { font-size: 22px; }
+    th, td { padding: 6px; }
+    .chart text { font-size: 20px; }  /* the chart scales down to the phone: keep labels readable */
+  }
+  .chart text { fill: var(--muted); font-size: 11px; } .chart .grid { stroke: var(--border); stroke-width: 1; }
+  .legend { display: flex; gap: 16px; font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .legend span::before { content: ""; display: inline-block; width: 16px; height: 3px; border-radius: 2px;
+    margin-right: 6px; vertical-align: middle; background: var(--bright); }
+  .legend .an::before { background: var(--plane); }
+"""
+
+LOGO = ('<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">'
+        '<circle cx="16" cy="16" r="15" fill="#fff" fill-opacity="0.16"/><circle cx="16" cy="16" r="11" fill="#fff"/>'
+        '<circle cx="13" cy="13.5" r="1.3" fill="#c9cec6"/><circle cx="18.5" cy="12.5" r="1.3" fill="#c9cec6"/>'
+        '<circle cx="15.5" cy="18.5" r="1.3" fill="#c9cec6"/><circle cx="20" cy="17.5" r="1.3" fill="#c9cec6"/></svg>')
+
+THEME = ('<script>try { if (localStorage.getItem("swingcheck.theme") === "light") '
+         'document.documentElement.dataset.theme = "light"; } catch {}</script>')
+
+
 def page(data: dict[str, Any]) -> str:
-    """The admin page: plain HTML on the app's stylesheet, refreshing itself every 30 s."""
+    """The admin page: the app's stylesheet and brand header, refreshing itself every 30 s."""
     esc = html.escape
     live = data["live"]
-    doing = {"convert": "Converting a video", "analyze": "Analyzing a swing"}
-    running = ", ".join(f"{doing.get(r['kind'], r['kind'])} · {_duration(r['for_s'])}" for r in live["running"]) or "Idle"
+    doing = {"convert": "Converting", "analyze": "Analyzing"}
+    running = ", ".join(f"{doing.get(r['kind'], r['kind'])} · {_duration(r['for_s'])}"
+                        for r in live["running"]) or "Idle"
+
+    def tile(label: str, value: Any, sub: str = "") -> str:
+        return (f'<div class="tile"><div class="label">{label}</div><div class="value">{value}</div>'
+                + (f'<div class="sub">{sub}</div>' if sub else "") + "</div>")
+
+    active = f"Active browsers ({live['keep_days']} days)" if live.get("keep_days") else "Active browsers"
+    tiles = "".join([
+        tile("Processing now", esc(running)),
+        tile("In line", live["queued"]),
+        tile("Uploading", live["uploading"]),
+        tile("Swings stored", live["swings_stored"]),
+        tile(active, live["browsers_stored"]),
+        tile("Disk used", f"{live['disk_used_pct']}%", f"{live['disk_free_gb']} GB free"),
+        tile("Up for", _duration(live["up_s"]), esc(live["version"])),
+    ])
     rows = "".join(
-        f"<tr><td>{esc(datetime.fromisoformat(d['date']).strftime('%a %b %d'))}</td><td>{d['uploaders']}</td><td>{d['upload']}</td>"
-        f"<td>{_count(d['convert_ok'], d['convert_failed'])}</td><td>{_count(d['analyze_ok'], d['analyze_failed'])}</td></tr>"
+        f"<tr><td>{esc(_day(d['date']))}</td><td>{d['uploaders']}</td>"
+        f"<td>{d['upload']}</td><td>{_count(d['convert_ok'], d['convert_failed'])}</td>"
+        f"<td>{_count(d['analyze_ok'], d['analyze_failed'])}</td></tr>"
         for d in data["days"])
     problems = "".join(
         f"<li><span class=muted>{esc(datetime.fromtimestamp(p['t'], LOCAL_TZ).strftime('%b %d %H:%M'))} · "
@@ -182,39 +277,23 @@ def page(data: dict[str, Any]) -> str:
     camera = "".join(f"<li>{esc(title)} <span class=muted>× {n}</span></li>" for title, n in data["camera"]) \
         or "<li class=muted>None.</li>"
     speed = data["speed"]
+    timing = (f"wait {_duration(speed['median_wait_s'])} typical, {_duration(speed['longest_wait_s'])} longest"
+              f" · analysis {_duration(speed['median_analysis_s'])}")
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="30"><meta name="robots" content="noindex">
+<meta http-equiv="refresh" content="30"><meta name="robots" content="noindex"><meta name="theme-color" content="#123824">
 <title>SwingCheck admin</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css">
-<style>
-  main {{ max-width: 860px; }}
-  .grid2 {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }}
-  .stat {{ font-size: 22px; font-weight: 700; }}
-  table {{ width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }}
-  th, td {{ text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }}
-  .bad {{ color: var(--flag); }} .muted {{ color: var(--muted); font-size: 13px; }}
-  ul {{ margin: 0; padding-left: 18px; }} li {{ margin: 4px 0; overflow-wrap: anywhere; }}
-</style></head><body><main class="stack">
-<h1>SwingCheck admin</h1>
-<p class="muted">Numbers only: no swings, names, IP addresses, or keys. Refreshes every 30 s.</p>
-<section class="panel"><h2>Now</h2><div class="grid2">
-  <div><div class="muted">Working on now</div><div class="stat">{esc(running)}</div>
-    <div class="muted">one at a time: converting a new upload takes ~20 s, an analysis ~1.5 min</div></div>
-  <div><div class="muted">Waiting in line</div><div class="stat">{live['queued']}</div>
-    <div class="muted">swings waiting their turn to be converted or analyzed</div></div>
-  <div><div class="muted">Uploading now</div><div class="stat">{live['uploading']}</div>
-    <div class="muted">videos still being sent from someone's phone or computer</div></div>
-  <div><div class="muted">Swings stored · from browsers</div><div class="stat">{live['swings_stored']} · {live['browsers_stored']}</div>
-    <div class="muted">{f"browsers with swings from the last {live['keep_days']} days" if live.get('keep_days') else "browsers with swings stored"}</div></div>
-  <div><div class="muted">Disk</div><div class="stat">{live['disk_used_pct']}% used</div><div class="muted">{live['disk_free_gb']} GB free</div></div>
-  <div><div class="muted">Up for</div><div class="stat">{_duration(live['up_s'])}</div>
-    <div class="muted">since the last restart or release · running {esc(live['version'])}</div></div>
-</div></section>
-<section class="panel"><h2>Last {DAYS_SHOWN} days</h2>
-<table><tr><th>Day (PHT)</th><th>Uploaders</th><th>Uploads</th><th>Converted</th><th>Analyzed</th></tr>{rows}</table>
-<p class="muted">Uploaders: different browsers that uploaded that day (one person on phone and laptop counts twice).</p>
-<p class="muted">Typical wait in line {_duration(speed['median_wait_s'])} (longest {_duration(speed['longest_wait_s'])}) ·
-typical analysis {_duration(speed['median_analysis_s'])}</p></section>
+{THEME}<style>{STYLE}</style></head><body>
+<header class="topbar admin-bar"><span class="brand">{LOGO}<span class="brand-name">SwingCheck
+  <span class="stage-badge">Admin</span></span></span>
+  <span class="brand-sub">Numbers only · refreshes every 30 s</span></header>
+<main class="stack">
+<section class="tiles">{tiles}</section>
+<section class="panel"><h2>Activity by hour <small>last {DAYS_SHOWN} days, PHT</small></h2>
+{_hour_chart(data["hours"])}
+<div class="legend"><span>Uploads</span><span class="an">Analyses</span></div></section>
+<section class="panel"><h2>Last {DAYS_SHOWN} days <small>{timing}</small></h2>
+<div class="table-wrap"><table><tr><th>Day</th><th>Uploaders</th><th>Uploads</th><th>Converted</th><th>Analyzed</th></tr>{rows}</table></div></section>
 <section class="panel"><h2>Recent problems</h2><ul>{problems}</ul></section>
-<section class="panel"><h2>Camera check problems (30 days)</h2><ul>{camera}</ul></section>
+<section class="panel"><h2>Camera check problems <small>30 days</small></h2><ul>{camera}</ul></section>
 </main></body></html>"""
