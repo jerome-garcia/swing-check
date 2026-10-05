@@ -62,9 +62,9 @@ def test_reference_like_exit_is_green():
 @pytest.mark.parametrize("inside_by, status, label", [
     (0.3, "ok", "Exits on the swing plane"),
     (0.9, "warn", "Exits slightly steep"),
-    (1.3, "flag", "Exits steep"),
+    (1.3, "warn", "Exits steep"),  # past the red line, but Watch at most
     (-0.35, "warn", "Exits slightly flat"),
-    (-0.6, "flag", "Exits flat"),
+    (-0.6, "warn", "Exits flat"),
 ])
 def test_shaft_bands(inside_by, status, label):
     v = run(inside_by=inside_by, back=None)
@@ -77,12 +77,13 @@ def test_shaft_bands(inside_by, status, label):
     (-0.45, "ok", "same line as going back"),  # a club golfer's ~50%: fine after impact
     (-0.8, "warn", "slightly steeper than going back"),
     (0.8, "warn", "slightly flatter than going back"),
-    (-1.17, "flag", "steeper than going back"),  # the amateur swing: laid off going back
+    (-1.17, "warn", "steeper than going back"),  # the amateur swing: laid off going back (Watch at most)
 ])
 def test_same_line_bands(back, status, label):
     v = run(inside_by=0.0, back=back)
     row = v.rows[1]
     assert row.status == status and row.note.lower() == label.lower()
+    assert row.fix == "" and v.status != "flag"  # the follow-through is never Fix
 
 
 def test_without_halfway_back_shaft_only():

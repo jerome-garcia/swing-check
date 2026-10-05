@@ -23,7 +23,8 @@ from __future__ import annotations
 import numpy as np
 
 from swingcheck.analyzers import (MissingData, Overlay, PLANE_BAND_COLOR, PLANE_COLOR, REFERENCE_COLOR, Row,
-                                  STATUS_COLORS, SwingContext, Verdict, deg_text, grade, register, spot_mark)
+                                  STATUS_COLORS, SwingContext, Verdict, deg_text, grade, register, spot_mark,
+                                  watch_at_most)
 
 
 
@@ -128,7 +129,7 @@ def swing_plane(ctx: SwingContext) -> Verdict:
     # The shaft's angle depends on the club and the camera height as much as on the setup,
     # so it's a watch item at most: never "Fix" on its own (the wording still says "too").
     angle_band = grade(angle, cfg["angle_min"], cfg["angle_max"], cfg["angle_watch_min"], cfg["angle_watch_max"])
-    angle_status = "warn" if angle_band == "flag" else angle_band
+    angle_status = watch_at_most(angle_band)
     angle_ok = angle_status == "ok"
     angle_text = "In range" if angle_ok else (
         ("Slightly " if angle_band == "warn" else "Too ") + ("flat" if angle < cfg["angle_min"] else "steep"))

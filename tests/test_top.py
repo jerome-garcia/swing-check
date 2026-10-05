@@ -120,9 +120,9 @@ def test_judges_the_arm_and_the_hands_over_the_heel():
     (0.03, "ok", "Hands over your back heel"),      # McIlroy
     (-0.12, "ok", "Hands over your back heel"),
     (0.2, "warn", "Hands slightly toward the ball"),
-    (0.4, "flag", "Hands too far toward the ball"),
+    (0.4, "warn", "Hands too far toward the ball"),  # past the red line, but Watch at most
     (-0.2, "warn", "Hands slightly behind your back heel"),
-    (-0.4, "flag", "Hands behind your back heel"),
+    (-0.4, "warn", "Hands behind your back heel"),
 ])
 def test_hands_vs_trail_heel_bands(out, status, label):
     for mirror in (False, True):
@@ -132,7 +132,7 @@ def test_hands_vs_trail_heel_bands(out, status, label):
         assert v.status == status  # the arm is green, so the hands decide
         assert v.measurements["hands_out_from_heel"] == pytest.approx(out, abs=1e-3)
         assert row.value.endswith("toward the ball" if out >= 0 else "behind")
-        assert (row.good, row.fix) == ("within 8 cm of your heel", "more than 15 cm either way")
+        assert (row.good, row.fix) == ("within 8 cm of your heel", "")  # never Fix: no red range
         assert (label.lower() in v.label.lower()) == (status != "ok")
         assert (v.tip == "") == (status == "ok")
 

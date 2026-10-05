@@ -26,7 +26,7 @@ from __future__ import annotations
 import numpy as np
 
 from swingcheck.analyzers import (MissingData, Overlay, REFERENCE_COLOR, Row, STATUS_COLORS, SwingContext, Verdict,
-                                  clubhead_mark, deg_text, grade, hands_mark, register, spot_mark)
+                                  clubhead_mark, deg_text, grade, hands_mark, register, spot_mark, watch_at_most)
 from swingcheck.analyzers.dtl_body import posture_kept, with_body
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.geometry import angle_between_deg
@@ -85,8 +85,11 @@ def top(ctx: SwingContext) -> Verdict:
     heel_xy = np.median(heel, axis=0) if len(heel) else None
     if heel_xy is not None:
         out = ctx.units((hands[0] - heel_xy[0]) * forward)  # + = hands out toward the ball
-        heel_status = grade(out, -cfg["heel_max"], cfg["heel_max"], -cfg["heel_watch"], cfg["heel_watch"])
-        heel_soft = heel_status == "warn"
+        # Watch at most: deep or shallow hands at the top vary with the club (a driver is
+        # flatter) and the camera angle, and rarely cost a shot by themselves.
+        heel_band = grade(out, -cfg["heel_max"], cfg["heel_max"], -cfg["heel_watch"], cfg["heel_watch"])
+        heel_soft = heel_band == "warn"
+        heel_status = watch_at_most(heel_band)
         if heel_status == "ok":
             heel_label, heel_meaning, heel_tip = ("Hands over your back heel",
                                                   "your hands are right above your back (trail) heel", "")
@@ -101,8 +104,7 @@ def top(ctx: SwingContext) -> Verdict:
         heel_value = ("Right above it" if abs(ctx.cm(out)) < 0.75 else
                       f"{ctx.distance_text(out)} {'toward the ball' if out >= 0 else 'behind'}")
         heel_row = Row("Hands vs back heel", heel_value, heel_label.removeprefix("Hands ").capitalize(), heel_status,
-                       good=f"within {ctx.distance_text(cfg['heel_max'])} of your heel",
-                       fix=f"more than {ctx.distance_text(cfg['heel_watch'])} either way")
+                       good=f"within {ctx.distance_text(cfg['heel_max'])} of your heel")  # never Fix
     else:
         out, heel_status, heel_label, heel_meaning, heel_tip = None, "ok", "", "", ""
         heel_row = Row("Hands vs back heel", "Not measured", "Back heel not tracked around the top", "error")

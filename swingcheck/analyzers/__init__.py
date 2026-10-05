@@ -102,6 +102,13 @@ def spot_mark(xy, color: Color, show: tuple[int, int] | None, label: str = "") -
     return Overlay("ring", [(float(xy[0]), float(xy[1]))], color, label, show, 2)
 
 
+def watch_at_most(g: Grade) -> Grade:
+    """For a measurement that's a style point more than a fault (it varies with the club,
+    the camera, or good players' own styles): past its red limit it's still only "warn"
+    (Watch), never "flag" (Fix). The wording can still say "too"."""
+    return Grade("warn", min(1.0, g.depth)) if g == "flag" else g
+
+
 def grade(value: float, ok_lo: float, ok_hi: float, watch_lo: float, watch_hi: float) -> Grade:
     """Green / yellow / red: "ok" inside [ok_lo, ok_hi], "warn" inside [watch_lo, watch_hi], else "flag"
     (a Grade, so it also carries how deep into the band the value is)."""

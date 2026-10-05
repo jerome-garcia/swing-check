@@ -215,7 +215,7 @@ your **hands**. Body points come from tracking. Settings live in
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
 | **Front arm vs spine** | angle between the lead arm (lead shoulder → hands) and the spine, drawn from the hip center through the head, on the top frame; 90° = the arm matches the shoulders | 75–105°: **Front arm matches your shoulders** | 65–75° (*slightly above*) or 105–115° (*slightly below*) | under 65°: arm lifted **above the shoulders** (upright); over 115°: **below the shoulders** (flat, around the body) |
-| **Hands vs back heel** | how far the hands sit across the picture from straight above the back (trail) heel (tracked, median of a few frames around the top), as % of torso length; drawn as a dashed plumb line up from the heel | within ±15% (about 7 cm): **Hands over your back heel** | 15–30% (*hands slightly toward the ball* / *slightly behind your back heel*) | more than 30%: **hands too far toward the ball** or **behind your back heel** (deep, flat) |
+| **Hands vs back heel** | how far the hands sit across the picture from straight above the back (trail) heel (tracked, median of a few frames around the top), as % of torso length; drawn as a dashed plumb line up from the heel | within ±15% (about 7 cm): **Hands over your back heel** | 15–30% (*hands slightly toward the ball* / *slightly behind your back heel*); past 30% the wording says **too far toward the ball** or **behind your back heel** (deep, flat), still yellow | never: it varies with the club (a driver is flatter) and the camera angle, and rarely costs a shot by itself |
 | **Spine bend kept** | as at the takeaway and halfway back: spine bend on the top frame vs address, from tracking; its lines are drawn only when it's off (the frame already has a spine line) | up to 8° more upright or 5° more bent | 8–12° more upright (*slightly standing up*) or 5–10° more bent | more than 12° more upright: **standing up** in the backswing; more than 10° more bent: **bending over** |
 
 The card shows the worst of the three. References for the hands: McIlroy about
@@ -288,13 +288,14 @@ where the shaft looks about as steep as at halfway back. Settings live in
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Shaft points at** | the shaft line carried down to the ball's level, as at halfway back | 25% past the ball to 75% inside: **Exits on the swing plane** | to 50% past (*slightly flat*) or 75–110% inside (*slightly steep*) | beyond: **Exits flat** / **Exits steep** |
-| **Vs halfway back** | this landing vs the halfway-back landing, as % of torso length | within ±60%: **Same line as going back** | 60–100% apart (*slightly steeper / flatter than going back*) | more than 100% apart |
+| **Shaft points at** | the shaft line carried down to the ball's level, as at halfway back | 25% past the ball to 75% inside: **Exits on the swing plane** | to 50% past (*slightly flat*) or 75–110% inside (*slightly steep*); beyond: **Exits flat** / **Exits steep**, still yellow | never |
+| **Vs halfway back** | this landing vs the halfway-back landing, as % of torso length | within ±60%: **Same line as going back** | 60–100% apart (*slightly steeper / flatter than going back*); more than 100%: *steeper / flatter than going back*, still yellow | never |
 
 The bands are loose on purpose: the ball is gone by the follow-through, so it
-mostly reflects what came before. Only a clearly different exit turns red, and
-these rows rank lowest when picking **Work on first** (a red follow-through is
-only the focus when nothing else is red).
+mostly reflects what came before, good players exit in different ways, and a
+late frame or a driver makes the exit look flatter. So the follow-through is
+**Watch at most, never Fix**, and its rows rank lowest when picking **Work on
+first**.
 
 Set from the same reference golfer (follow-through on the ball, halfway back
 16–26% inside: about 20% apart, green). McIlroy exits 48% inside, 18% steeper
