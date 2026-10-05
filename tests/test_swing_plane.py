@@ -97,11 +97,29 @@ def test_angle_has_its_own_bands():
     grip = far_clubhead + 0.5 * (target - far_clubhead)
     v = run(grip, clubhead=far_clubhead)
     angle = v.measurements["shaft_angle_deg"]
-    assert angle < 45
-    expected = "warn" if angle >= 40 else "flag"
-    assert {r.label: r.status for r in v.rows}["Shaft angle"] == expected
-    assert v.status == expected
-    assert "Points at your belt buckle" in v.label
+    assert angle < 40  # past the yellow band...
+    # ...but the angle depends on the club and camera height: Watch at most, never Fix.
+    assert {r.label: r.status for r in v.rows}["Shaft angle"] == "warn"
+    assert v.status == "warn"
+    assert "Points at your belt buckle" in v.label and "shaft too flat" in v.label
+    assert {r.label: r.fix for r in v.rows}["Shaft angle"] == ""
+
+
+def test_driver_has_its_own_ranges():
+    from swingcheck.config import for_club, load_config
+    driver = for_club(load_config(), "driver")
+    assert driver["golfer"]["club"] == "driver"
+    assert driver["analyzers"]["swing_plane"]["angle_min"] == 35
+    assert driver["analyzers"]["address"]["spine_bend_min"] == 25
+    assert driver["analyzers"]["address"]["arm_max_from_vertical"] == 20
+    assert load_config()["analyzers"]["swing_plane"]["angle_min"] == 45  # irons unchanged
+    # A 38-degree shaft pointing at the belt: flat for an iron (Watch), fine for a driver.
+    clubhead = np.array([830.0, 1035.0])
+    grip = clubhead + 0.5 * (HIP + 0.25 * (SHOULDER - HIP) - clubhead)
+    iron = run(grip, clubhead=clubhead)
+    assert 35 < iron.measurements["shaft_angle_deg"] < 40
+    assert {r.label: r.status for r in iron.rows}["Shaft angle"] == "warn"
+    assert {r.label: r.status for r in run(grip, clubhead=clubhead, config=driver).rows}["Shaft angle"] == "ok"
 
 
 def test_ranges_come_from_config():

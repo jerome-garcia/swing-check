@@ -1,4 +1,4 @@
-import { api, el, features, HAND_NAMES, listText, navigate, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
+import { api, el, features, CLUB_NAMES, HAND_NAMES, listText, navigate, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
 import { swingHeader } from "./swing.js";
 
 // Marking steps per view, all required. After address, one step per checkpoint, and
@@ -720,6 +720,25 @@ export async function renderMark(view, id, isCurrent) {
     },
   }, HAND_NAMES[choice]));
 
+  // --- Club: driver or iron ---------------------------------------------------
+  // Some ranges differ for a driver (taller, arms further out, flatter shaft); marks stay.
+  const clubButtons = ["iron", "driver"].map(choice => el("button", {
+    type: "button", class: `btn small ${choice === (s.club || "iron") ? "selected" : ""}`,
+    "aria-pressed": String(choice === (s.club || "iron")),
+    onclick: async () => {
+      if (choice === (s.club || "iron")) return;
+      if (s.status === "analyzed" && !confirm(`Switch to ${CLUB_NAMES[choice].toLowerCase()}? Your marks stay; `
+          + "save and analyze again to update the results.")) return;
+      try {
+        await postJSON(`/api/swings/${encodeURIComponent(id)}/club`, { club: choice });
+        if (isCurrent()) await renderMark(view, id, isCurrent);
+      } catch (err) {
+        viewError.textContent = err.message;
+        viewError.hidden = false;
+      }
+    },
+  }, CLUB_NAMES[choice]));
+
   // --- Keyboard -------------------------------------------------------------
   function onKey(e) {
     if (!isCurrent()) { document.removeEventListener("keydown", onKey); return; }
@@ -768,6 +787,9 @@ export async function renderMark(view, id, isCurrent) {
         el("details", { class: "panel" },
           el("summary", {}, el("strong", {}, "Golfer"), el("span", { class: "subtle small" }, ` · ${HAND_NAMES[s.handedness] || HAND_NAMES.right}`)),
           el("div", { class: "actions" }, handButtons)),
+        el("details", { class: "panel" },
+          el("summary", {}, el("strong", {}, "Club"), el("span", { class: "subtle small" }, ` · ${CLUB_NAMES[s.club] || CLUB_NAMES.iron}`)),
+          el("div", { class: "actions" }, clubButtons)),
         el("details", { class: "panel" },
           el("summary", {}, el("strong", {}, "Camera view"), el("span", { class: "subtle small" }, ` · ${s.view === "fo" ? "Face-on" : "Down-the-line"}`)),
           el("div", { class: "actions" }, viewButtons),

@@ -224,3 +224,14 @@ def test_left_handed_mirror_matches(kwargs):
     assert left.label == right.label
     for key in ("arm_from_vertical_deg", "spine_bend_deg", "knee_flex_deg"):
         assert left.measurements[key] == pytest.approx(right.measurements[key], abs=0.2), key
+
+
+def test_driver_setup_stands_taller_with_arms_further_out():
+    # Spine 27 degrees and arms 17 degrees out: watch/fix with an iron, good with a driver.
+    from swingcheck.config import for_club
+    pose = dtl_address_pose(arm_deg=17, spine_deg=27)
+    iron = run_address(pose)
+    assert iron.status == "flag"
+    driver = run_address(pose, config=for_club(CONFIG, "driver"))
+    assert driver.status == "ok" and driver.label == "Good posture"
+    assert run_address(dtl_address_pose(spine_deg=42), config=for_club(CONFIG, "driver")).status == "warn"  # 25-40 for a driver

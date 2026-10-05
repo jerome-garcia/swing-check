@@ -125,10 +125,13 @@ def swing_plane(ctx: SwingContext) -> Verdict:
     else:
         aim, aim_note = "Points at your belt buckle", "At address, the club shaft points at your belt buckle."
 
-    angle_status = grade(angle, cfg["angle_min"], cfg["angle_max"], cfg["angle_watch_min"], cfg["angle_watch_max"])
+    # The shaft's angle depends on the club and the camera height as much as on the setup,
+    # so it's a watch item at most: never "Fix" on its own (the wording still says "too").
+    angle_band = grade(angle, cfg["angle_min"], cfg["angle_max"], cfg["angle_watch_min"], cfg["angle_watch_max"])
+    angle_status = "warn" if angle_band == "flag" else angle_band
     angle_ok = angle_status == "ok"
     angle_text = "In range" if angle_ok else (
-        ("Slightly " if angle_status == "warn" else "Too ") + ("flat" if angle < cfg["angle_min"] else "steep"))
+        ("Slightly " if angle_band == "warn" else "Too ") + ("flat" if angle < cfg["angle_min"] else "steep"))
 
     order = {"ok": 0, "warn": 1, "flag": 2}
     status = max(aim_status, angle_status, key=order.__getitem__)
@@ -185,7 +188,6 @@ def swing_plane(ctx: SwingContext) -> Verdict:
                 fix=f"more than {ctx.distance_text(cfg['belt_watch_min'])} below or "
                     f"{ctx.distance_text(cfg['belt_watch_max'])} above your hips"),
             Row("Shaft angle", deg_text(angle), angle_text, angle_status,
-                good=f"{cfg['angle_min']:g}–{cfg['angle_max']:g}° from the ground",
-                fix=f"under {cfg['angle_watch_min']:g}° or over {cfg['angle_watch_max']:g}°"),
+                good=f"{cfg['angle_min']:g}–{cfg['angle_max']:g}° from the ground"),  # never Fix: no red range
         ],
     )

@@ -100,10 +100,15 @@ camera side (your trail side). Settings live in `[analyzers.address]` in
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| Arms hang straight down | shoulder → wrist line, degrees from vertical (+ reaching out, − tucked in) | within ±10° | 10–15° | past 15° |
-| Spine tilt | forward bend of the hip-center → shoulder-center line from vertical | 30–45° | 25–30° or 45–50° | below 25° or above 50° |
+| Arms hang straight down | shoulder → wrist line, degrees from vertical (+ reaching out, − tucked in) | within ±10° (driver ±20°) | 10–15° (driver 20–25°) | past 15° (driver 25°) |
+| Spine tilt | forward bend of the hip-center → shoulder-center line from vertical | 30–45° (driver 25–40°) | 25–30° or 45–50° (driver 20–25° or 40–45°) | below 25° or above 50° (driver 20° / 45°) |
 | Knee bend | knee flex = 180° − the hip-knee-ankle angle (0° = straight leg) | 15–35° | 10–15° or 35–40° | below 10° or above 40° |
 | Upper back (rounding) | how far the outline of your back bulges beyond a straight line from hip to shoulder level, from the body silhouette (MediaPipe segmentation), as % of torso length | up to 6% (≈3 cm) | 6–9% | past 9% (≈4.5 cm) |
+
+**Driver or wood.** With a driver you stand taller, the hands sit further out, and
+the shaft is flatter, so a swing marked *Driver or wood* uses the driver ranges in
+brackets above (`[clubs.driver]` in `config/default.toml`, set by hand for now:
+there's no pro driver clip to tune them on yet). Everything else is the same.
 
 When something is out of range, the card says how far and which way to move,
 rounded up so following it lands you in green (e.g. *Spine bend 29°: Bend 2°
@@ -122,7 +127,7 @@ line crosses it. Settings live in `[analyzers.swing_plane]`.
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
 | **Shaft points at** (key check) | where the extended shaft line crosses your torso, as % of the way from hip center (0%) to shoulder center (100%) | 0–45%: **Points at your belt buckle** | −10–0%: *just below your belt*; 45–60%: *just above your belt* | below −10%: **Points below your belt** (shaft too flat: too far from the ball / hands too low); above 60%: **Points above your belt** (too upright: too close / hands too high) |
-| **Shaft angle** | angle of the line above horizontal | 45–65° | 40–45° or 65–70° | below 40° or above 70° (check the club and camera height) |
+| **Shaft angle** | angle of the line above horizontal | 45–65° (driver 35–55°) | outside green: *slightly* flat or steep, or *too* flat or steep past 40° / 70° (driver 30° / 60°) | never: it depends on the club and camera height as much as the setup, so it's a watch item at most (with a tip to check them) |
 
 **The swing plane line** that checkpoints 3–8 are judged against starts at the
 address clubhead and points at the belt buckle. When your shaft already points
@@ -647,7 +652,9 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    shown but disabled until a future release.) Choose **Right-handed** or
    **Left-handed** under *Golfer*; the choice is remembered for next time, and a
    swing's handedness can be switched later on the marking screen (*Golfer*):
-   the marks stay, and it's analyzed again.
+   the marks stay, and it's analyzed again. The same goes for **Club**: *Iron or
+   wedge* (irons, hybrids, and wedges) or *Driver or wood* (driver and fairway
+   woods), which sets a few address ranges (see checkpoint 1).
 
    **Camera check.** The marking screen opens with the result: a green "✓ a good
    down-the-line view", or what to film differently: camera off to one side or

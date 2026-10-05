@@ -1,5 +1,5 @@
 import { TERMS_VERSION } from "./legal.js";
-import { api, el, features, HAND_NAMES, listText, navigate, plural, progressBlock, swingUrl } from "./util.js";
+import { api, CLUB_NAMES, el, features, HAND_NAMES, listText, navigate, plural, progressBlock, swingUrl } from "./util.js";
 
 const HAND_KEY = "swingcheck.handedness"; // the last choice, so it's preset next time
 
@@ -11,13 +11,24 @@ function rememberHand(hand) {
   try { localStorage.setItem(HAND_KEY, hand); } catch { /* private window: just not remembered */ }
 }
 
+const CLUB_KEY = "swingcheck.club"; // also remembered: a range session is often one club
+
+function rememberedClub() {
+  try { return localStorage.getItem(CLUB_KEY) === "driver" ? "driver" : "iron"; } catch { return "iron"; }
+}
+
+function rememberClub(club) {
+  try { localStorage.setItem(CLUB_KEY, club); } catch { /* private window: just not remembered */ }
+}
+
 // Upload with XMLHttpRequest: fetch() can't report upload progress.
-function uploadWithProgress(file, viewChoice, hand, agreed, onProgress) {
+function uploadWithProgress(file, viewChoice, hand, club, agreed, onProgress) {
   return new Promise((resolve, reject) => {
     const form = new FormData();
     form.append("file", file);
     form.append("view", viewChoice);
     form.append("handedness", hand);
+    form.append("club", club);
     if (agreed) form.append("agreed_terms", TERMS_VERSION);
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "/api/swings");
@@ -51,6 +62,7 @@ export async function renderUpload(view, isCurrent) {
   // With face-on held back, down-the-line is the only choice, so preselect it.
   let viewChoice = faceOn ? null : "dtl";
   let hand = rememberedHand();
+  let club = rememberedClub();
 
   const fileName = el("div", { class: "file-status subtle" }, "No video chosen");
   const dropTitle = el("div", { class: "dropzone-title" }, "Choose a video");
@@ -95,6 +107,11 @@ export async function renderUpload(view, isCurrent) {
   }, el("strong", {}, HAND_NAMES[h]),
   el("span", { class: "subtle" }, h === "right" ? "Lead with your left side (most golfers)" : "Lead with your right side")));
 
+  const clubButtons = ["iron", "driver"].map(c => el("button", {
+    type: "button", class: "choice", "data-club": c, onclick: () => { club = c; refresh(); },
+  }, el("strong", {}, CLUB_NAMES[c]),
+  el("span", { class: "subtle" }, c === "iron" ? "Irons, hybrids, and wedges" : "Driver and fairway woods")));
+
   const error = el("div", { class: "notice error", hidden: true });
   const agreeBox = hosted ? el("input", { type: "checkbox", id: "agree", onchange: () => refresh() }) : null;
   const submit = el("button", { class: "btn primary", type: "submit", disabled: true }, "Upload and convert");
@@ -120,6 +137,7 @@ export async function renderUpload(view, isCurrent) {
   function refresh() {
     for (const b of viewButtons) b.classList.toggle("selected", b.dataset.view === viewChoice);
     for (const b of handButtons) b.classList.toggle("selected", b.dataset.hand === hand);
+    for (const b of clubButtons) b.classList.toggle("selected", b.dataset.club === club);
     const missing = [!file && "choose a video", !viewChoice && "pick the camera view",
       agreeBox && !agreeBox.checked && "tick the agreement"].filter(Boolean);
     submit.disabled = missing.length > 0;
@@ -135,7 +153,8 @@ export async function renderUpload(view, isCurrent) {
       form.replaceWith(progress.node);
       try {
         rememberHand(hand);
-        const res = await uploadWithProgress(file, viewChoice, hand, agreeBox ? agreeBox.checked : false,
+        rememberClub(club);
+        const res = await uploadWithProgress(file, viewChoice, hand, club, agreeBox ? agreeBox.checked : false,
           // At 100% the server still saves and checks the file: don't leave the bar looking stuck.
           f => (f < 1 ? progress.update(f, `${Math.round(f * 100)}% uploaded`)
             : progress.update(null, "Uploaded. Saving and checking your video…")));
@@ -151,6 +170,7 @@ export async function renderUpload(view, isCurrent) {
   el("section", { class: "panel" }, el("h2", {}, "1. Video"), input, drop),
   el("section", { class: "panel" }, el("h2", {}, "2. Camera view"), el("div", { class: "choices" }, viewButtons)),
   el("section", { class: "panel" }, el("h2", {}, "3. Golfer"), el("div", { class: "choices" }, handButtons)),
+  el("section", { class: "panel" }, el("h2", {}, "4. Club"), el("div", { class: "choices" }, clubButtons)),
   agreeBox ? el("label", { class: "agree", for: "agree" }, agreeBox,
     el("span", {}, "I agree to the ", el("a", { href: "/terms", target: "_blank" }, "Terms of use"), " and ",
       el("a", { href: "/privacy", target: "_blank" }, "Privacy notice"),

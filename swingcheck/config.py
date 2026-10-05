@@ -40,6 +40,20 @@ def load_config(override_path: Path | None = None) -> dict[str, Any]:
     return config
 
 
+CLUBS = ("iron", "driver")
+
+
+def for_club(config: dict[str, Any], club: str) -> dict[str, Any]:
+    """The config for a swing with this club: [clubs.<club>] laid over the rest."""
+    if club not in CLUBS:
+        raise ValueError(f"club must be one of {CLUBS}, not {club!r}")
+    override = config.get("clubs", {}).get(club, {})
+    _check_keys(config, override, f"[clubs.{club}]")
+    merged = _deep_merge(config, override)
+    merged["golfer"] = {**merged["golfer"], "club": club}
+    return merged
+
+
 def _check_keys(base: dict[str, Any], override: dict[str, Any], source: str, prefix: str = "") -> None:
     for key, value in override.items():
         dotted = f"{prefix}{key}"

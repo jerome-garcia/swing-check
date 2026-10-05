@@ -334,6 +334,19 @@ def test_handedness_is_per_swing_and_switching_it_asks_for_a_new_analysis(client
     assert r.status_code == 400
 
 
+def test_club_is_per_swing_and_switching_it_asks_for_a_new_analysis(client, runs):
+    d = client.get("/api/swings/old_swing").json()
+    assert d["club"] == "iron" and d["status"] == "analyzed"  # older swings: irons
+    assert client.post("/api/swings/old_swing/club", json={"club": "putter"}).status_code == 400
+    r = client.post("/api/swings/old_swing/club", json={"club": "driver"})
+    assert r.status_code == 200 and r.json()["club"] == "driver"
+    assert r.json()["status"] == "marked"  # marks kept; the iron analysis no longer counts
+    r = client.post("/api/swings", files={"file": ("a.mov", b"x")}, data={"view": "dtl", "club": "driver"})
+    assert client.get(f"/api/swings/{r.json()['id']}").json()["club"] == "driver"
+    client.app.state.jobs.wait(r.json()["job"]["id"], timeout=60)
+    assert client.post("/api/swings", files={"file": ("a.mov", b"x")}, data={"view": "dtl", "club": "putter"}).status_code == 400
+
+
 def test_key_frames_are_shown_as_small_cached_jpegs(tmp_path):
     import cv2
     import numpy as np

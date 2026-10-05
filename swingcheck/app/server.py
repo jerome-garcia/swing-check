@@ -26,7 +26,7 @@ from swingcheck.app.frames import FrameReader
 from swingcheck.checkpoints import checkpoints_json
 from swingcheck.app.jobs import JobManager
 from swingcheck.app.store import Store, SwingNotFound
-from swingcheck.config import PROJECT_ROOT, load_config
+from swingcheck.config import CLUBS, PROJECT_ROOT, for_club, load_config
 from swingcheck.ingest import IngestError, VideoInfo, probe
 from swingcheck.output.summary_pdf import summary_pdf
 from swingcheck.pipeline import (PipelineError, analyze, ingest, load_camera_check, load_suggested, save_marks,
@@ -104,6 +104,10 @@ class ViewIn(BaseModel):
 
 class HandednessIn(BaseModel):
     handedness: str
+
+
+class ClubIn(BaseModel):
+    club: str
 
 
 class TrimIn(BaseModel):
@@ -199,8 +203,8 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
             raise HTTPException(503, "SwingCheck is busy with other swings right now. Try again in a few minutes.")
 
     def swing_config(meta) -> dict[str, Any]:
-        """The config for one swing: the app's, with this golfer's handedness."""
-        cfg = copy.deepcopy(config)
+        """The config for one swing: the app's, with this golfer's handedness and club."""
+        cfg = for_club(copy.deepcopy(config), meta.club)
         cfg["golfer"]["handedness"] = meta.handedness
         return cfg
 
@@ -224,6 +228,10 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     def check_handedness(handedness: str) -> None:
         if handedness not in ("right", "left"):
             raise HTTPException(400, "Choose right-handed or left-handed")
+
+    def check_club(club: str) -> None:
+        if club not in CLUBS:
+            raise HTTPException(400, "Choose driver or iron")
 
     def check_view(view: str) -> None:
         if view not in ("dtl", "fo"):
@@ -271,9 +279,11 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
 
     @app.post("/api/swings")
     def upload_swing(request: Request, file: UploadFile = File(...), view: str = Form(...),
-                     handedness: str = Form("right"), agreed_terms: str | None = Form(None)) -> dict[str, Any]:
+                     handedness: str = Form("right"), club: str = Form("iron"),
+                     agreed_terms: str | None = Form(None)) -> dict[str, Any]:
         check_view(view)
         check_handedness(handedness)
+        check_club(club)
         if limits and not agreed_terms:
             raise HTTPException(400, "Agree to the Terms of use and Privacy notice to upload.")
         ext = Path(file.filename or "").suffix.lower()
@@ -282,7 +292,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         if limits and len(owned(request)) >= limits["max_swings"]:
             raise HTTPException(409, full_message())
         check_not_busy()
-        meta = store.create(file.filename or "swing", view, owner=owner(request), handedness=handedness)
+        meta = store.create(file.filename or "swing", view, owner=owner(request), handedness=handedness, club=club)
         meta.source_file = f"source{ext}"
         if limits:  # which terms this upload was agreed under, and when
             meta.notes["agreed_terms"] = {"version": agreed_terms[:40], "at": meta.created}
@@ -378,6 +388,18 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
             raise HTTPException(409, "This swing is still being processed.")
         meta = store.meta(swing_id)
         meta.handedness = body.handedness
+        store.save_meta(meta)
+        return with_expiry(store.summary(swing_id))
+
+    @app.post("/api/swings/{swing_id}/club")
+    def set_club(swing_id: str, body: ClubIn, request: Request) -> dict[str, Any]:
+        """Driver or iron. Marks stay; the analysis is redone, since some ranges change."""
+        swing_or_404(swing_id, request)
+        check_club(body.club)
+        if jobs.active_for(swing_id):
+            raise HTTPException(409, "This swing is still being processed.")
+        meta = store.meta(swing_id)
+        meta.club = body.club
         store.save_meta(meta)
         return with_expiry(store.summary(swing_id))
 

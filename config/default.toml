@@ -8,6 +8,7 @@
 
 [golfer]
 handedness = "right"          # "right" | "left"; the app sets it per swing (upload page)
+club = "iron"                 # "iron" (irons and wedges) | "driver" (driver and woods); per swing too
 # Target direction in the frame. "auto" infers it from handedness and view:
 #   fo  (camera facing golfer): right-handed -> target is screen-right
 #   dtl (camera behind golfer, looking at target): target is into the screen
@@ -352,3 +353,21 @@ max_queued_jobs = 10          # conversions/analyses waiting; past this, "busy, 
 # Uploads per IP address in 24 hours, so clearing cookies (a fresh owner key, so a fresh
 # swing limit) can't be used to upload without end. Counted in memory only.
 max_uploads_per_ip_per_day = 12
+
+[clubs.driver]
+# A driver (or wood) changes the set-up: you stand taller, the hands sit further
+# out, and the shaft is flatter. These replace the matching iron settings above
+# for a swing marked "Driver or wood". Set by hand for now (no pro driver clip
+# to tune against yet).
+[clubs.driver.analyzers.address]
+spine_bend_min = 25         # green 25-40 degrees (irons 30-45)
+spine_bend_max = 40
+spine_bend_watch_min = 20
+spine_bend_watch_max = 45
+arm_max_from_vertical = 20  # arms a bit forward: green up to 20 degrees out (irons 10)
+arm_watch_max = 25
+[clubs.driver.analyzers.swing_plane]
+angle_min = 35              # flatter shaft: green 35-55 degrees (irons 45-65)
+angle_max = 55
+angle_watch_min = 30
+angle_watch_max = 60
