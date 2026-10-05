@@ -67,6 +67,14 @@ def test_clean_page_addresses_get_the_app(client):
     assert client.get("/reference/reference.json").status_code == 200  # absolute: works from any page
 
 
+def test_link_preview_tags_and_image(client):
+    html = client.get("/").text
+    assert 'property="og:image" content="https://swingcheck.org/og-image.png"' in html
+    assert 'property="og:title"' in html and 'name="twitter:card"' in html
+    image = client.get("/og-image.png")
+    assert image.status_code == 200 and image.headers["content-type"] == "image/png"
+
+
 def test_fingerprint_changes_with_the_files(tmp_path, monkeypatch):
     for f in server.STATIC.iterdir():
         if f.is_file():
