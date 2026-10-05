@@ -315,7 +315,7 @@ server fits.
 
 | Option | Cost | Fit |
 |---|---|---|
-| **Hetzner Cloud, 2 vCPU / 4 GB** | ~€4–6/month (EU), more in Singapore | **Chosen.** Enough RAM for MediaPipe, real disk; the Singapore region is close to Philippine users |
+| **Hetzner Cloud, 2 vCPU / 4 GB** | ~€4–6/month (EU), more in Singapore | **Suggested.** Enough RAM for MediaPipe, real disk; the Singapore region is close to Philippine users |
 | DigitalOcean / Vultr / Linode, 2 GB | ~$12/month | Easy, but more money for less; the $4–6 1 GB plans are too small |
 | Oracle Cloud free tier (ARM) | free | MediaPipe on ARM can be a hassle, and free accounts get reclaimed |
 | Render / Railway / Fly free tiers | free–cheap | Poor fit: they sleep, have little RAM, and the disk can be wiped |
