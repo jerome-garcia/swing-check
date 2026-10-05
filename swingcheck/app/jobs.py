@@ -39,6 +39,7 @@ class Job:
     ahead: int | None = None  # while queued: jobs running or queued before this one
     error: str | None = None
     created: float = field(default_factory=time.time)
+    started: float | None = None
     finished: float | None = None
 
     def to_json(self) -> dict[str, Any]:
@@ -46,7 +47,9 @@ class Job:
 
 
 class JobManager:
-    def __init__(self) -> None:
+    def __init__(self, on_finish: Callable[[Job], None] | None = None) -> None:
+        # Called with each job once it's done or failed (the admin page's event log).
+        self._on_finish = on_finish
         self._jobs: dict[str, Job] = {}
         self._fns: dict[str, JobFn] = {}
         self._queue: queue.Queue[str] = queue.Queue()
@@ -74,6 +77,11 @@ class JobManager:
                 if job.swing_id == swing_id and job.state in ("queued", "running"):
                     return self._placed(job)
         return None
+
+    def snapshot(self) -> list[Job]:
+        """Copies of the queued and running jobs, in the order they run (admin page)."""
+        with self._lock:
+            return [Job(**asdict(j)) for j in self._jobs.values() if j.state in ("queued", "running")]
 
     def pending(self) -> int:
         """How many jobs are queued or running."""
@@ -124,6 +132,7 @@ class JobManager:
             with self._lock:
                 job, fn = self._jobs[job_id], self._fns.pop(job_id)
                 job.state, job.message, job.ahead = "running", "Starting", None
+                job.started = time.time()
 
             def progress(stage: str, fraction: float | None, message: str, job: Job = job) -> None:
                 with self._lock:
@@ -141,3 +150,8 @@ class JobManager:
                     job.message = "Failed"
                     job.finished = time.time()
                 traceback.print_exc()
+            if self._on_finish:
+                try:
+                    self._on_finish(job)
+                except Exception:  # noqa: BLE001 - stats must never break the queue
+                    traceback.print_exc()

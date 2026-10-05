@@ -6,8 +6,10 @@ import copy
 import hashlib
 import json
 import logging
+import os
 import shutil
 import subprocess
+import time
 from importlib import metadata
 from pathlib import Path
 from typing import Any
@@ -18,6 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from swingcheck.analyzers import REGISTRY, discover
+from swingcheck.app import admin
 from swingcheck.app import hosted as hosting
 from swingcheck.app.frames import FrameReader
 from swingcheck.checkpoints import checkpoints_json
@@ -93,7 +96,29 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     """The app. `hosted` runs it for the public (see swingcheck/app/hosted.py): every
     visitor sees only their own swings, with limits; otherwise it's single-user."""
     store = Store(runs_dir or PROJECT_ROOT / "runs")
-    jobs = JobManager()
+    events = admin.EventLog(store.root / admin.EVENTS_FILE)
+    started_at = time.time()
+
+    def job_finished(job) -> None:
+        """Log each finished job for the admin page: kind, outcome, wait, and run time, plus
+        the camera check's findings after a conversion. Nothing about who or which swing."""
+        fields: dict[str, Any] = {
+            "ok": job.state == "done",
+            "wait_s": round(job.started - job.created, 1) if job.started else None,
+            "run_s": round(job.finished - job.started, 1) if job.started and job.finished else None,
+        }
+        if job.error:  # with the swing's folder (and so its id) blanked out
+            error = job.error.replace(str(store.root / job.swing_id), "<swing>").replace(job.swing_id, "<swing>")
+            fields["error"] = error[:500]
+        if job.kind == "convert" and job.state == "done":
+            try:
+                suggest = json.loads((store.root / job.swing_id / "suggest.json").read_text())
+                fields["camera"] = [f["title"] for f in suggest.get("camera") or []]
+            except (OSError, ValueError):
+                pass
+        events.add(job.kind, **fields)
+
+    jobs = JobManager(on_finish=job_finished)
     frames = FrameReader()
     config = load_config()
     limits = config["hosted"] if hosted else None
@@ -242,6 +267,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
                 store.delete(meta.id)
                 raise HTTPException(400, too_long)
         job = start_convert(meta.id)
+        events.add("upload", view=view, handedness=handedness)
         return {"id": meta.id, "job": job.to_json()}
 
     def clip_too_long(path: Path) -> str | None:
@@ -491,6 +517,26 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
             return None
 
     page = index_page()
+
+    # Admin page (swingcheck/app/admin.py): numbers only. Hosted, Cloudflare Access guards
+    # /admin with an email one-time code; the app also checks the email Access vouches for
+    # against SWINGCHECK_ADMIN_EMAIL (set on the server, not in the repo). Without it, or
+    # from anyone else, /admin doesn't exist.
+    admin_email = os.environ.get("SWINGCHECK_ADMIN_EMAIL", "").strip().lower()
+
+    def admin_allowed(request: Request) -> bool:
+        if not hosted:
+            return True  # your own computer
+        who = request.headers.get("cf-access-authenticated-user-email", "").strip().lower()
+        return bool(admin_email) and bool(request.headers.get("cf-access-jwt-assertion")) and who == admin_email
+
+    @app.get("/admin", include_in_schema=False)
+    def admin_page(request: Request) -> HTMLResponse:
+        if not admin_allowed(request):
+            raise HTTPException(404, "Not Found")
+        live = admin.live_status(jobs.snapshot(), uploading, store.root, version, started_at)
+        return HTMLResponse(admin.page(admin.summary(events.read(), live)),
+                            headers={"Cache-Control": "no-store"})
 
     # The app's pages (clean addresses, routed in the browser: static/app.js). Opening or
     # reloading any of them gets the app, which then shows that page.

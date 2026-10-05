@@ -416,6 +416,17 @@ Full analysis takes about 1.3–1.4× a Ryzen 7 5800H laptop: 73 s for McIlroy
 (657 frames), 98 s for a 240 fps clip (774 frames). Releases go out with
 `deploy/deploy.sh` (see Development: Releasing).
 
+**Admin page (`/admin`).** Numbers only, never anyone's swings: what's running, the
+queue, uploads in progress, disk, version; uploads, conversions, and analyses per day
+for a week (with failures); typical wait and analysis time; recent errors; right- vs
+left-handed and the most common camera-check findings. Swings are deleted after 3 days,
+so the counts come from `admin-events.jsonl` in the swings folder: event, time,
+durations, and errors (swing folder blanked), no names, IPs, or keys, kept 90 days
+(the Privacy page says so). Hosted, Cloudflare Access guards `/admin` with an email
+one-time code, and the app also checks the email Access vouches for against
+`SWINGCHECK_ADMIN_EMAIL` (set in a systemd drop-in on the server, not in the repo);
+without it the page doesn't exist. Locally it's open.
+
 **Scaling notes.** One app process only: jobs live in memory, so never run
 several workers. Jobs run one at a time (pose uses the whole CPU), so grow with a
 bigger server, not more processes. A queued job tells its page its place in line
