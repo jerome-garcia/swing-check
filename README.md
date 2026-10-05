@@ -335,8 +335,9 @@ caching and basic abuse protection.
 1. ✅ **Privacy between users.** Done: an owner key in a cookie, with no sign-in
    and no database (see "Hosted mode" below).
 2. ✅ **Limits.** Done: each visitor keeps at most **4 swings** (delete one to add
-   another), uploads up to 200 MB and 20 seconds, one job at a time, and "busy,
-   try again" past 10 waiting jobs.
+   another), uploads up to 95 MB (Cloudflare's free plan refuses uploads over
+   100 MB) and 20 seconds, one job at a time, and "busy, try again" past 10
+   waiting jobs.
 3. ✅ **Automatic cleanup.** Done: swings are deleted **3 days** after upload. The
    original upload is kept until then, so Trim still works; with 4 swings for 3
    days the disk per visitor stays small.

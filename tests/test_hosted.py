@@ -119,7 +119,7 @@ def test_upload_limits(alice, app):
     limits["max_upload_mb"] = 0.00001
     r = upload(alice)
     assert r.status_code == 413 and "MB" in r.json()["detail"]
-    limits["max_upload_mb"] = 200
+    limits["max_upload_mb"] = 95
     limits["max_queued_jobs"] = 0
     r = upload(alice)
     assert r.status_code == 503 and "busy" in r.json()["detail"]
