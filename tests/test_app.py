@@ -229,3 +229,4 @@ def test_conversion_lost_to_a_restart_can_run_again(client, runs):
     assert d["status"] == "uploaded" and d["job"] is None
     r = client.post(f"/api/swings/{meta.id}/trim", json={"start": None, "end": None})
     assert r.status_code == 200 and r.json()["job"]["kind"] == "convert"
+    client.app.state.jobs.wait(r.json()["job"]["id"], timeout=60)  # don't leave it running at exit
