@@ -1,4 +1,4 @@
-"""swing-check web app: a local FastAPI server plus a static single-page frontend."""
+"""SwingCheck web app: a local FastAPI server plus a static single-page frontend."""
 
 from __future__ import annotations
 
@@ -63,7 +63,7 @@ def create_app(runs_dir: Path | None = None) -> FastAPI:
     jobs = JobManager()
     frames = FrameReader()
     config = load_config()
-    app = FastAPI(title="swing-check", docs_url=None, redoc_url=None)
+    app = FastAPI(title="SwingCheck", docs_url=None, redoc_url=None)
     app.state.store = store
     app.state.jobs = jobs
     app.state.config = config

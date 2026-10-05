@@ -24,7 +24,7 @@ def _lan_address() -> str | None:
 
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(prog="swingcheck", description="Start the swing-check app.")
+    parser = argparse.ArgumentParser(prog="swingcheck", description="Start the SwingCheck app.")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--phone", action="store_true",
                         help="also allow devices on your Wi-Fi (e.g. your iPhone) to open the app; there is no login")
@@ -39,7 +39,7 @@ def main(argv: list[str] | None = None) -> None:
 
     host = "0.0.0.0" if args.phone else "127.0.0.1"
     url = f"http://localhost:{args.port}"
-    print(f"swing-check is running at {url}")
+    print(f"SwingCheck is running at {url}")
     if args.phone:
         lan = _lan_address()
         print(f"On your phone (same Wi-Fi), open: http://{lan or '<this PC IP>'}:{args.port}")

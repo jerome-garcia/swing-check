@@ -1,1 +1,1 @@
-"""The swing-check web app."""
+"""The SwingCheck web app."""

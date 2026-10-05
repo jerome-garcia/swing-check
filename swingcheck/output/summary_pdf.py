@@ -133,13 +133,13 @@ def summary_pdf(folder: Path, swing_name: str, created: str, analysis: dict[str,
     view = analysis.get("view", "dtl")
     items = _items(view, analysis.get("verdicts", []))
     date = created[:10] if created else ""
-    doc = _Doc(f"Swing Check · {swing_name} · {date}")
+    doc = _Doc(f"SwingCheck · {swing_name} · {date}")
     doc.alias_nb_pages()
     doc.add_page()
 
     # Title.
     doc.font(8.5, True, TURF)
-    doc.cell(0, 5, doc.text_ok("SWING CHECK · " + ("DOWN THE LINE" if view == "dtl" else "FACE ON")),
+    doc.cell(0, 5, doc.text_ok("SWINGCHECK · " + ("DOWN THE LINE" if view == "dtl" else "FACE ON")),
              new_x="LMARGIN", new_y="NEXT")
     doc.font(22, True)
     doc.cell(0, 11, doc.text_ok(f"Swing summary: {swing_name}"), new_x="LMARGIN", new_y="NEXT")

@@ -1,4 +1,4 @@
-# swing-check
+# SwingCheck
 
 A golf swing analyzer that runs on your own computer. Upload a **down-the-line**
 video of one swing, click the ball and club, and it gives you an annotated
@@ -13,9 +13,9 @@ are done. **Face-on** analysis is held back for a future release.
 Everything runs locally with Python, OpenCV, MediaPipe Pose and ffmpeg. Nothing
 is uploaded anywhere.
 
-### Support swing-check
+### Support SwingCheck
 
-swing-check is free. If it helps your game, you can
+SwingCheck is free. If it helps your game, you can
 [support it on Ko-fi](https://ko-fi.com/jeromegarcia) to help cover the server
 and upkeep costs. Thank you!
 
@@ -310,7 +310,7 @@ detection, and trends across sessions.
    ```
 
    Open a **new** terminal afterwards so `ffmpeg` is on your PATH.
-3. **Install swing-check** from the project folder:
+3. **Install SwingCheck** from the project folder:
 
    ```bash
    py -3 -m venv .venv
@@ -681,7 +681,7 @@ Other useful settings:
 | `ffmpeg not found on PATH` (conversion fails) | Install it (Setup step 2), open a new terminal, and start the app again. |
 | Warning that the clip is 30 or 60 fps when you filmed slo-mo | The file was re-exported on the way off the phone. Use the original (see Filming). |
 | Phone can't open the app | Start with `swingcheck --phone`, check the phone is on the same Wi-Fi, and allow Python through the Windows firewall on private networks. |
-| "Can't reach the swing-check app" or "The app was restarted while this was running" | The app stopped (its terminal was closed or it was restarted) during a conversion or analysis. Analysis runs inside the app, so closing it stops the job. Start `swingcheck` again and press **Try again**. |
+| "Can't reach the SwingCheck app" or "The app was restarted while this was running" | The app stopped (its terminal was closed or it was restarted) during a conversion or analysis. Analysis runs inside the app, so closing it stops the job. Start `swingcheck` again and press **Try again**. |
 | Address checks measured on the wrong frame | **Edit marks**, scrub to your set-up position, and save again. |
 | Upper back reads rounded but isn't | Loose clothing changes the outline; check the line drawn on the address key frame. |
 | Wrong impact frame | **Adjust impact** under Impact frame on the results page. |

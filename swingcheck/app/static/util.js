@@ -1,6 +1,6 @@
-// Shared helpers for the swing-check frontend.
+// Shared helpers for the SwingCheck frontend.
 
-const OFFLINE = "Can't reach the swing-check app. Is it still running? If you closed or restarted it, start it again and try once more.";
+const OFFLINE = "Can't reach the SwingCheck app. Is it still running? If you closed or restarted it, start it again and try once more.";
 
 export async function api(path, options = {}) {
   let res;

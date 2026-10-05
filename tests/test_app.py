@@ -78,7 +78,7 @@ def test_delete(client, runs):
 
 def test_frontend_served(client):
     r = client.get("/")
-    assert r.status_code == 200 and "swing-check" in r.text
+    assert r.status_code == 200 and "SwingCheck" in r.text
 
 
 def test_upload_rejects_non_video_and_bad_view(client):

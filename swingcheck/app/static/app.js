@@ -1,4 +1,4 @@
-// swing-check frontend: a tiny hash router over a few views.
+// SwingCheck frontend: a tiny hash router over a few views.
 //   #/                 history
 //   #/new              upload a swing
 //   #/swing/<id>       the swing (progress, results, or the next step)
