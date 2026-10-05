@@ -269,7 +269,9 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
                 raise HTTPException(400, too_long)
         job = start_convert(meta.id)
         who = owner(request)  # hosted: a code that matches this browser today only (admin.DailyCode)
-        events.add("upload", view=view, handedness=handedness, **({"u": daily_codes.code(who)} if who else {}))
+        took = round(time.monotonic() - getattr(request.state, "upload_started", time.monotonic()), 1)
+        events.add("upload", view=view, handedness=handedness, upload_s=took,
+                   **({"u": daily_codes.code(who)} if who else {}))
         return {"id": meta.id, "job": job.to_json()}
 
     def clip_too_long(path: Path) -> str | None:
@@ -469,6 +471,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         if request.method != "POST" or request.url.path != "/api/swings":
             return await call_next(request)
         uploading += 1
+        request.state.upload_started = time.monotonic()  # the upload event logs how long sending took
         try:
             return await call_next(request)
         finally:

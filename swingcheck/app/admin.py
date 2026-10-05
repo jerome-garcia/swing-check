@@ -102,6 +102,8 @@ def summary(events: list[dict[str, Any]], live: dict[str, Any], now: float | Non
     jobs = [e for e in events if e["event"] in ("convert", "analyze") and e["t"] >= week_ago]
     analyses = [e for e in jobs if e["event"] == "analyze" and e.get("ok")]
     waits = [e["wait_s"] for e in jobs if e.get("wait_s") is not None]
+    upload_times = [e["upload_s"] for e in events
+                    if e["event"] == "upload" and e["t"] >= week_ago and e.get("upload_s") is not None]
     month_ago = now - 30 * 86400
     camera = Counter(title for e in events if e["event"] == "convert" and e["t"] >= month_ago
                      for title in e.get("camera", []))
@@ -117,6 +119,8 @@ def summary(events: list[dict[str, Any]], live: dict[str, Any], now: float | Non
         "speed": {
             "median_wait_s": round(statistics.median(waits)) if waits else None,
             "longest_wait_s": round(max(waits)) if waits else None,
+            "average_wait_s": round(statistics.mean(waits)) if waits else None,
+            "average_upload_s": round(statistics.mean(upload_times)) if upload_times else None,
             "median_analysis_s": round(statistics.median(e["run_s"] for e in analyses)) if analyses else None,
         },
         "problems": [{"t": e["t"], "event": e["event"], "error": e.get("error", "")}
@@ -138,6 +142,8 @@ def live_status(jobs, uploading: int, runs_dir: Path, version: str, started: flo
         "queued": sum(j.state == "queued" for j in jobs),
         "uploading": uploading,
         "swings_stored": sum(1 for p in runs_dir.iterdir() if p.is_dir()),
+        "swings_bytes": sum(f.stat().st_size for p in runs_dir.iterdir() if p.is_dir()
+                            for f in p.rglob("*") if f.is_file()),
         "disk_free_gb": round(disk.free / 1e9, 1),
         "disk_used_pct": round(100 * (disk.total - disk.free) / disk.total),
     }
@@ -154,6 +160,10 @@ def _duration(seconds: float | None) -> str:
     if seconds < 48 * 3600:
         return f"{round(seconds / 3600)} h"
     return f"{round(seconds / 86400)} days"
+
+
+def _size(n: int) -> str:
+    return f"{n / 1e6:.0f} MB" if n < 1e9 else f"{n / 1e9:.1f} GB"
 
 
 def _count(ok: int, failed: int) -> str:
@@ -195,7 +205,7 @@ def _hour_chart(hours: dict[str, list[int]]) -> str:
 STYLE = """
   main { max-width: 920px; }
   .admin-bar .brand-sub { color: var(--on-deep-soft); font-size: 13px; font-weight: 500; }
-  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
   .tile .label, th { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
   .tile .value { font-size: 26px; font-weight: 750; letter-spacing: -.02em; line-height: 1.2; margin-top: 4px; }
@@ -246,9 +256,9 @@ def page(data: dict[str, Any]) -> str:
 
     tiles = "".join([
         tile("Processing now", esc(running)),
-        tile("In line", live["queued"]),
-        tile("Uploading", live["uploading"]),
-        tile("Swings stored", live["swings_stored"]),
+        tile("In line", live["queued"], f"avg wait {_duration(data['speed']['average_wait_s'])}"),
+        tile("Uploading", live["uploading"], f"avg upload {_duration(data['speed']['average_upload_s'])}"),
+        tile("Swings stored", live["swings_stored"], _size(live.get("swings_bytes", 0))),
         tile("Disk used", f"{live['disk_used_pct']}%", f"{live['disk_free_gb']} GB free"),
         tile("Up for", _duration(live["up_s"]), esc(live["version"])),
     ])
