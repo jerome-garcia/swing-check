@@ -1,6 +1,17 @@
 import {
-  checkpointStates, el, features, fileUrl, imageUrl, listText, pollJob, postJSON, progressBlock, scorecard, STATUS_WORD, swingUrl,
+  api, checkpointStates, el, features, fileUrl, imageUrl, listText, pollJob, postJSON, progressBlock, scorecard, STATUS_WORD, swingUrl,
 } from "./util.js";
+
+// The link just made by Share summary, so the page can say it was copied after it re-renders.
+let justShared = null;
+
+// Phone: the share sheet (Messenger, Viber, ...). Computer: copy the link.
+async function sendLink(url) {
+  if (navigator.share && window.matchMedia("(pointer: coarse)").matches) {
+    try { await navigator.share({ title: "My swing check", url }); return "shared"; } catch { /* closed */ }
+  }
+  try { await navigator.clipboard.writeText(url); return "copied"; } catch { return null; }
+}
 
 const PHASE_LABELS = {
   address: "Address", takeaway: "Takeaway", top: "Top", early_downswing: "Early downswing", impact: "Impact",
@@ -326,6 +337,41 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
   const pdf = el("a", { class: "btn", href: `/api/swings/${encodeURIComponent(s.id)}/summary.pdf`, download: "" },
     "Download summary");
   const report = { label: "Text report", href: fileUrl(s.id, "report.txt"), newTab: true };
+  // Sharing: a link anyone can open to the summary (swingcheck/app/share.py), until the
+  // swing is deleted. Sharing again updates it with the latest results, at the same link.
+  const shared = s.notes && s.notes.share;
+  const shareUrl = shared ? `${location.origin}/s/${shared.code}` : null;
+  const shareError = el("span", { class: "subtle small", hidden: true });
+  const shareBtn = el("button", {
+    class: "btn", type: "button",
+    title: "A link anyone can open: this summary, until the swing is deleted",
+    onclick: async () => {
+      shareBtn.disabled = true;
+      try {
+        const res = await postJSON(`/api/swings/${encodeURIComponent(s.id)}/share`, {});
+        justShared = { url: res.url, how: await sendLink(res.url) };
+        rerender();
+      } catch (err) {
+        shareBtn.disabled = false;
+        shareError.textContent = err.message;
+        shareError.hidden = false;
+      }
+    },
+  }, shared ? "Share again" : "Share summary");
+  const copied = justShared && shareUrl && justShared.url.endsWith(`/s/${shared.code}`) ? justShared.how : null;
+  justShared = null;
+  const shareNote = shared ? el("div", { class: "notice share-note" },
+    "Your summary is shared: anyone with ", el("a", { href: shareUrl, target: "_blank", rel: "noopener" }, "this link"),
+    " can see it until the swing is deleted. ",
+    copied === "copied" ? el("strong", {}, "Link copied. ") : null,
+    el("button", { class: "linkish", type: "button", onclick: async e => {
+      e.target.textContent = (await sendLink(shareUrl)) === "copied" ? "Copied" : "Copy link";
+    } }, "Copy link"),
+    " · ",
+    el("button", { class: "linkish", type: "button", onclick: async () => {
+      await api(`/api/swings/${encodeURIComponent(s.id)}/share`, { method: "DELETE" });
+      rerender();
+    } }, "Stop sharing")) : null;
 
   let main;
   if (checkpoints.length) {
@@ -346,7 +392,8 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
     main = [el("section", { class: "stack-sm" }, (a.verdicts || []).map(verdictCard)), freezeFrames(s)];
   }
   view.replaceChildren(
-    header([pdf, reanalyze], [report]),
+    header([pdf, shareBtn, reanalyze], [report]),
+    shareNote || "", shareError,
     clipNotes(warnings) || "",
     el("div", { class: "results-layout" },
       el("div", { class: "stack main-col" }, ...main),

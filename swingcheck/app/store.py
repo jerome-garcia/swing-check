@@ -90,6 +90,17 @@ class Store:
                 pass
         return self._inferred_meta(folder)
 
+    def shared(self, code: str) -> SwingMeta | None:
+        """The swing whose summary is shared under this code (swingcheck/app/share.py), if any."""
+        if not code:
+            return None
+        for folder in self.root.iterdir():
+            if folder.is_dir() and ID_PATTERN.match(folder.name) and (folder / META).exists():
+                meta = self.meta(folder.name)
+                if (meta.notes.get("share") or {}).get("code") == code:
+                    return meta
+        return None
+
     def _inferred_meta(self, folder: Path) -> SwingMeta:
         view = None
         for name in ("analysis.json", "marks.json"):

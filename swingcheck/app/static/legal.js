@@ -4,8 +4,8 @@
 
 import { el, features, plural } from "./util.js";
 
-export const TERMS_VERSION = "2026-10-05";
-const UPDATED = "October 5, 2026";
+export const TERMS_VERSION = "2026-10-06";
+const UPDATED = "October 6, 2026";
 const contact = () => el("a", { href: "https://ko-fi.com/jeromegarcia", target: "_blank", rel: "noopener" }, "the SwingCheck Ko-fi page");
 
 const section = (title, ...body) => el("section", { class: "legal-section" }, el("h2", {}, title), ...body);
@@ -81,11 +81,14 @@ function privacy(hosted) {
         "Your IP address, counted in memory for a day to limit uploads. It isn't saved with your swings.",
         "Anonymous counts for running the service: when a video was uploaded, converted, or analyzed, how long it took, and any error message. They don't include your video, its name, your IP address, or your key, and they're kept for 90 days. To count how many browsers uploaded each day, an upload is tagged with a code that changes every day, so one day can't be linked to the next.")),
     section("Why",
-      p("Only to analyze your swing and show the results to you. Your videos aren't sold, shared, used for ",
-        "advertising, or used to train anything.")),
+      p("Only to analyze your swing and show the results to you. Your videos aren't sold, shared (unless you ",
+        "share a summary yourself), used for advertising, or used to train anything.")),
     section("Who can see your swings",
       p("Only browsers with your key: this one, and any device where you open your private link. Anyone you give ",
-        "that link to can see and delete your swings, so keep it private.")),
+        "that link to can see and delete your swings, so keep it private."),
+      p("If you choose Share summary on a swing, anyone with that link can see its summary: the PDF, a picture of ",
+        "the address, top, and impact frames, and the checkpoint results. Not the video, its name, or your other ",
+        "swings. Stop sharing ends it at once, and it ends anyway when the swing is deleted.")),
     section("How long it's kept",
       p(`Every swing is deleted automatically ${plural(hosted.keep_days, "day")} after upload, or straight away when you `,
         "delete it. The cookie stays in your browser until you clear it, but by then it points to nothing.")),

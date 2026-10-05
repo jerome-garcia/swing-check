@@ -821,6 +821,15 @@ to fix), built from the last analysis; **Edit marks**, the text report and
 **Delete** are in the ⋯ menu. In the annotated video, the
 header names only the checkpoint whose lines are on screen.
 
+**Share summary** makes a link anyone can open (`/s/<code>`, opens the share
+sheet on a phone, copies the link on a computer): a page with the address, top,
+and impact frames, the 8 checkpoints with their results, and **View the PDF**,
+plus a preview card in Messenger and similar apps. It's a snapshot saved inside
+the swing's folder (`swingcheck/app/share.py`): never the video or its file name,
+and the code is random and separate from your key. **Share again** updates it at
+the same link after a re-analysis; **Stop sharing** ends it at once, and it ends
+anyway when the swing is deleted.
+
 On the swing list, each analyzed swing shows the same 8 dots under its
 thumbnail; swings still to mark or analyze say what's next.
 

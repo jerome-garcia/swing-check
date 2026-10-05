@@ -10,6 +10,7 @@ import os
 import shutil
 import subprocess
 import time
+from datetime import datetime
 from importlib import metadata
 from pathlib import Path
 from typing import Any
@@ -20,7 +21,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from swingcheck.analyzers import REGISTRY, discover
-from swingcheck.app import admin
+from swingcheck.app import admin, share
 from swingcheck.app import hosted as hosting
 from swingcheck.app.frames import FrameReader
 from swingcheck.checkpoints import checkpoints_json
@@ -493,6 +494,78 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         return Response(pdf, media_type="application/pdf",
                         headers={"Content-Disposition": f'attachment; filename="{filename}-summary.pdf"',
                                  "Cache-Control": "no-store"})
+
+    # --- Shared summaries (swingcheck/app/share.py) ------------------------------------
+    def share_url(request: Request, code: str) -> str:
+        return f"{site_url(request)}/s/{code}"
+
+    def site_url(request: Request) -> str:
+        # Hosted, the app sits behind Caddy on plain HTTP; the public address is HTTPS.
+        return f"https://{request.headers.get('host')}" if limits else str(request.base_url).rstrip("/")
+
+    @app.post("/api/swings/{swing_id}/share")
+    def share_summary(swing_id: str, request: Request) -> dict[str, Any]:
+        """Share (or refresh) this swing's summary: a snapshot of the PDF, a preview picture,
+        and the checkpoint list, at a link anyone can open. Sharing again keeps the link."""
+        folder = swing_or_404(swing_id, request)
+        analysis_path = folder / "analysis.json"
+        if store.status(swing_id) != "analyzed" or not analysis_path.exists():
+            raise HTTPException(409, "Analyze this swing first, then share its summary.")
+        meta = store.meta(swing_id)
+        analysis = json.loads(analysis_path.read_text())
+        pdf = summary_pdf(folder, meta.name, meta.created or "", analysis, config["golfer"]["torso_cm"])
+        (folder / share.PDF_FILE).write_bytes(pdf)
+        share.write_preview(folder / "summary.png", folder / share.PREVIEW_FILE)
+        old = meta.notes.get("share") or {}
+        meta.notes["share"] = {"code": old.get("code") or share.new_code(), "shared": datetime.now().isoformat(timespec="seconds"),
+                               "items": share.snapshot_items(analysis)}
+        store.save_meta(meta)
+        return {"url": share_url(request, meta.notes["share"]["code"])}
+
+    @app.delete("/api/swings/{swing_id}/share")
+    def stop_sharing(swing_id: str, request: Request) -> dict[str, str]:
+        folder = swing_or_404(swing_id, request)
+        meta = store.meta(swing_id)
+        meta.notes.pop("share", None)
+        store.save_meta(meta)  # the link stops working now, before the files go
+        for name in (share.PDF_FILE, share.PREVIEW_FILE):
+            (folder / name).unlink(missing_ok=True)
+        return {"shared": "no"}
+
+    def shared_or_404(code: str):
+        meta = store.shared(code)
+        if meta is None:
+            raise HTTPException(404, "This shared swing isn't available any more.")
+        return meta
+
+    @app.get("/s/{code}", include_in_schema=False)
+    def shared_page(code: str, request: Request) -> HTMLResponse:
+        meta = shared_or_404(code)
+        folder = store.path(meta.id)
+        until = hosting.expires_at(meta.created, limits["keep_days"]) if limits and meta.created else None
+        details = " · ".join(["Face-on" if meta.view == "fo" else "Down-the-line",
+                              "Left-handed" if meta.handedness == "left" else "Right-handed",
+                              "Driver or wood" if meta.club == "driver" else "Iron or wedge"])
+        return HTMLResponse(share.page(meta.notes["share"], site_url(request), details, until,
+                                       (folder / share.PREVIEW_FILE).exists()),
+                            headers={"Cache-Control": "no-cache"})
+
+    @app.get("/s/{code}/summary.pdf", include_in_schema=False)
+    def shared_pdf(code: str) -> FileResponse:
+        meta = shared_or_404(code)
+        path = store.path(meta.id) / share.PDF_FILE
+        if not path.exists():
+            raise HTTPException(404, "This shared swing isn't available any more.")
+        return FileResponse(path, media_type="application/pdf", headers={
+            "Content-Disposition": 'inline; filename="swing-summary.pdf"', "Cache-Control": "no-cache"})
+
+    @app.get("/s/{code}/preview.jpg", include_in_schema=False)
+    def shared_preview(code: str) -> FileResponse:
+        meta = shared_or_404(code)
+        path = store.path(meta.id) / share.PREVIEW_FILE
+        if not path.exists():
+            raise HTTPException(404, "No preview")
+        return FileResponse(path, media_type="image/jpeg", headers={"Cache-Control": "no-cache"})
 
     @app.delete("/api/swings/{swing_id}")
     def delete_swing(swing_id: str, request: Request) -> dict[str, str]:
