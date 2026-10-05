@@ -120,6 +120,11 @@ low_level_tolerance = 0.15
 # the top; tuned on seven clips (McIlroy, Tiger, Morikawa, and four amateurs), all
 # within about a frame. A takeaway frame you mark replaces it.
 takeaway_fraction = 0.12
+# Halfway back (lead arm parallel to the ground), suggested on the marking screen: where
+# the hands have risen this fraction of the way from address height to top height.
+# Tuned on the same seven clips: within a frame on six, McIlroy (club set early,
+# hands low) about 0.1 s early.
+halfway_back_fraction = 0.45
 # Early downswing checkpoint: where the hands come back down past this height, as a
 # fraction of the way from address hand height up to top hand height.
 downswing_fraction = 0.35

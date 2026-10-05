@@ -179,6 +179,17 @@ def detect_phases(hands: np.ndarray, fps: float, scale: float, cfg: dict[str, An
     return phases
 
 
+def halfway_back(hands: np.ndarray, fps: float, phases: Phases, cfg: dict[str, Any]) -> int:
+    """Lead arm parallel to the ground: where the hands have risen this fraction of the way
+    from address height to top height. Height fits better than time here, since tempo
+    varies (some backswings rush the second half). Only a suggestion for the marking screen."""
+    y = clean_track(hands, fps, max_gap_ms=0, smoothing_ms=cfg["smoothing_ms"])[:, 1]
+    a, top = phases.address, phases.top
+    with np.errstate(invalid="ignore"):
+        up = _first(y[phases.takeaway : top + 1] <= y[a] - cfg["halfway_back_fraction"] * (y[a] - y[top]))
+    return phases.takeaway + up if up is not None else (phases.takeaway + top) // 2
+
+
 def validate(phases: Phases, frame_count: int) -> None:
     values = [getattr(phases, name) for name in PHASE_NAMES]
     if not all(0 <= v < frame_count for v in values):

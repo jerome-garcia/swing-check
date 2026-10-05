@@ -58,8 +58,9 @@ const STEP_POINT_INFO = {
 // Where to start a checkpoint step that has no detected phase of its own (checked against
 // hand-marked McIlroy, Tiger and amateur clips).
 const FRAME_GUESS = {
-  // Lead arm parallel comes about 30% of the way from takeaway to the top.
-  halfway_back: p => (p.takeaway !== undefined && p.top !== undefined ? p.takeaway + 0.3 * (p.top - p.takeaway) : undefined),
+  // Lead arm parallel (when the suggestions don't include it, e.g. older swings): about
+  // 40% of the way from takeaway to the top.
+  halfway_back: p => (p.takeaway !== undefined && p.top !== undefined ? p.takeaway + 0.4 * (p.top - p.takeaway) : undefined),
   // Shaft parallel coming down is about halfway from the early downswing to impact.
   downswing: p => (p.early_downswing !== undefined && p.impact !== undefined ? (p.early_downswing + p.impact) / 2 : undefined),
   // Trail arm parallel after impact: about as long after impact as the downswing took from the top.

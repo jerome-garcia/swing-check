@@ -80,7 +80,8 @@ def test_suggest_frames_saves_detected_phases_for_this_video(tmp_path, monkeypat
     monkeypatch.setattr(pipeline, "detect_phases",
                         lambda *a, **k: Phases(address=10, takeaway=40, top=200, early_downswing=260, impact=300))
     frames = pipeline.suggest_frames(tmp_path, info, load_config())
-    assert frames == {"address": 10, "takeaway": 40, "top": 200, "early_downswing": 260, "impact": 300}
+    # halfway back: no hands in the fake pose, so halfway from takeaway to top
+    assert frames == {"address": 10, "takeaway": 40, "top": 200, "early_downswing": 260, "impact": 300, "halfway_back": 120}
     assert calls["sampled"] == [0, 8]  # 240 fps clip, quick pass at 30 fps
     assert pipeline.load_suggested(tmp_path, info) == frames
     assert pipeline.load_suggested(tmp_path, make_info(frame_count=200)) is None  # re-trimmed: stale

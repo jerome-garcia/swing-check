@@ -192,3 +192,15 @@ def test_takeaway_counts_hands_moving_back_not_just_up():
     xy = np.concatenate([back, up, np.tile([[220.0, 790.0]], (5, 1))])
     takeaway, _ = checkpoints(xy, address=0, top=40, impact=45, takeaway_fraction=0.12, downswing_fraction=0.35)
     assert takeaway == 6  # 12% of the 380 px path, while still moving back; height alone would wait until it rose
+
+
+def test_halfway_back_is_where_the_hands_are_partway_up():
+    from swingcheck.phases import halfway_back
+    fps = 240.0
+    track, truth = synthetic_swing(fps)
+    phases = detect_phases(track, fps, SCALE, CFG)
+    frame = halfway_back(track, fps, phases, CFG)
+    assert phases.takeaway < frame < phases.top
+    y = track[:, 1]
+    risen = (y[phases.address] - y[frame]) / (y[phases.address] - y[phases.top])
+    assert abs(risen - CFG["halfway_back_fraction"]) < 0.05

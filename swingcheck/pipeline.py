@@ -26,7 +26,7 @@ from swingcheck.priority import pick_focus
 from swingcheck.models import CHECKPOINT_MARKS, REQUIRED_MARKS, CheckpointMark, Marks, Point, PoseSeq
 from swingcheck.output.annotate import Annotator, write_outputs
 from swingcheck.output.report import build_report
-from swingcheck.phases import PhaseError, Phases, detect_phases, get_phases
+from swingcheck.phases import PhaseError, Phases, detect_phases, get_phases, halfway_back
 from swingcheck.pose import extract_pose, get_pose, write_debug_video
 
 ProgressFn = Callable[[str, float | None, str], None]
@@ -102,8 +102,9 @@ def suggest_frames(run_dir: Path, info: VideoInfo, config: dict[str, Any],
     except ValueError:
         return None
     try:
-        frames = detect_phases(hands(pose, config), info.fps, clip_torso_length(pose, config),
-                               config["phases"]).as_dict()
+        track = hands(pose, config)
+        found = detect_phases(track, info.fps, clip_torso_length(pose, config), config["phases"])
+        frames = {**found.as_dict(), "halfway_back": halfway_back(track, info.fps, found, config["phases"])}
     except (PhaseError, ValueError):
         frames = None
     address = frames["address"] if frames else None
