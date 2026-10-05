@@ -29,8 +29,8 @@ In the Philippines? Support with InstaPay: scan this with GCash, Maya or your ba
 
 The one-page brand guide (logo, versions, clear space, colors, type, voice) is
 [branding/swingcheck-brand-guide.pdf](branding/swingcheck-brand-guide.pdf).
-The `branding/` folder also holds the logo SVGs and the Ko-fi cover. Each is built
-from an HTML file there; edit it and re-render with `sh branding/render.sh`.
+The `branding/` folder also holds the logo SVGs and the Ko-fi cover. The guide and
+the cover are built from HTML files there; edit one and re-render with `sh branding/render.sh`.
 
 ---
 
