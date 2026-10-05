@@ -32,6 +32,11 @@ class BodyCheck:
 
 
 
+def list_text(items: list[str]) -> str:
+    """"a", "a and b", "a, b, and c" (with the Oxford comma, as all SwingCheck text)."""
+    return " and ".join(items) if len(items) <= 2 else f"{', '.join(items[:-1])}, and {items[-1]}"
+
+
 def with_body(status: str, label: str, meaning: str, tip: str, body: list[BodyCheck]) -> tuple[str, str, str, str]:
     """A check's result with its body rows folded in: the worst status, faults appended
     to the label and the summary sentence, and their tips added."""
@@ -39,7 +44,7 @@ def with_body(status: str, label: str, meaning: str, tip: str, body: list[BodyCh
     faults = [b for b in body if b.label]
     if faults:
         label = ", ".join([label] + [b.label[0].lower() + b.label[1:] for b in faults])
-        meaning = f"{meaning} Your {' and '.join(b.meaning for b in faults)}."
+        meaning = f"{meaning} Your {list_text([b.meaning for b in faults])}."
     tip = " ".join(t for t in [tip] + [b.tip for b in body] if t)
     return status, label, meaning, tip
 

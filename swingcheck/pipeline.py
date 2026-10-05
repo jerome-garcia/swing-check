@@ -237,7 +237,7 @@ def analyze(
     pose, _ = get_pose(run_dir, info, config, locate_swing=locate_swing, force=force, progress=pose_progress,
                        extra_ranges=[address_range])
 
-    progress("phases", None, "Finding address, top and impact")
+    progress("phases", None, "Finding address, top, and impact")
     warnings: list[str] = list(info.warnings)
     hand_track = hands(pose, config)
     try:

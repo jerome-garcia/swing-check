@@ -36,7 +36,7 @@ CACHE_VERSION = 1
 def ensure_model(name: str) -> Path:
     """Path to the .task model file, downloading it once if missing."""
     if name not in ("lite", "full", "heavy"):
-        raise ValueError(f"pose.model must be lite, full or heavy, not {name!r}")
+        raise ValueError(f"pose.model must be lite, full, or heavy, not {name!r}")
     path = MODELS_DIR / f"pose_landmarker_{name}.task"
     if not path.exists():
         MODELS_DIR.mkdir(parents=True, exist_ok=True)

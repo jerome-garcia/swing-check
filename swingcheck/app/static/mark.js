@@ -1,4 +1,4 @@
-import { api, el, features, HAND_NAMES, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
+import { api, el, features, HAND_NAMES, listText, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
 import { swingHeader } from "./swing.js";
 
 // Marking steps per view, all required. After address, one step per checkpoint, and
@@ -588,7 +588,7 @@ export async function renderMark(view, id, isCurrent) {
     }));
     saveBtn.disabled = unfinished().length > 0;
     saveHint.textContent = unfinished().length
-      ? `Still to mark: ${unfinished().map(st => st.title.toLowerCase()).join(", ")}.` : "";
+      ? `Still to mark: ${listText(unfinished().map(st => st.title.toLowerCase()))}.` : "";
     renderRef();
     refreshWarnings();
     draw();
@@ -598,7 +598,7 @@ export async function renderMark(view, id, isCurrent) {
     saveError.hidden = true;
     const left = unfinished();
     if (left.length) {
-      saveError.textContent = `Mark every step first. Still to mark: ${left.map(st => st.title.toLowerCase()).join(", ")}.`;
+      saveError.textContent = `Mark every step first. Still to mark: ${listText(left.map(st => st.title.toLowerCase()))}.`;
       saveError.hidden = false;
       return;
     }

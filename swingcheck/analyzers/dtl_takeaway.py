@@ -124,7 +124,7 @@ def takeaway(ctx: SwingContext) -> Verdict:
     ]
 
     tip = "" if status == "ok" else (
-        "Keep the clubhead in front of your hands early: move the club, hands and chest back together."
+        "Keep the clubhead in front of your hands early: move the club, hands, and chest back together."
         if inside_by > 0 else
         "Start the takeaway by turning your chest, without pushing your hands out toward the ball.")
 

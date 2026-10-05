@@ -84,3 +84,10 @@ def test_lone_wrist_glitch_is_interpolated_over():
     cfg = {**CFG, "pose": {**CFG["pose"], "smoothing_ms": 0}}
     xy = hands(pose, cfg)
     assert xy[25] == pytest.approx([505, 700])
+
+
+def test_list_text_uses_the_oxford_comma():
+    from swingcheck.analyzers.dtl_body import list_text
+    assert list_text(["arms reach"]) == "arms reach"
+    assert list_text(["arms reach", "knees lock"]) == "arms reach and knees lock"
+    assert list_text(["a", "b", "c"]) == "a, b, and c"

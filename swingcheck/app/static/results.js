@@ -1,5 +1,5 @@
 import {
-  checkpointStates, el, features, fileUrl, pollJob, postJSON, progressBlock, scorecard, STATUS_WORD, swingUrl,
+  checkpointStates, el, features, fileUrl, listText, pollJob, postJSON, progressBlock, scorecard, STATUS_WORD, swingUrl,
 } from "./util.js";
 
 const PHASE_LABELS = {
@@ -97,7 +97,7 @@ function summaryPanel(s, states, focusPick, onSelect) {
     scorecard(states, { onSelect, labels: true }),
     focusBox || null,
     notMarked.length ? el("p", { class: "subtle small not-marked" },
-      `${notMarked.map(x => x.cp.title).join(", ")} ${notMarked.length === 1 ? "isn't" : "aren't"} measured yet. `,
+      `${listText(notMarked.map(x => x.cp.title))} ${notMarked.length === 1 ? "isn't" : "aren't"} measured yet. `,
       el("a", { href: swingUrl(s.id, "mark") }, "Add the marks"), " to check them.") : null);
 }
 

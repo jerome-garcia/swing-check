@@ -1,5 +1,5 @@
 import { TERMS_VERSION } from "./legal.js";
-import { api, el, features, HAND_NAMES, plural, progressBlock, swingUrl } from "./util.js";
+import { api, el, features, HAND_NAMES, listText, plural, progressBlock, swingUrl } from "./util.js";
 
 const HAND_KEY = "swingcheck.handedness"; // the last choice, so it's preset next time
 
@@ -123,7 +123,7 @@ export async function renderUpload(view, isCurrent) {
     const missing = [!file && "choose a video", !viewChoice && "pick the camera view",
       agreeBox && !agreeBox.checked && "tick the agreement"].filter(Boolean);
     submit.disabled = missing.length > 0;
-    submitHint.textContent = missing.length ? `To upload, ${missing.join(" and ")}.` : "";
+    submitHint.textContent = missing.length ? `To upload, ${listText(missing)}.` : "";
   }
 
   const form = el("form", {

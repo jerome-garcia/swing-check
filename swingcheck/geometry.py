@@ -206,7 +206,7 @@ def target_sign(view: str, handedness: str, fo_override: str = "auto") -> int:
     if fo_override in ("left", "right"):
         return 1 if fo_override == "right" else -1
     if fo_override != "auto":
-        raise ValueError(f"target_direction_fo must be auto, left or right, not {fo_override!r}")
+        raise ValueError(f"target_direction_fo must be auto, left, or right, not {fo_override!r}")
     if handedness not in ("right", "left"):
         raise ValueError(f"handedness must be right or left, not {handedness!r}")
     return 1 if handedness == "right" else -1

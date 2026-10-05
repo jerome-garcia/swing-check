@@ -77,6 +77,12 @@ export function expiryText(s) {
   return Number.isNaN(d.getTime()) ? null : `Deleted ${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
 }
 
+// "a", "a and b", "a, b, and c" (with the Oxford comma, as all SwingCheck text).
+export function listText(items, conjunction = "and") {
+  if (items.length <= 2) return items.join(` ${conjunction} `);
+  return `${items.slice(0, -1).join(", ")}, ${conjunction} ${items[items.length - 1]}`;
+}
+
 export function plural(n, word) {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
 }
