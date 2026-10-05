@@ -1,0 +1,231 @@
+<!doctype html>
+<!-- SwingCheck brand guide: one A4 page. Render to PDF with branding/render.sh. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SwingCheck brand guide</title>
+<style>
+  @page { size: A4; margin: 0; }
+  :root {
+    --fairway: #2b7a47; --deep: #123824; --deeper: #0d2a1b; --bright: #4fb06d; --plane: #ff9f43;
+    --ok: #2b8a4b; --warn: #b77a14; --flag: #c23d36;
+    --paper: #f4f5f2; --ink: #1a1d19; --muted: #5f665d; --line: rgba(255, 255, 255, 0.14); --soft: rgba(255, 255, 255, 0.68);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  html { height: 1123px; overflow: hidden; }
+  body {
+    width: 794px; height: 1123px; overflow: hidden; position: relative;
+    background: var(--deep); color: #fff;
+    font: 10.5px/1.45 "Segoe UI", system-ui, sans-serif;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .pad { padding: 0 40px; }
+
+  /* Header */
+  .head { display: flex; justify-content: space-between; align-items: flex-start; padding-top: 36px; }
+  .title { font-size: 50px; font-weight: 750; line-height: 1; letter-spacing: -0.035em; }
+  .title span { color: var(--bright); display: block; }
+  .head-right { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; padding-top: 4px; }
+  .lockup { display: flex; align-items: center; gap: 9px; font-size: 24px; font-weight: 750; letter-spacing: -0.035em; }
+  .lockup img { width: 38px; height: 38px; }
+  .bar { background: var(--bright); color: var(--deeper); font-weight: 700; padding: 7px 14px 7px 40px; margin-right: -40px;
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+
+  /* Sections */
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; padding: 30px 40px; }
+  .rule { height: 1px; background: var(--line); margin: 0 40px; }
+  h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+  h2::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--bright); }
+  h3 { margin: 0 0 2px; font-size: 9px; font-weight: 700; color: var(--bright); letter-spacing: 0.1em; text-transform: uppercase; }
+  p { margin: 0; color: var(--soft); }
+
+  /* Logotype */
+  .parts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+  .anatomy { position: relative; display: flex; align-items: center; justify-content: center; gap: 12px; height: 108px; }
+  .anatomy img { width: 64px; height: 64px; }
+  .anatomy .word { font-size: 40px; font-weight: 750; letter-spacing: -0.035em; }
+  .tag { position: absolute; width: 17px; height: 17px; border-radius: 50%; border: 1px solid var(--soft);
+    display: grid; place-items: center; font-size: 8.5px; font-weight: 700; color: var(--soft); }
+
+  /* Variants */
+  .variants { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+  .variant { text-align: center; }
+  .variant b { display: block; font-size: 11px; }
+  .variant small { display: block; color: var(--soft); font-size: 9px; margin-bottom: 6px; }
+  .tile { height: 58px; display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-weight: 750; font-size: 13px; letter-spacing: -0.035em; border: 1px solid var(--line); }
+  .tile img { width: 18px; height: 18px; }
+
+  /* Applications */
+  .cover { display: block; width: 100%; aspect-ratio: 3 / 1; border: 1px solid var(--line); }
+  .app { margin-top: 10px; background: var(--paper); color: var(--ink); border-radius: 6px; overflow: hidden; }
+  .app-top { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; background: #fff; border-bottom: 1px solid #dfe2db; }
+  .app-top .lockup { font-size: 13px; gap: 5px; }
+  .app-top .lockup img { width: 18px; height: 18px; }
+  .app-btn { white-space: nowrap; background: var(--fairway); color: #fff; font-weight: 600; font-size: 9px; padding: 4px 9px; border-radius: 4px; }
+  .app-body { display: flex; align-items: center; gap: 10px; padding: 10px; }
+  .app-body b { font-size: 11px; }
+  .labels { display: flex; gap: 18px; margin: 0 0 8px; color: var(--soft); font-size: 9.5px; }
+
+  /* Clear space */
+  .clear { display: grid; grid-template-columns: 1fr 132px; gap: 14px; align-items: center; }
+  .clear-box { position: relative; width: 132px; height: 132px; border: 1px dashed var(--soft);
+    background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 16.5px 16.5px; display: grid; place-items: center; }
+  .clear-box .inner { width: 66px; height: 66px; border: 1px solid var(--bright); display: grid; place-items: center; }
+  .clear-box img { width: 66px; height: 66px; }
+  .x { position: absolute; font-size: 9px; font-weight: 700; color: var(--bright); background: var(--deep); padding: 0 2px; }
+  .clear p + h3 { margin-top: 8px; }
+
+  /* Badges */
+  .dots { display: flex; gap: 6px; margin: 4px 0 8px; }
+  .dot { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; font-weight: 700; }
+  .dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.flag { background: var(--flag); }
+  .dot.soon { border: 1px dashed var(--soft); color: var(--soft); }
+  .legend { display: flex; gap: 14px; color: var(--soft); font-size: 9.5px; }
+  .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+  .lines { display: flex; gap: 16px; align-items: center; margin-top: 10px; color: var(--soft); font-size: 9.5px; }
+  .lines svg { width: 72px; height: 28px; flex: none; }
+
+  /* Bottom: colors + type panel */
+  .bottom { position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: 1fr 1fr; height: 340px; }
+  .colors { padding: 22px 36px 22px 40px; }
+  .swatches { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 10px; }
+  .swatch .c { width: 50px; height: 50px; border-radius: 50%; margin-bottom: 5px; border: 1px solid rgba(255, 255, 255, 0.35); }
+  .swatch b { display: block; font-size: 10.5px; }
+  .swatch span { display: block; color: var(--soft); font: 8.5px/1.4 Consolas, monospace; }
+  .note { margin-top: 10px; font-size: 9.5px; }
+  .type { background: var(--bright); color: var(--deeper); padding: 22px 40px 22px 32px; }
+  .type h2::before { background: var(--deeper); }
+  .type p { color: rgba(13, 42, 27, 0.78); }
+  .ab { display: grid; grid-template-columns: 96px 1fr; gap: 4px 14px; align-items: center; margin-top: 2px; }
+  .ab .big { font-size: 64px; line-height: 1; letter-spacing: -0.03em; }
+  .ab .name { font-size: 14px; font-weight: 750; letter-spacing: 0.04em; }
+  .ab .abc { font-size: 10px; letter-spacing: 0.08em; }
+  .scale { margin-top: 8px; display: grid; gap: 1px; }
+  .scale div { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid rgba(13, 42, 27, 0.2); padding: 2px 0; }
+  .scale small { font-size: 9px; }
+  .voice { margin-top: 10px; font-size: 9.5px; }
+</style>
+</head>
+<body>
+  <div class="head pad">
+    <div class="title">Brand Guide<span>SwingCheck</span></div>
+    <div class="head-right">
+      <div class="lockup"><img src="logo-on-dark.svg" alt="">SwingCheck</div>
+      <div class="bar">Free golf swing analyzer</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <section>
+      <h2>Logotype</h2>
+      <div class="parts">
+        <div><h3>01 Full logo</h3><p>Symbol and wordmark together. The first choice.</p></div>
+        <div><h3>02 Symbol</h3><p>A golf ball. For icons and tight spaces.</p></div>
+        <div><h3>03 Wordmark</h3><p>One word, capital S and C.</p></div>
+      </div>
+      <div class="anatomy">
+        <img src="logo-on-dark.svg" alt=""><span class="word">SwingCheck</span>
+        <span class="tag" style="left:4px; top:46px">01</span>
+        <span class="tag" style="left:52px; top:4px">02</span>
+        <span class="tag" style="right:4px; top:4px">03</span>
+      </div>
+    </section>
+    <section>
+      <h2>Logo versions</h2>
+      <p>Use the white ball with a soft ring on dark or green backgrounds, and the Fairway disc on light ones.
+        Never recolor, stretch, outline or rotate the logo.</p>
+      <div class="variants">
+        <div class="variant"><b>Logo A</b><small>Deep green background</small>
+          <div class="tile" style="background:var(--deeper)"><img src="logo-on-dark.svg" alt="">SwingCheck</div></div>
+        <div class="variant"><b>Logo B</b><small>Light background</small>
+          <div class="tile" style="background:var(--paper); color:var(--ink)"><img src="logo.svg" alt="">SwingCheck</div></div>
+        <div class="variant"><b>Logo C</b><small>Fairway background</small>
+          <div class="tile" style="background:var(--fairway)"><img src="logo-on-dark.svg" alt="">SwingCheck</div></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="rule"></div>
+
+  <div class="row">
+    <section>
+      <h2>Applications</h2>
+      <div class="labels"><span>Ko-fi cover (3:1)</span><span>·</span><span>App header and support card</span></div>
+      <img class="cover" src="ko-fi-cover.png" alt="">
+      <div class="app">
+        <div class="app-top"><div class="lockup"><img src="logo.svg" alt="">SwingCheck</div><span class="app-btn">New swing</span></div>
+        <div class="app-body"><div><b>Enjoying SwingCheck?</b><br><span style="color:var(--muted)">It's free to use. A small tip helps cover the server costs.</span></div>
+          <span class="app-btn" style="margin-left:auto">Support on Ko-fi</span></div>
+      </div>
+    </section>
+    <section>
+      <h2>Logo clear space</h2>
+      <div class="clear">
+        <div>
+          <h3>Clear space</h3>
+          <p>Keep empty space on every side of the symbol equal to <b style="color:#fff">x</b>, half the symbol's width.</p>
+          <h3>Minimum size</h3>
+          <p>20 px on screen, 6 mm in print. Below that, use the symbol alone.</p>
+        </div>
+        <div class="clear-box">
+          <div class="inner"><img src="logo-on-dark.svg" alt=""></div>
+          <span class="x" style="top:26px; left:58px">x</span>
+          <span class="x" style="bottom:26px; left:60px">x</span>
+          <span class="x" style="left:24px; top:59px">x</span>
+          <span class="x" style="right:24px; top:59px">x</span>
+        </div>
+      </div>
+      <h2 style="margin-top:16px">Checkpoint badges</h2>
+      <div class="dots">
+        <span class="dot ok">1</span><span class="dot ok">2</span><span class="dot warn">3</span><span class="dot ok">4</span>
+        <span class="dot flag">5</span><span class="dot ok">6</span><span class="dot warn">7</span><span class="dot soon">8</span>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--ok)"></i>Good</span><span><i style="background:var(--warn)"></i>Watch</span>
+        <span><i style="background:var(--flag)"></i>Fix</span><span><i style="border:1px dashed var(--soft)"></i>Not run</span>
+      </div>
+      <div class="lines">
+        <svg viewBox="0 0 72 28"><line x1="4" y1="26" x2="68" y2="2" stroke="#ff9f43" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="4" y1="18" x2="58" y2="-2" stroke="#fff" stroke-opacity="0.35" stroke-width="1"/></svg>
+        <span>Swing lines are Plane orange, with thin grey guide lines. Status colors only ever mean a result.</span>
+      </div>
+    </section>
+  </div>
+
+  <div class="bottom">
+    <section class="colors">
+      <h2>Color palette</h2>
+      <div class="swatches">
+        <div class="swatch"><div class="c" style="background:var(--fairway)"></div><b>Fairway</b><span>#2B7A47</span><span>RGB 43 122 71</span></div>
+        <div class="swatch"><div class="c" style="background:var(--deep)"></div><b>Deep green</b><span>#123824</span><span>RGB 18 56 36</span></div>
+        <div class="swatch"><div class="c" style="background:var(--bright)"></div><b>Bright green</b><span>#4FB06D</span><span>RGB 79 176 109</span></div>
+        <div class="swatch"><div class="c" style="background:var(--plane)"></div><b>Plane orange</b><span>#FF9F43</span><span>RGB 255 159 67</span></div>
+        <div class="swatch"><div class="c" style="background:var(--paper)"></div><b>Paper</b><span>#F4F5F2</span><span>RGB 244 245 242</span></div>
+        <div class="swatch"><div class="c" style="background:var(--ink)"></div><b>Ink</b><span>#1A1D19</span><span>RGB 26 29 25</span></div>
+      </div>
+      <p class="note">Fairway is the brand color (logo, buttons, links). Bright green replaces it in dark mode.
+        Status: Good #2B8A4B · Watch #B77A14 · Fix #C23D36.</p>
+    </section>
+    <section class="type">
+      <h2>Typography</h2>
+      <div class="ab">
+        <div class="big" style="font-weight:750">Ab</div>
+        <div><div class="name">SEGOE UI · SYSTEM FONT</div><div class="abc">ABCDEFGHIJKLMNOPQRSTUVWXYZ<br>abcdefghijklmnopqrstuvwxyz 0123456789</div></div>
+        <div class="big" style="font-weight:400">Ab</div>
+        <div><p>The device's own font: Segoe UI on Windows, SF Pro on Apple, Roboto on Android. No web fonts.</p>
+          <div style="margin-top:4px; font-size:12px"><b>Bold 750</b> / <b style="font-weight:600">Semibold 600</b> / Regular 400</div></div>
+      </div>
+      <div class="scale">
+        <div><b style="font-size:15px">Page title</b><small>24 px · 700</small></div>
+        <div><b>Section heading</b><small>16 px · 700</small></div>
+        <div><span>Body text · Small print 13 px</span><small>15 px · 400</small></div>
+      </div>
+      <p class="voice"><b style="color:var(--deeper)">Voice:</b> a friendly coach. Plain words, sentence case,
+        centimeters only, the biggest issue first. "Slightly standing up. Keep your hips back."</p>
+    </section>
+  </div>
+</body>
+</html>

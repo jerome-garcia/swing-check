@@ -217,9 +217,3 @@ def test_detail_includes_suggested_frames_for_this_video(client, runs):
     assert client.get("/api/swings/old_swing").json()["suggested"] == {"address": 3, "top": 50}
     (folder / SUGGEST_FILE).write_text(json.dumps({"video_signature": {**sig, "frame_count": 1}, "phases": {"top": 50}}))
     assert client.get("/api/swings/old_swing").json()["suggested"] is None
-
-
-def test_brand_page_is_bundled(client):
-    assert "SwingCheck" in client.get("/brand/").text
-    for name in ["logo.svg", "logo-on-dark.svg", "ko-fi-cover.jpg"]:
-        assert client.get(f"/brand/{name}").status_code == 200

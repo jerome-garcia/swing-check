@@ -27,10 +27,10 @@ In the Philippines? Support with InstaPay: scan this with GCash, Maya or your ba
 
 ### Brand
 
-The one-page brand guidelines (name, logo, colors, type, voice) ship with the
-app: open `/brand/` on the running app, or
-[swingcheck/app/static/brand/index.html](swingcheck/app/static/brand/index.html).
-The full-size Ko-fi cover and its source are in [branding/](branding/).
+The one-page brand guide (logo, versions, clear space, colors, type, voice) is
+[branding/swingcheck-brand-guide.pdf](branding/swingcheck-brand-guide.pdf).
+The `branding/` folder also holds the logo SVGs and the Ko-fi cover. Each is built
+from an HTML file there; edit it and re-render with `sh branding/render.sh`.
 
 ---
 
