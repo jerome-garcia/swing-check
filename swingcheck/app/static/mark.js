@@ -433,7 +433,8 @@ export async function renderMark(view, id, isCurrent) {
     backToSuggested.hidden = onSuggestion || cur().suggested === undefined;
     suggestNote.hidden = cur().suggested === undefined;
     suggestNote.replaceChildren(
-      `This opens on a suggested frame, a best guess at your ${stepDef().title.toLowerCase()}.`, el("br"),
+      state.active === "address" ? "This opens on the first frame of your clip."
+        : `This opens on a suggested frame, a best guess at your ${stepDef().title.toLowerCase()}.`, el("br"),
       hasExample() ? "Before you click, check it against the example and move the slider to the exact frame if it's off."
         : "Before you click, check it and move the slider to the exact frame if it's off.");
     showFrame(cur().frame);
