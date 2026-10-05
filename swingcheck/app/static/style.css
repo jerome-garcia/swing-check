@@ -537,14 +537,6 @@ button.score-item:hover { background: var(--surface-2); }
 .hud-next .swatch.circle, .hud-next .swatch.square { background: radial-gradient(circle, #fff 0 2.5px, transparent 3px); }
 .hud-next.done { color: var(--bright); }
 .hud-hint { font-size: 15px; color: var(--on-deep-soft); }
-/* Before the first click: "1 Find the frame", then a quieter "2 Then click ..." */
-.hud-num { display: inline-grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 50%;
-  background: var(--bright); color: var(--deep); font-size: 13px; font-weight: 800; letter-spacing: 0; }
-.hud-then { display: inline-flex; align-items: center; gap: 10px; margin-top: 4px; font-size: 15px; font-weight: 650; color: var(--on-deep); }
-.hud-then .hud-num { background: transparent; border: 1.5px solid var(--on-deep-line); color: var(--on-deep); }
-.mark-hud .hud-btn.example-cta { border-color: var(--bright); color: var(--bright); }
-/* The example to match is outlined while the frame is still being found. */
-.ref-frame.attention a { outline: 3px solid var(--bright); outline-offset: 2px; }
 .mark-hud .hud-btn { background: transparent; border-color: var(--on-deep-line); color: var(--on-deep); }
 .mark-hud .hud-btn:hover { background: rgba(255, 255, 255, 0.08); }
 .mark-hud .hud-btn:disabled { opacity: 0.4; }

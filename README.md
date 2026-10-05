@@ -656,11 +656,7 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    hard to see. A red one means results would likely be wrong, so film again.
    Thresholds are in `[camera_check]` in `config/default.toml`.
 2. **Mark your swing.** There are six steps, all required: address, then one
-   per checkpoint. Each step starts with **1 Find the frame** (for example
-   "shaft parallel to the ground, coming down"): move the slider until your swing
-   matches the example, which is outlined while you look, since the frame a step
-   opens on is only a guess. **2 Then click** the points; the bar switches to them
-   once you click. Each step tab shows its number, turning into a green ✓ once
+   per checkpoint. Each step tab shows its number, turning into a green ✓ once
    it's marked. **Save and analyze** unlocks once every step is marked, and
    the line under it lists what's still to mark. The dark bar above the frame
    says what to click next in large type, with exactly where under it (for
