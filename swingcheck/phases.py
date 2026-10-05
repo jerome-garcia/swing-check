@@ -14,8 +14,10 @@ Steps:
   4. Address: the last still stretch of hands at or before that low point, then
      back to before the hands started creeping away (a takeaway often starts
      too slowly to count as moving), and a little earlier still to be safe.
-  5. Takeaway / early downswing: where the hands cross a set fraction of the
-     address-to-top height on the way up and on the way down.
+  5. Takeaway: where the hands have covered a set fraction of their path from
+     address to the top (down the line they first move back, then up, so height
+     alone misses the flat start). Early downswing: where they come back down
+     through a set fraction of the address-to-top height.
 """
 
 from __future__ import annotations
@@ -61,13 +63,17 @@ def _last(mask: np.ndarray) -> int | None:
     return int(hits[-1]) if hits.size else None
 
 
-def checkpoints(y: np.ndarray, address: int, top: int, impact: int,
+def checkpoints(xy: np.ndarray, address: int, top: int, impact: int,
                 takeaway_fraction: float, downswing_fraction: float) -> tuple[int, int]:
-    """Takeaway and early-downswing frames: where the hands cross the given fraction of
-    the address->top height, on the way up and on the way down."""
+    """Takeaway: where the hands have covered the given fraction of their path from address
+    to the top. Early downswing: where they cross the given fraction of the address->top
+    height on the way down."""
+    y = xy[:, 1]
     rise = y[address] - y[top]
+    steps = np.nan_to_num(np.linalg.norm(np.diff(xy[address : top + 1], axis=0), axis=1))
+    path = np.cumsum(steps)
     with np.errstate(invalid="ignore"):
-        up = _first(y[address + 1 : top + 1] <= y[address] - takeaway_fraction * rise)
+        up = _first(path >= takeaway_fraction * path[-1]) if path.size and path[-1] > 0 else None
         down = _first(y[top : impact + 1] >= y[address] - downswing_fraction * rise)
     takeaway = address + 1 + up if up is not None else (address + top) // 2
     early = top + down if down is not None else (top + impact) // 2
@@ -167,7 +173,7 @@ def detect_phases(hands: np.ndarray, fps: float, scale: float, cfg: dict[str, An
     address = max(0, address - int(round(cfg["address_margin_ms"] * fps / 1000)))
 
     # 5. Checkpoints.
-    takeaway, early = checkpoints(y, address, top, impact, cfg["takeaway_fraction"], cfg["downswing_fraction"])
+    takeaway, early = checkpoints(xy, address, top, impact, cfg["takeaway_fraction"], cfg["downswing_fraction"])
     phases = Phases(address=address, takeaway=takeaway, top=top, early_downswing=early, impact=impact)
     validate(phases, n)
     return phases
@@ -192,8 +198,8 @@ def apply_overrides(
     if not overrides:
         assert auto is not None
         return auto
-    y = clean_track(hands, fps, max_gap_ms=0, smoothing_ms=cfg["smoothing_ms"])[:, 1]
-    takeaway, early = checkpoints(y, key["address"], key["top"], key["impact"],
+    xy = clean_track(hands, fps, max_gap_ms=0, smoothing_ms=cfg["smoothing_ms"])
+    takeaway, early = checkpoints(xy, key["address"], key["top"], key["impact"],
                                   cfg["takeaway_fraction"], cfg["downswing_fraction"])
     phases = Phases(
         address=key["address"], takeaway=takeaway, top=key["top"], early_downswing=early,

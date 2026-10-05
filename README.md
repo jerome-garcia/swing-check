@@ -629,7 +629,9 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    phone video and keeps the slo-mo frame rate. It then takes a quick look
    through the clip (about 5–20 s) to find your swing, so each marking step can
    open on a **suggested frame** (address errs early: a still set-up frame just
-   before the hands start back, never one where the swing has begun), and checks
+   before the hands start back, never one where the swing has begun; takeaway is
+   where the hands have covered 12% of their path to the top, which lands within
+   about a frame of the shaft being parallel), and checks
    the camera at address. (Face-on is
    shown but disabled until a future release.) Choose **Right-handed** or
    **Left-handed** under *Golfer*; the choice is remembered for next time, and a

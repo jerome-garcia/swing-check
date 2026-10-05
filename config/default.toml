@@ -114,11 +114,14 @@ impact_offset_ms = 0
 # Top search starts where the hands were last at impact height before the
 # downswing, give or take this tolerance (body units).
 low_level_tolerance = 0.15
-# Takeaway / early downswing checkpoints: frames where the hands cross these
-# heights, as a fraction of the way from address hand height to top hand height.
-# Takeaway is when the shaft is about parallel to the target line (hands at
-# about hip height); a takeaway frame you mark replaces it.
-takeaway_fraction = 0.17
+# Takeaway checkpoint: when the shaft is about parallel to the target line. The
+# hands first move back (mostly away from a down-the-line camera), then up, so this
+# is the frame where they've covered this fraction of their path from address to
+# the top; tuned on seven clips (McIlroy, Tiger, Morikawa, and four amateurs), all
+# within about a frame. A takeaway frame you mark replaces it.
+takeaway_fraction = 0.12
+# Early downswing checkpoint: where the hands come back down past this height, as a
+# fraction of the way from address hand height up to top hand height.
 downswing_fraction = 0.35
 
 [analyzers]
