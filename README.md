@@ -16,10 +16,10 @@ is uploaded anywhere.
 ### Support swing-check
 
 swing-check is free. If it helps your game, you can
-[support it on Ko-fi](https://ko-fi.com/YOUR-KOFI-NAME) to help cover the server
+[support it on Ko-fi](https://ko-fi.com/jeromegarcia) to help cover the server
 and upkeep costs. Thank you!
 
-[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/YOUR-KOFI-NAME)
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/jeromegarcia)
 
 ---
 
@@ -748,9 +748,8 @@ Overlay kinds are documented in `swingcheck/analyzers/__init__.py`.
 Run the tests with `pytest`. Some tests need `ffmpeg` on the PATH and are
 skipped without it.
 
-The app's footer shows a Ko-fi support link once `KOFI_URL` at the top of
-`swingcheck/app/static/app.js` is set (empty hides it). Replace
-`YOUR-KOFI-NAME` in the "Support swing-check" section above too.
+The app's footer Ko-fi link comes from `KOFI_URL` at the top of
+`swingcheck/app/static/app.js` (empty hides it).
 
 ```
 swingcheck/

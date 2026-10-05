@@ -11,7 +11,7 @@ import { el } from "./util.js";
 
 // Ko-fi page for the footer's support link, e.g. "https://ko-fi.com/yourname".
 // Empty hides the footer.
-const KOFI_URL = "";
+const KOFI_URL = "https://ko-fi.com/jeromegarcia";
 
 const view = document.getElementById("view");
 if (KOFI_URL) {
