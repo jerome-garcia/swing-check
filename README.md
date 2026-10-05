@@ -394,7 +394,7 @@ and the limits in `[hosted]` in `config/default.toml`.
   uploads) or too busy is refused before the upload is received. A clip over the length limit is deleted right after upload. The
   upload page shows the limits, and says so when you already have 4 swings.
 - **Expiry.** A background sweep deletes swings 3 days after upload, at startup
-  and every 30 minutes. Each card and swing page says when ("Deleted Oct 8").
+  and every 30 minutes. Each card and swing page says when ("Deletes on Oct 8").
 - **Search engines.** Every response is marked `noindex`.
 - Sign-in with accounts is not planned (it would need a database to maintain).
 

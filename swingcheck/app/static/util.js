@@ -70,11 +70,11 @@ export function fileUrl(id, name, bust = true) {
   return bust ? `${url}?t=${Date.now()}` : url;
 }
 
-// Hosted: "Deleted Oct 8" for a swing that expires (none when run locally).
+// Hosted: "Deletes on Oct 8" for a swing that expires (none when run locally).
 export function expiryText(s) {
   if (!s.expires) return null;
   const d = new Date(s.expires);
-  return Number.isNaN(d.getTime()) ? null : `Deleted ${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+  return Number.isNaN(d.getTime()) ? null : `Deletes on ${d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
 }
 
 // "a", "a and b", "a, b, and c" (with the Oxford comma, as all SwingCheck text).
