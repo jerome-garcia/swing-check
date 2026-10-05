@@ -558,8 +558,8 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
 - The camera faces you, **square to the target line**.
 - Center it on the **ball / your sternum**, at about **chest height**.
 - For a right-hander the target is on the **right of the screen**; for a
-  left-hander, the left. Set your handedness in the config (see Tuning). If
-  your setup is unusual, set `target_direction_fo` explicitly.
+  left-hander, the left. Choose your handedness when uploading. If your setup
+  is unusual, set `target_direction_fo` explicitly.
 - Distance: full body plus the club at the top in frame (often 3 to 4 m).
 
 ---
@@ -579,7 +579,8 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    **Camera check.** The marking screen opens with the result: a green "✓ a good
    down-the-line view", or what to film differently: camera off to one side or
    not behind you at all (your shoulders and hips look too wide), facing the wrong
-   way (camera on the target side), small in the frame, head or feet cut off, or
+   way for the handedness chosen (camera on the target side, or the wrong
+   handedness picked), small in the frame, head or feet cut off, or
    hard to see. A red one means results would likely be wrong, so film again.
    Thresholds are in `[camera_check]` in `config/default.toml`.
 2. **Mark your swing.** There are six steps, all required: address, then one
@@ -603,8 +604,9 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    (above the frame) removes the last point, and **Clear step** removes all of
    this step's points. **The frame you mark on is your address frame**:
    the address checks are measured on it, so pick a frame where you're fully set
-   up and still. If a swing was saved with the wrong camera view, switch it
-   under **Camera view** at the top of this screen.
+   up and still. If a swing was saved with the wrong camera view or
+   handedness, switch it under **Camera view** or **Golfer** below the marking
+   panel.
 
    **Takeaway.** Switch to the **Takeaway** step, move the slider to where the
    shaft is parallel to the target line (from behind it points at the camera),
@@ -777,7 +779,7 @@ with only what you want to change:
 
 ```toml
 [golfer]
-handedness = "right"          # or "left"
+torso_cm = 46                 # your torso, for the cm figures
 
 [analyzers.address]
 knee_flex_max = 38
