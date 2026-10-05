@@ -207,7 +207,8 @@ def page(data: dict[str, Any]) -> str:
   <div><div class="muted">Swings stored · from browsers</div><div class="stat">{live['swings_stored']} · {live['browsers_stored']}</div>
     <div class="muted">{f"browsers with swings from the last {live['keep_days']} days" if live.get('keep_days') else "browsers with swings stored"}</div></div>
   <div><div class="muted">Disk</div><div class="stat">{live['disk_used_pct']}% used</div><div class="muted">{live['disk_free_gb']} GB free</div></div>
-  <div><div class="muted">Version · up for</div><div class="stat">{esc(live['version'])}</div><div class="muted">{_duration(live['up_s'])}</div></div>
+  <div><div class="muted">Up for</div><div class="stat">{_duration(live['up_s'])}</div>
+    <div class="muted">since the last restart or release · running {esc(live['version'])}</div></div>
 </div></section>
 <section class="panel"><h2>Last {DAYS_SHOWN} days</h2>
 <table><tr><th>Day (PHT)</th><th>Uploaders</th><th>Uploads</th><th>Converted</th><th>Analyzed</th></tr>{rows}</table>
