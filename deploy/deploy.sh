@@ -6,7 +6,7 @@
 #                                    and pushed) and pushed; an existing tag is deployed as is,
 #                                    so rolling back = deploying the previous tag
 #
-# On the server it waits until no analysis is running (a restart loses running jobs), checks
+# On the server it waits until no analysis or upload is in progress (a restart loses them), checks
 # the tag out, reinstalls the package if pyproject.toml changed, restarts and checks the site.
 # New system packages (apt) still have to be installed by hand: see the README.
 set -euo pipefail
@@ -40,8 +40,8 @@ ssh "$HOST" "TAG=$TAG bash -s" <<'REMOTE'
 set -euo pipefail
 APP=/opt/swingcheck/app
 as_app() { sudo -u swingcheck "$@"; }
-jobs_running() {  # "?" if the running version has no /api/health
-  curl -sf http://127.0.0.1:8765/api/health | python3 -c 'import json,sys; print(json.load(sys.stdin)["jobs"])' 2>/dev/null || echo "?"
+jobs_running() {  # analyses/conversions plus uploads in progress; "?" if the running version has no /api/health
+  curl -sf http://127.0.0.1:8765/api/health     | python3 -c 'import json,sys; h=json.load(sys.stdin); print(h["jobs"] + h.get("uploads", 0))' 2>/dev/null || echo "?"
 }
 
 as_app git -C "$APP" fetch -q --tags origin
@@ -52,7 +52,7 @@ if [ "$before" = "$after" ]; then echo "The server already runs $TAG."; exit 0; 
 for i in $(seq 1 60); do  # up to 10 minutes
   n=$(jobs_running)
   { [ "$n" = 0 ] || [ "$n" = "?" ]; } && break
-  [ "$i" = 1 ] && echo "Waiting for $n running analysis job(s) to finish…"
+  [ "$i" = 1 ] && echo "Waiting for $n analysis job(s) and upload(s) in progress to finish…"
   sleep 10
 done
 

@@ -950,7 +950,7 @@ deploy/deploy.sh v0.2.0-alpha    # tag main (clean and pushed) and deploy it
 deploy/deploy.sh v0.1.0-alpha    # an existing tag deploys as is: this is a rollback
 ```
 
-It waits until no analysis is running (a restart loses running jobs; it asks
+It waits until no analysis or upload is in progress (a restart loses them; it asks
 `/api/health`), checks the tag out on the server, reinstalls if `pyproject.toml`
 changed, restarts the service and checks that the site, through Cloudflare, reports
 the new version (shown small under the name in the header, from `git describe`).

@@ -41,7 +41,7 @@ def client(runs):
 
 def test_health_reports_jobs_and_version(client):
     health = client.get("/api/health").json()
-    assert health["ok"] is True and health["jobs"] == 0
+    assert health["ok"] is True and health["jobs"] == 0 and health["uploads"] == 0
     assert health["version"] and health["version"] == client.get("/api/features").json()["version"]
 
 
@@ -86,6 +86,19 @@ def test_fingerprint_changes_with_the_files(tmp_path, monkeypatch):
     (tmp_path / "util.js").write_text((tmp_path / "util.js").read_text(encoding="utf-8") + "\n// changed\n", encoding="utf-8")
     after = server.index_page()
     assert before != after and before.split("?v=")[1][:12] != after.split("?v=")[1][:12]
+
+
+def test_health_counts_uploads_in_progress(client, monkeypatch):
+    seen = []
+    real_create = client.app.state.store.create
+
+    def create(*args, **kwargs):  # runs while the upload request is in progress
+        seen.append(client.get("/api/health").json()["uploads"])
+        return real_create(*args, **kwargs)
+
+    monkeypatch.setattr(client.app.state.store, "create", create)
+    client.post("/api/swings", files={"file": ("clip.mp4", b"not really a video")}, data={"view": "dtl"})
+    assert seen == [1] and client.get("/api/health").json()["uploads"] == 0
 
 
 def test_version_falls_back_to_the_package(monkeypatch):

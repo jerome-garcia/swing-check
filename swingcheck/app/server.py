@@ -179,9 +179,10 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
 
     @app.get("/api/health")
     def health() -> dict[str, Any]:
-        """For the deploy script: up, and how many jobs are queued or running (it waits
-        for 0 before restarting, since a restart loses running jobs)."""
-        return {"ok": True, "jobs": jobs.pending(), "version": version}
+        """For the deploy script: up, how many jobs are queued or running, and how many
+        uploads are arriving. It waits for both to be 0 before restarting, since a restart
+        loses running jobs and cuts uploads off."""
+        return {"ok": True, "jobs": jobs.pending(), "uploads": uploading, "version": version}
 
     @app.get("/api/features")
     def features() -> dict[str, Any]:
@@ -428,6 +429,22 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
             raise HTTPException(404, "File not found") from None
         # No caching: files are regenerated when a swing is re-analyzed.
         return FileResponse(path, headers={"Cache-Control": "no-store"})
+
+    # Uploads whose video is still arriving or being saved: the deploy script waits for
+    # these too (a restart mid-upload makes the visitor upload again). The middleware runs
+    # on the event loop's one thread, so a plain counter is enough.
+    uploading = 0
+
+    @app.middleware("http")
+    async def count_uploads(request, call_next):
+        nonlocal uploading
+        if request.method != "POST" or request.url.path != "/api/swings":
+            return await call_next(request)
+        uploading += 1
+        try:
+            return await call_next(request)
+        finally:
+            uploading -= 1
 
     @app.middleware("http")
     async def revalidate_static(request, call_next):
