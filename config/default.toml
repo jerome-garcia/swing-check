@@ -232,9 +232,9 @@ posture_gain_watch = 10    # ...yellow to 10°; red beyond (bending over)
 #
 # Clubhead vs the address shaft line, square to it: + = behind the line (under
 # the plane, the golfer's side), - = above it (over the top).
-under_min = 0.0         # green: on the line to 40% under
+under_min = -0.10       # green: 10% above (on the line, give or take a click: Tiger -1%) to 40% under
 under_max = 0.40
-under_watch_min = -0.30 # yellow: up to 30% above (slightly steep; a little above is forgivable) or 40-70% under (very
+under_watch_min = -0.30 # yellow: 10-30% above (slightly steep; a little above is forgivable) or 40-70% under (very
 under_watch_max = 0.70  # shallow); red beyond (over the top / stuck)
 # Shallowing: that distance minus the same one at your takeaway. + = the club
 # comes down flatter than it went back.

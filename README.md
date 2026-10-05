@@ -222,7 +222,7 @@ moved. Settings live in `[analyzers.downswing]`.
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Clubhead vs swing plane** | the clubhead's distance from the swing plane line, square to it (as at the takeaway), as % of torso length | on the line to 40% under (behind the hands): **Clubhead on the swing plane** | up to 30% above (*slightly above*; a little above is forgivable) or 40–70% under (*well under*) | more than 30% above (≈15 cm): **clubhead above the swing plane** (over the top); more than 70% under: **too far under** (stuck, too flat) |
+| **Clubhead vs swing plane** | the clubhead's distance from the swing plane line, square to it (as at the takeaway), as % of torso length | 10% above (≈5 cm: on the line, give or take a click; Tiger reads 1% above) to 40% under (behind the hands): **Clubhead on the swing plane** | 10–30% above (*slightly above*; a little above is forgivable) or 40–70% under (*well under*) | more than 30% above (≈15 cm): **clubhead above the swing plane** (over the top); more than 70% under: **too far under** (stuck, too flat) |
 | **Vs your takeaway** (shallowing) | that distance minus the same one at your takeaway: + = the club comes down flatter than it went back | 0% or more flatter: **Flatter than going back** | up to 20% steeper | more than 20% steeper than going back: the over-the-top loop |
 | **Spine bend kept** | spine bend on the downswing frame vs address, from tracking; its lines are drawn only when it's off | up to 5° more upright or 5° more bent | 5–10° (*slightly standing up* / *slightly bending over*) | more than 10° more upright: **standing up** coming down (where early extension starts); more than 10° more bent: **bending over** |
 

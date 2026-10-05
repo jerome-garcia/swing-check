@@ -45,7 +45,7 @@ def downswing(ctx: SwingContext) -> Verdict:
     soft = plane_status == "warn"
     if plane_status == "ok":
         plane_label, plane_meaning = ("Clubhead on the swing plane",
-                                      "the clubhead is back on your swing plane line, or just under it")
+                                      "the clubhead is back on your swing plane line (or very close), or just under it")
     elif under < cfg["under_min"]:
         plane_label = "Clubhead slightly above the swing plane" if soft else "Clubhead above the swing plane"
         plane_meaning = ("the clubhead is a little above your swing plane line (a little steep)" if soft else
@@ -145,7 +145,8 @@ def downswing(ctx: SwingContext) -> Verdict:
             Row("Clubhead vs swing plane",
                 "On the line" if abs(ctx.cm(under)) < 0.75 else f"{ctx.distance_text(under)} {side} the line",
                 plane_label.removeprefix("Clubhead ").capitalize(), plane_status,
-                good=f"on the line to {ctx.distance_text(cfg['under_max'])} under",
+                good=(f"{ctx.distance_text(cfg['under_min'])} above to {ctx.distance_text(cfg['under_max'])} under"
+                      if cfg["under_min"] < 0 else f"on the line to {ctx.distance_text(cfg['under_max'])} under"),
                 fix=f"more than {ctx.distance_text(cfg['under_watch_min'])} above or "
                     f"{ctx.distance_text(cfg['under_watch_max'])} under"),
             *rows_extra,
