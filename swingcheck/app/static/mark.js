@@ -398,6 +398,11 @@ export async function renderMark(view, id, isCurrent) {
     draw();
   });
   canvas.addEventListener("pointercancel", () => { state.aiming = false; state.cursor = null; draw(); });
+  // The frame handles its own touches: without this, iOS turns a long press (aiming with
+  // the loupe) into text selection, the magnifier, or the image menu, and may cancel the
+  // press so the point never lands. Pointer events still arrive.
+  canvas.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
+  canvas.addEventListener("contextmenu", e => e.preventDefault());
   canvas.addEventListener("pointerleave", e => { if (e.pointerType === "mouse" && !state.aiming) { state.cursor = null; draw(); } });
 
   // --- Scrubber -------------------------------------------------------------
