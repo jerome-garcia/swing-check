@@ -16,7 +16,8 @@ function hero(count, hosted) {
     : count ? `${count} saved` : null;
   const node = el("section", { class: "hero" },
     el("div", {},
-      el("h1", {}, "Your swings"),
+      // A first-time visitor has no swings yet: tell them what SwingCheck does instead.
+      el("h1", {}, count ? "Your swings" : "Check your golf swing"),
       el("p", {}, "Film your swing. See 8 checkpoints. Fix the one that matters first."),
       countText ? el("p", { class: "hero-count" }, countText) : null,
       hosted && count >= hosted.max_swings
