@@ -91,7 +91,7 @@ function privacy(hosted) {
     section("Service providers",
       p("SwingCheck runs on a rented server, and a network provider protects and speeds up the site. Like any ",
         "website, they may keep short-lived technical logs, such as IP addresses, for security. Tips are handled ",
-        "by Ko-fi, or by your GCash, Maya or bank app for InstaPay, under their own privacy policies.")),
+        "by Ko-fi, or by your GCash, Maya, or banking app for InstaPay, under their own privacy policies.")),
     section("Your choices",
       p("You can delete any swing at any time with Delete swing. Since SwingCheck doesn't know who you are, that's ",
         "also how to remove your data. For anything else, message the maker through ", contact(), ".")),

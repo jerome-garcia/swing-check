@@ -26,7 +26,7 @@ and upkeep costs. Thank you!
 
 [![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/jeromegarcia)
 
-In the Philippines? Support with InstaPay: scan this with GCash, Maya or your bank app.
+In the Philippines? Support with InstaPay: scan this with GCash, Maya, or your banking app.
 
 <img src="swingcheck/app/static/support/instapay-qr.png" alt="InstaPay QR code" width="200">
 
