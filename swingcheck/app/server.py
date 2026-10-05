@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import logging
 import shutil
@@ -12,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -460,5 +461,30 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
                                      "Try again in a few minutes."}, 503)
             return None
 
+    page = index_page()
+
+    @app.get("/", include_in_schema=False)
+    @app.get("/index.html", include_in_schema=False)
+    def index() -> HTMLResponse:
+        return HTMLResponse(page)
+
     app.mount("/", StaticFiles(directory=STATIC, html=True), name="static")
     return app
+
+
+def index_page() -> str:
+    """index.html with its CSS and JS addressed by a fingerprint of their contents
+    (style.css?v=…), so after a release every browser fetches the new files instead of
+    mixing cached old ones with the new page. An import map does the same for the
+    modules app.js imports (./util.js and the rest), which a ?v= on app.js alone wouldn't."""
+    assets = sorted(STATIC.glob("*.js")) + sorted(STATIC.glob("*.css"))
+    digest = hashlib.sha256(b"".join(p.name.encode() + p.read_bytes() for p in assets)).hexdigest()[:12]
+    imports = {f"/{p.name}": f"/{p.name}?v={digest}" for p in assets if p.suffix == ".js"}
+    import_map = f'<script type="importmap">{json.dumps({"imports": imports})}</script>\n  '
+    html = (STATIC / "index.html").read_text(encoding="utf-8")
+    for old, new in (('href="/style.css"', f'href="/style.css?v={digest}"'),
+                     ('<script type="module" src="/app.js">', f'{import_map}<script type="module" src="/app.js?v={digest}">')):
+        if old not in html:
+            raise RuntimeError(f"index.html no longer contains {old!r}: update index_page()")
+        html = html.replace(old, new)
+    return html

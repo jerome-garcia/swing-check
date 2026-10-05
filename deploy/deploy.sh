@@ -75,4 +75,6 @@ REMOTE
 health=$(curl -sf "$SITE/api/health") || die "$SITE didn't answer through Cloudflare"
 live=$(printf '%s' "$health" | grep -o '"version":"[^"]*"' | cut -d'"' -f4 || true)
 [ "$live" = "$TAG" ] || die "$SITE reports version '${live:-none}', not $TAG"
+# The page must address its CSS/JS by fingerprint, or browsers may mix old cached files in.
+curl -sf "$SITE/" | grep -q 'style.css?v=' || die "$SITE's page isn't fingerprinting its CSS/JS"
 echo "Live: $SITE is on $TAG."

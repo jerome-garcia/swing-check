@@ -44,6 +44,30 @@ def test_health_reports_jobs_and_version(client):
     assert health["version"] and health["version"] == client.get("/api/features").json()["version"]
 
 
+def test_page_addresses_its_css_and_js_by_fingerprint(client):
+    for path in ("/", "/index.html"):
+        res = client.get(path)
+        assert res.status_code == 200 and res.headers["cache-control"] == "no-cache"
+        html = res.text
+        digest = html.split('href="/style.css?v=')[1].split('"')[0]
+        assert len(digest) == 12 and f'src="/app.js?v={digest}"' in html
+        imports = json.loads(html.split('<script type="importmap">')[1].split("</script>")[0])["imports"]
+        assert imports["/util.js"] == f"/util.js?v={digest}" and "/mark.js" in imports
+        assert html.index("importmap") < html.index('type="module"')  # the map must come first
+    assert "brand-version" in client.get(f"/style.css?v={digest}").text  # the query doesn't matter to the server
+
+
+def test_fingerprint_changes_with_the_files(tmp_path, monkeypatch):
+    for f in server.STATIC.iterdir():
+        if f.is_file():
+            shutil.copy(f, tmp_path / f.name)
+    monkeypatch.setattr(server, "STATIC", tmp_path)
+    before = server.index_page()
+    (tmp_path / "util.js").write_text((tmp_path / "util.js").read_text(encoding="utf-8") + "\n// changed\n", encoding="utf-8")
+    after = server.index_page()
+    assert before != after and before.split("?v=")[1][:12] != after.split("?v=")[1][:12]
+
+
 def test_version_falls_back_to_the_package(monkeypatch):
     def no_git(*args, **kwargs):
         raise FileNotFoundError("git")
