@@ -55,7 +55,7 @@ function terms(hosted) {
         "features or support, and they aren't refundable. The payment providers handle them under their own terms.")),
     section("Changes and contact",
       p("These terms may change; the date below shows the latest version, and using SwingCheck after a change means ",
-        "you accept it. These terms are governed by the laws of the Republic of the Philippines. Questions? Message ",
+        "you accept it. Questions? Message ",
         "the maker through ", contact(), ".")),
   ];
 }
