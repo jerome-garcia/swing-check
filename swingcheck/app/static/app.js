@@ -32,6 +32,20 @@ features().then(f => {
   version.title = `SwingCheck ${f.version}`;
   version.hidden = !f.version;
 }).catch(() => { /* the header just goes without it */ });
+// Dark by default; the footer switch flips to light and back, remembered in this browser.
+const themeToggle = document.getElementById("theme-toggle");
+function showTheme() {
+  const light = document.documentElement.dataset.theme === "light";
+  themeToggle.textContent = light ? "Dark mode" : "Light mode";
+}
+themeToggle.addEventListener("click", () => {
+  const light = document.documentElement.dataset.theme !== "light";
+  if (light) document.documentElement.dataset.theme = "light";
+  else delete document.documentElement.dataset.theme;
+  try { localStorage.setItem("swingcheck.theme", light ? "light" : "dark"); } catch { /* just not remembered */ }
+  showTheme();
+});
+showTheme();
 let navigation = 0;
 
 async function route() {

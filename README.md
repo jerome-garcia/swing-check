@@ -38,7 +38,10 @@ The `branding/` folder also holds the logo SVGs, the Ko-fi cover, and the link
 preview (`link-preview.html` → `swingcheck/app/static/og-image.png`, 1200×630: the
 image Messenger, Facebook, and other apps show for a swingcheck.org link, set by the
 Open Graph tags in `index.html`). All are built from HTML files there; edit one and
-re-render with `sh branding/render.sh`. After changing the preview, Facebook's Sharing
+re-render with `sh branding/render.sh`.
+
+The app is dark by default (on every device, whatever the system setting); the
+footer's **Light mode** switch changes it, remembered in that browser. After changing the preview, Facebook's Sharing
 Debugger (developers.facebook.com/tools/debug) refreshes the copy Messenger keeps.
 
 ---

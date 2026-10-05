@@ -1,5 +1,38 @@
-/* SwingCheck: light by default, dark when the system is. */
+/* SwingCheck: dark by default; light when the visitor picks it in the footer
+   (html[data-theme="light"], remembered in this browser; see index.html and app.js). */
 :root {
+  --bg: #111311;
+  --surface: #1a1d1a;
+  --surface-2: #232723;
+  --text: #e9ece7;
+  --muted: #9ca398;
+  --border: #2e332e;
+  --accent: #4fb06d;
+  --accent-soft: #1d3324;
+  --accent-text: #0c140e;
+  --ok: #58b874;
+  --warn: #e3a83f;
+  --flag: #ee6b63;
+  --ok-soft: #1c3022;
+  --warn-soft: #362a14;
+  --flag-soft: #3a1d1b;
+  --error: #8e948b;
+  --radius: 12px;
+  --radius-sm: 8px;
+  /* Brand (branding/swingcheck-brand-guide.pdf), the same in light and dark */
+  --deep: #123824;
+  --deep-2: #1d5a37;
+  --bright: #4fb06d;
+  --on-deep: #ffffff;
+  --on-deep-soft: rgba(255, 255, 255, 0.72);
+  --on-deep-line: rgba(255, 255, 255, 0.14);
+  --plane: #ff9f43;
+  --shadow: none;
+  --focus: 0 0 0 3px rgba(79, 176, 109, 0.45);
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
   --bg: #f4f5f2;
   --surface: #ffffff;
   --surface-2: #eef0eb;
@@ -16,43 +49,12 @@
   --warn-soft: #fbf0dc;
   --flag-soft: #fbe5e3;
   --error: #8a9087;
-  --radius: 12px;
-  --radius-sm: 8px;
-  /* Brand (branding/swingcheck-brand-guide.pdf), the same in light and dark */
-  --deep: #123824;
-  --deep-2: #1d5a37;
-  --bright: #4fb06d;
-  --on-deep: #ffffff;
-  --on-deep-soft: rgba(255, 255, 255, 0.72);
-  --on-deep-line: rgba(255, 255, 255, 0.14);
-  --plane: #ff9f43;
   --shadow: 0 1px 2px rgba(20, 30, 20, 0.05), 0 4px 14px rgba(20, 30, 20, 0.05);
   --focus: 0 0 0 3px rgba(43, 122, 71, 0.35);
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #111311;
-    --surface: #1a1d1a;
-    --surface-2: #232723;
-    --text: #e9ece7;
-    --muted: #9ca398;
-    --border: #2e332e;
-    --accent: #4fb06d;
-    --accent-soft: #1d3324;
-    --accent-text: #0c140e;
-    --ok: #58b874;
-    --warn: #e3a83f;
-    --flag: #ee6b63;
-    --ok-soft: #1c3022;
-    --warn-soft: #362a14;
-    --flag-soft: #3a1d1b;
-    --error: #8e948b;
-    --shadow: none;
-    --focus: 0 0 0 3px rgba(79, 176, 109, 0.45);
-  }
-}
+.theme-toggle { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
 
 * { box-sizing: border-box; }
 
