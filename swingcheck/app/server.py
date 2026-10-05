@@ -442,6 +442,12 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         def run(progress):
             analyze(folder, meta.view, cfg, overrides=overrides, clear_overrides=body.reset_phases,
                     progress=progress)
+            # A shared summary follows the latest results, at the same link.
+            if store.meta(swing_id).notes.get("share"):
+                try:
+                    write_shared(swing_id)
+                except Exception:  # noqa: BLE001  (the analysis itself succeeded)
+                    log.exception("Couldn't update the shared summary for %s", swing_id)
 
         job = jobs.submit(swing_id, "analyze", run)
         return {"job": job.to_json()}
@@ -503,24 +509,31 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         # Hosted, the app sits behind Caddy on plain HTTP; the public address is HTTPS.
         return f"https://{request.headers.get('host')}" if limits else str(request.base_url).rstrip("/")
 
-    @app.post("/api/swings/{swing_id}/share")
-    def share_summary(swing_id: str, request: Request) -> dict[str, Any]:
-        """Share (or refresh) this swing's summary: a snapshot of the PDF, a preview picture,
-        and the checkpoint list, at a link anyone can open. Sharing again keeps the link."""
-        folder = swing_or_404(swing_id, request)
-        analysis_path = folder / "analysis.json"
-        if store.status(swing_id) != "analyzed" or not analysis_path.exists():
-            raise HTTPException(409, "Analyze this swing first, then share its summary.")
+    def write_shared(swing_id: str) -> str:
+        """(Re)make the shared snapshot from the latest analysis: the PDF, the preview picture,
+        and the checkpoint counts. Keeps the swing's link if it has one. Returns the code."""
+        folder = store.path(swing_id)
         meta = store.meta(swing_id)
-        analysis = json.loads(analysis_path.read_text())
+        analysis = json.loads((folder / "analysis.json").read_text())
         pdf = summary_pdf(folder, meta.name, meta.created or "", analysis, config["golfer"]["torso_cm"])
         (folder / share.PDF_FILE).write_bytes(pdf)
         share.write_preview(folder / "summary.png", folder / share.PREVIEW_FILE)
-        old = meta.notes.get("share") or {}
-        meta.notes["share"] = {"code": old.get("code") or share.new_code(), "shared": datetime.now().isoformat(timespec="seconds"),
+        meta = store.meta(swing_id)  # re-read: the PDF took a moment
+        code = (meta.notes.get("share") or {}).get("code") or share.new_code()
+        meta.notes["share"] = {"code": code, "shared": datetime.now().isoformat(timespec="seconds"),
                                "items": share.snapshot_items(analysis)}
         store.save_meta(meta)
-        return {"url": share_url(request, meta.notes["share"]["code"])}
+        return code
+
+    @app.post("/api/swings/{swing_id}/share")
+    def share_summary(swing_id: str, request: Request) -> dict[str, Any]:
+        """Share this swing's summary at a link anyone can open. Every later analysis updates
+        what the link shows (see analyze_swing); the link itself stays the same."""
+        folder = swing_or_404(swing_id, request)
+        if store.status(swing_id) != "analyzed" or not (folder / "analysis.json").exists():
+            raise HTTPException(409, "Analyze this swing first, then share its summary.")
+        code = (store.meta(swing_id).notes.get("share") or {}).get("code") or write_shared(swing_id)
+        return {"url": share_url(request, code)}
 
     @app.delete("/api/swings/{swing_id}/share")
     def stop_sharing(swing_id: str, request: Request) -> dict[str, str]:

@@ -78,3 +78,23 @@ def test_only_analyzed_swings_can_be_shared(tmp_path):
     meta = analyzed_swing(tmp_path)
     (tmp_path / meta.id / "analysis.json").unlink()
     assert TestClient(create_app(tmp_path)).post(f"/api/swings/{meta.id}/share", json={}).status_code == 409
+
+
+def test_shared_summary_follows_each_new_analysis(tmp_path, monkeypatch):
+    from swingcheck.app import server
+    meta = analyzed_swing(tmp_path)
+    client = TestClient(create_app(tmp_path))
+    url = client.post(f"/api/swings/{meta.id}/share", json={}).json()["url"]
+    code = url.rsplit("/", 1)[1]
+    assert "1 good, 0 to watch, and 1 to fix" in client.get(f"/s/{code}").text
+
+    def fake_analyze(folder, view, cfg, **kw):  # re-marked and analyzed again: now all good
+        (folder / "analysis.json").write_text(json.dumps({"view": "dtl", "verdicts": [
+            {"name": "address", "title": "Address posture", "status": "ok", "label": "Good posture", "rows": []},
+            {"name": "top", "title": "Top", "status": "ok", "label": "Good top", "rows": []}]}))
+    monkeypatch.setattr(server, "analyze", fake_analyze)
+    job = client.post(f"/api/swings/{meta.id}/analyze", json={}).json()["job"]
+    assert client.app.state.jobs.wait(job["id"], timeout=30).state == "done"
+    assert "2 good, 0 to watch, and 0 to fix" in client.get(f"/s/{code}").text  # same link, new results
+    # Sharing again just gives the same link.
+    assert client.post(f"/api/swings/{meta.id}/share", json={}).json()["url"] == url

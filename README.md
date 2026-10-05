@@ -827,9 +827,9 @@ PDF. Messenger and similar apps show a preview card for it (the address, top, an
 impact frames and the checkpoint counts), read from a tiny page that sends a
 browser on to the PDF at once. It's a snapshot saved inside
 the swing's folder (`swingcheck/app/share.py`): never the video or its file name,
-and the code is random and separate from your key. **Share again** updates it at
-the same link after a re-analysis; **Stop sharing** ends it at once, and it ends
-anyway when the swing is deleted.
+and the code is random and separate from your key. It follows the latest
+results: each re-analysis updates what the link shows, at the same link.
+**Stop sharing** ends it at once, and it ends anyway when the swing is deleted.
 
 On the swing list, each analyzed swing shows the same 8 dots under its
 thumbnail; swings still to mark or analyze say what's next.

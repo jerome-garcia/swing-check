@@ -337,14 +337,14 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
   const pdf = el("a", { class: "btn", href: `/api/swings/${encodeURIComponent(s.id)}/summary.pdf`, download: "" },
     "Download summary");
   const report = { label: "Text report", href: fileUrl(s.id, "report.txt"), newTab: true };
-  // Sharing: a link anyone can open to the summary (swingcheck/app/share.py), until the
-  // swing is deleted. Sharing again updates it with the latest results, at the same link.
+  // Sharing: a link anyone can open to the summary PDF (swingcheck/app/share.py), until the
+  // swing is deleted. It follows re-analysis by itself; the button only sends the link.
   const shared = s.notes && s.notes.share;
   const shareUrl = shared ? `${location.origin}/s/${shared.code}` : null;
   const shareError = el("span", { class: "subtle small", hidden: true });
   const shareBtn = el("button", {
     class: "btn", type: "button",
-    title: "A link anyone can open: this summary, until the swing is deleted",
+    title: "A link anyone can open to this summary, until the swing is deleted",
     onclick: async () => {
       shareBtn.disabled = true;
       try {
@@ -357,12 +357,12 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
         shareError.hidden = false;
       }
     },
-  }, shared ? "Share again" : "Share summary");
+  }, "Share summary");
   const copied = justShared && shareUrl && justShared.url.endsWith(`/s/${shared.code}`) ? justShared.how : null;
   justShared = null;
   const shareNote = shared ? el("div", { class: "notice share-note" },
     "Your summary is shared: anyone with ", el("a", { href: shareUrl, target: "_blank", rel: "noopener" }, "this link"),
-    " can see it until the swing is deleted. ",
+    " can see it, always with your latest results, until the swing is deleted. ",
     copied === "copied" ? el("strong", {}, "Link copied. ") : null,
     el("button", { class: "linkish", type: "button", onclick: async e => {
       e.target.textContent = (await sendLink(shareUrl)) === "copied" ? "Copied" : "Copy link";
