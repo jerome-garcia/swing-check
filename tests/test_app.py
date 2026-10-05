@@ -370,3 +370,15 @@ def test_key_frames_are_shown_as_small_cached_jpegs(tmp_path):
     assert client.get(f"/files/{meta.id}/check_top.jpg?w=720", headers={"if-none-match": r.headers["etag"]}).status_code == 200
     assert client.get(f"/files/{meta.id}/nothing.jpg").status_code == 404
     assert "check_top.w720.jpg" not in client.get(f"/api/swings/{meta.id}").json().get("files", [])
+
+
+def test_key_frame_addresses_change_with_each_analysis(client, runs):
+    # Within one page a browser reuses a picture it already has at the same address, so
+    # a re-analysis must give the key frames a new address (images_version).
+    import os
+    import time
+    before = client.get("/api/swings/old_swing").json()["images_version"]
+    later = time.time_ns() + 10**9
+    os.utime(runs / "old_swing" / "analysis.json", ns=(later, later))
+    assert client.get("/api/swings/old_swing").json()["images_version"] != before
+    assert all("images_version" in s for s in client.get("/api/swings").json())

@@ -142,7 +142,7 @@ function checkpointStepper(s, states, focusPick) {
     const frame = cp.phase && s.analysis && s.analysis.phases ? s.analysis.phases[cp.phase] : undefined;
     let url = null;
     let src = null;
-    if (name) [url, src] = [fileUrl(s.id, name), imageUrl(s.id, name)]; // full-size PNG to open, small JPEG to show
+    if (name) [url, src] = [fileUrl(s.id, name), imageUrl(s.id, name, s.images_version)]; // full-size PNG to open, small JPEG to show
     else if (frame !== undefined && s.video) url = src = `/api/swings/${encodeURIComponent(s.id)}/frames/${frame}.jpg?w=720`;
     if (!url) return el("div", { class: "step-frame empty-frame" }, "Mark this checkpoint to see its frame");
     return el("a", { class: "step-frame", href: url, target: "_blank", rel: "noopener", title: "Open full size" },
@@ -202,7 +202,7 @@ function freezeFrames(s) {
     el("div", { class: "freeze-row" }, names.map(n => {
       const url = fileUrl(s.id, `${n}.png`);
       return el("a", { class: "freeze", href: url, target: "_blank", rel: "noopener" },
-        el("img", { src: imageUrl(s.id, `${n}.png`, 360), alt: `${PHASE_LABELS[n]} frame`, loading: "lazy" }),
+        el("img", { src: imageUrl(s.id, `${n}.png`, s.images_version, 360), alt: `${PHASE_LABELS[n]} frame`, loading: "lazy" }),
         el("span", {}, PHASE_LABELS[n]));
     })));
 }

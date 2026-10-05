@@ -67,9 +67,11 @@ export function formatDate(iso) {
 }
 
 // A key-frame PNG as shown on the page: a small JPEG copy (the server makes it; see
-// web_image), cached by the browser and checked for changes on each visit.
-export function imageUrl(id, png, width = 720) {
-  return `${fileUrl(id, png.replace(/\.png$/, ".jpg"), false)}?w=${width}`;
+// web_image), cached by the browser. `version` (the swing's images_version) changes with
+// each analysis: within one page a browser reuses a picture it already has at the same
+// address without asking the server, so a re-analysis needs a new address.
+export function imageUrl(id, png, version, width = 720) {
+  return `${fileUrl(id, png.replace(/\.png$/, ".jpg"), false)}?w=${width}&v=${encodeURIComponent(version || "0")}`;
 }
 
 export function fileUrl(id, name, bust = true) {

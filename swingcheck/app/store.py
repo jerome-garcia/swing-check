@@ -146,7 +146,12 @@ class Store:
             verdicts = [{"name": v.get("name"), "title": v.get("title"), "status": v.get("status"), "label": v.get("label")}
                         for v in analysis.get("verdicts", [])]
         thumb = next((n for n in ("address.png", "top.png") if (folder / n).exists()), None)
-        summary = {**asdict(meta), "status": status, "verdicts": verdicts, "thumbnail": thumb}
+        # Changes with every analysis: the page puts it in the key frames' addresses, since a
+        # browser reuses a picture it already showed at the same address without asking again.
+        analysis_file = folder / "analysis.json"
+        images_version = f"{analysis_file.stat().st_mtime_ns:x}" if analysis_file.exists() else "0"
+        summary = {**asdict(meta), "status": status, "verdicts": verdicts, "thumbnail": thumb,
+                   "images_version": images_version}
         summary.pop("owner")  # never sent to the page
         return summary
 

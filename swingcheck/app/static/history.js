@@ -67,7 +67,7 @@ export async function renderHistory(view, isCurrent) {
   const grid = el("div", { class: "grid" }, swings.map(s => {
     const thumb = el("div", { class: "thumb" });
     // The address key frame once analyzed; before that, the clip's first frame.
-    const src = s.thumbnail ? (s.thumbnail.endsWith(".png") ? imageUrl(s.id, s.thumbnail, 360) : fileUrl(s.id, s.thumbnail))
+    const src = s.thumbnail ? (s.thumbnail.endsWith(".png") ? imageUrl(s.id, s.thumbnail, s.images_version, 360) : fileUrl(s.id, s.thumbnail))
       : s.status !== "uploaded" ? `/api/swings/${encodeURIComponent(s.id)}/frames/0.jpg?w=360` : null;
     if (src) thumb.style.backgroundImage = `url("${src}")`;
     else thumb.append(el("span", {}, STATUS_TEXT[s.status]));

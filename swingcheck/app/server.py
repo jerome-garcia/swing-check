@@ -49,10 +49,12 @@ WEB_IMAGE_WIDTHS = (360, 720)
 
 def web_image(png: Path, width: int) -> Path:
     """A JPEG copy of a key-frame PNG at most `width` px wide (one of WEB_IMAGE_WIDTHS), made
-    on first request next to it and remade if the PNG is newer (a re-analysis)."""
+    on first request next to it. The copy carries the PNG's modified time, and is remade
+    whenever the two differ (a re-analysis, or a PNG put back from elsewhere)."""
     width = min((w for w in WEB_IMAGE_WIDTHS if w >= width), default=WEB_IMAGE_WIDTHS[-1])
     out = png.with_name(f"{png.stem}.w{width}.jpg")
-    if out.exists() and out.stat().st_mtime_ns >= png.stat().st_mtime_ns:
+    png_mtime = png.stat().st_mtime_ns
+    if out.exists() and out.stat().st_mtime_ns == png_mtime:
         return out
     import cv2
 
@@ -66,6 +68,7 @@ def web_image(png: Path, width: int) -> Path:
         raise HTTPException(500, "Couldn't make the picture")
     tmp = out.with_suffix(f".{os.getpid()}.tmp")
     tmp.write_bytes(data.tobytes())
+    os.utime(tmp, ns=(png_mtime, png_mtime))
     tmp.replace(out)  # atomic: two requests at once can't serve half a file
     return out
 
