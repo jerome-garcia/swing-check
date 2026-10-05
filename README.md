@@ -329,11 +329,11 @@ caching and basic abuse protection.
 
 1. ✅ **Privacy between users.** Done: an owner key in a cookie, with no sign-in
    and no database (see "Hosted mode" below).
-2. ✅ **Limits.** Done: each visitor keeps at most **3 swings** (delete one to add
+2. ✅ **Limits.** Done: each visitor keeps at most **4 swings** (delete one to add
    another), uploads up to 200 MB and 20 seconds, one job at a time, and "busy,
    try again" past 10 waiting jobs.
 3. ✅ **Automatic cleanup.** Done: swings are deleted **3 days** after upload. The
-   original upload is kept until then, so Trim still works; with 3 swings for 3
+   original upload is kept until then, so Trim still works; with 4 swings for 3
    days the disk per visitor stays small.
 4. ✅ **Wording and legal.** Done: Terms of use (`#/terms`) and a Privacy notice
    (`#/privacy`) in the app, linked from every page's footer, which also says
@@ -363,7 +363,7 @@ and the limits in `[hosted]` in `config/default.toml`.
   and the link loses the swings, which is fine since they expire anyway.
 - **Limits.** Too big, too many swings or too busy is refused before the upload
   is received. A clip over the length limit is deleted right after upload. The
-  upload page shows the limits, and says so when you already have 3 swings.
+  upload page shows the limits, and says so when you already have 4 swings.
 - **Expiry.** A background sweep deletes swings 3 days after upload, at startup
   and every 30 minutes. Each card and swing page says when ("Deleted Oct 8").
 - **Search engines.** Every response is marked `noindex`.

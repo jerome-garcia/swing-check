@@ -300,7 +300,7 @@ max_playback_fps = 60
 [hosted]
 # Only used when the app runs on a public server (`swingcheck --hosted`); see
 # swingcheck/app/hosted.py. Each visitor sees only their own swings.
-max_swings = 3                # swings a visitor can keep; delete one to add another
+max_swings = 4                # swings a visitor can keep; delete one to add another
 keep_days = 3                 # swings are deleted this long after upload
 max_upload_mb = 200           # largest video file accepted
 max_clip_seconds = 20         # longest clip accepted (real time, as the phone recorded it)

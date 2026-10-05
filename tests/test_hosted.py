@@ -85,11 +85,12 @@ def test_swing_folder_stores_a_hash_not_the_key(alice, app):
     assert stored["owner"] and key not in stored["owner"]
 
 
-def test_three_swings_then_delete_one_to_add_another(alice, bob):
-    ids = [upload(alice).json()["id"] for _ in range(3)]
+def test_swing_limit_then_delete_one_to_add_another(alice, bob, app):
+    limit = app.state.config["hosted"]["max_swings"]
+    ids = [upload(alice).json()["id"] for _ in range(limit)]
     r = upload(alice)
     assert r.status_code == 409 and "Delete one" in r.json()["detail"]
-    assert alice.get("/api/owner").json()["swings"] == 3
+    assert alice.get("/api/owner").json()["swings"] == limit
     assert upload(bob).status_code == 200  # the limit is per visitor
     assert alice.delete(f"/api/swings/{ids[0]}").status_code == 200
     assert upload(alice).status_code == 200
