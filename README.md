@@ -418,7 +418,8 @@ Full analysis takes about 1.3–1.4× a Ryzen 7 5800H laptop: 73 s for McIlroy
 
 **Scaling notes.** One app process only: jobs live in memory, so never run
 several workers. Jobs run one at a time (pose uses the whole CPU), so grow with a
-bigger server, not more processes. Frame images use one lock per open video, so
+bigger server, not more processes. A queued job tells its page its place in line
+and a rough wait ("1 swing ahead of yours, about 2 min", from `TYPICAL_S` in jobs.py). Frame images use one lock per open video, so
 visitors moving through frames of different swings don't wait for each other, and finished jobs
 are forgotten after 6 hours.
 

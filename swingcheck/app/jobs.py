@@ -23,6 +23,9 @@ JobFn = Callable[[Callable[[str, float | None, str], None]], Any]
 # for its error message, which is read soon after.
 KEEP_FINISHED_S = 6 * 60 * 60
 
+# Rough time per job on the 2-CPU server, for the "N ahead of yours, about M min" message.
+TYPICAL_S = {"convert": 20, "analyze": 90}
+
 
 @dataclass
 class Job:
@@ -33,6 +36,7 @@ class Job:
     stage: str = ""
     fraction: float | None = None
     message: str = "Waiting for another job to finish"
+    ahead: int | None = None  # while queued: jobs running or queued before this one
     error: str | None = None
     created: float = field(default_factory=time.time)
     finished: float | None = None
@@ -61,14 +65,14 @@ class JobManager:
 
     def get(self, job_id: str) -> Job | None:
         with self._lock:
-            return self._jobs.get(job_id)
+            return self._placed(self._jobs.get(job_id))
 
     def active_for(self, swing_id: str) -> Job | None:
         """The queued or running job for a swing, if any."""
         with self._lock:
             for job in self._jobs.values():
                 if job.swing_id == swing_id and job.state in ("queued", "running"):
-                    return job
+                    return self._placed(job)
         return None
 
     def pending(self) -> int:
@@ -79,7 +83,25 @@ class JobManager:
     def latest_for(self, swing_id: str) -> Job | None:
         with self._lock:
             jobs = [j for j in self._jobs.values() if j.swing_id == swing_id]
-        return max(jobs, key=lambda j: j.created) if jobs else None
+            return self._placed(max(jobs, key=lambda j: j.created)) if jobs else None
+
+    def _placed(self, job: Job | None) -> Job | None:
+        """A queued job with its place in line and a rough wait (call with the lock held)."""
+        if job is None or job.state != "queued":
+            return job
+        # Jobs are kept in the order they were submitted, which is the order they run.
+        order = list(self._jobs)
+        mine = order.index(job.id)
+        before = [j for i, j in enumerate(self._jobs.values())
+                  if j.state == "running" or (j.state == "queued" and i < mine)]
+        job.ahead = len(before)
+        if before:
+            minutes = max(1, round(sum(TYPICAL_S.get(j.kind, 60) for j in before) / 60))
+            job.message = (f"Waiting in line: {len(before)} {'swing' if len(before) == 1 else 'swings'} "
+                           f"ahead of yours, about {minutes} min")
+        else:
+            job.message = "Starting soon"
+        return job
 
     def _forget_old(self, now: float) -> None:
         """Drop jobs that finished more than KEEP_FINISHED_S ago (call with the lock held)."""
@@ -101,7 +123,7 @@ class JobManager:
             job_id = self._queue.get()
             with self._lock:
                 job, fn = self._jobs[job_id], self._fns.pop(job_id)
-                job.state, job.message = "running", "Starting"
+                job.state, job.message, job.ahead = "running", "Starting", None
 
             def progress(stage: str, fraction: float | None, message: str, job: Job = job) -> None:
                 with self._lock:
