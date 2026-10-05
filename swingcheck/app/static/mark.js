@@ -33,7 +33,7 @@ const POINT_INFO = {
   grip: { label: "Hands", hint: "Middle of your grip, between your two hands", color: "#ffffff", shape: "square", dx: 13, dy: -9 },
 };
 const REFERENCE_DIR = "reference"; // static/reference: the example swing shown beside each step
-const PLANE_COLOR = "#ff00ff"; // the address shaft line is the swing plane, magenta as on the key frames
+const PLANE_COLOR = "#ff9f43"; // the address shaft line is the swing plane, in the brand's plane orange
 // Wording for points on a later checkpoint frame.
 const STEP_POINT_INFO = {
   takeaway: {
@@ -216,7 +216,7 @@ export async function renderMark(view, id, isCurrent) {
 
     const points = cur().points;
     if (points.clubhead && points.grip) {
-      // At address the shaft line is the swing plane (magenta); later, just the shaft (white).
+      // At address the shaft line is the swing plane (orange); later, just the shaft (white).
       const [ax, ay] = toCanvas(...points.clubhead);
       const [bx, by] = toCanvas(...points.grip);
       ctx.strokeStyle = state.active === "address" ? PLANE_COLOR : "#ffffff";
