@@ -8,7 +8,7 @@ CFG = load_config()["phases"]
 SCALE = 260.0  # torso length in px
 
 
-def synthetic_swing(fps: float, seed: int = 0, waggle: bool = False, noise: float = 0.5):
+def synthetic_swing(fps: float, seed: int = 0, waggle: bool = False, noise: float = 0.5, creep: bool = False):
     """Hand track (frames, 2) for a stylized swing, plus the true phase frames.
 
     still address -> backswing up -> short pause at top -> accelerating
@@ -28,8 +28,11 @@ def synthetic_swing(fps: float, seed: int = 0, waggle: bool = False, noise: floa
         add(0.4, lambda s: 300 + 12 * np.sin(2 * np.pi * s), lambda s: 800 - 8 * np.sin(2 * np.pi * s) ** 2)
     end_still = add(0.6, lambda s: 300 + 0 * s, lambda s: 800 + 0 * s)
     truth["address"] = end_still - 1
+    if creep:  # a takeaway that starts too slowly to count as moving: 8 px over 0.3 s
+        add(0.3, lambda s: 300 - 8 * s, lambda s: 800 + 0 * s)
     ease = lambda s: (1 - np.cos(np.pi * s)) / 2  # noqa: E731
-    end_back = add(0.8, lambda s: 300 - 100 * np.sin(np.pi * s), lambda s: 800 - 420 * ease(s))
+    x0 = 292 if creep else 300
+    end_back = add(0.8, lambda s: x0 - 100 * np.sin(np.pi * s), lambda s: 800 - 420 * ease(s))
     end_pause = add(0.1, lambda s: 300 + 0 * s, lambda s: 380 + 0 * s)
     truth["top"] = (end_back + end_pause) // 2
     end_down = add(0.25, lambda s: 300 + 40 * s, lambda s: 380 + 410 * s**2)
@@ -42,6 +45,11 @@ def synthetic_swing(fps: float, seed: int = 0, waggle: bool = False, noise: floa
     return track, truth
 
 
+def assert_address(phases: Phases, truth: dict, fps: float):
+    """Address lands on the still set-up: never after it ends, and at most ~150 ms before."""
+    assert truth["address"] - max(2, 0.15 * fps) <= phases.address <= truth["address"],         f"address: got {phases.address}, want up to {truth['address']} (fps {fps})"
+
+
 def assert_close(phases: Phases, truth: dict, fps: float, tol_ms: dict):
     for name, ms in tol_ms.items():
         got, want = getattr(phases, name), truth[name]
@@ -52,7 +60,8 @@ def assert_close(phases: Phases, truth: dict, fps: float, tol_ms: dict):
 def test_detects_phases_at_common_frame_rates(fps):
     track, truth = synthetic_swing(fps)
     phases = detect_phases(track, fps, SCALE, CFG)
-    assert_close(phases, truth, fps, {"address": 40, "top": 60, "impact": 15})
+    assert_close(phases, truth, fps, {"top": 60, "impact": 15})
+    assert_address(phases, truth, fps)
     assert phases.address < phases.takeaway < phases.top < phases.early_downswing < phases.impact
 
 
@@ -60,7 +69,14 @@ def test_waggle_before_address_is_ignored():
     fps = 240.0
     track, truth = synthetic_swing(fps, waggle=True)
     phases = detect_phases(track, fps, SCALE, CFG)
-    assert_close(phases, truth, fps, {"address": 40, "top": 60, "impact": 15})
+    assert_close(phases, truth, fps, {"top": 60, "impact": 15})
+    assert_address(phases, truth, fps)
+
+
+@pytest.mark.parametrize("fps", [30.0, 240.0])
+def test_slow_start_of_the_takeaway_is_not_address(fps):
+    track, truth = synthetic_swing(fps, creep=True)
+    assert_address(detect_phases(track, fps, SCALE, CFG), truth, fps)
 
 
 def test_finish_higher_than_top_is_not_mistaken_for_top():

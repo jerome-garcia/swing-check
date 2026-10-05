@@ -628,7 +628,9 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    uploads and converts with a progress bar; the conversion straightens rotated
    phone video and keeps the slo-mo frame rate. It then takes a quick look
    through the clip (about 5–20 s) to find your swing, so each marking step can
-   open on a **suggested frame**, and checks the camera at address. (Face-on is
+   open on a **suggested frame** (address errs early: a still set-up frame just
+   before the hands start back, never one where the swing has begun), and checks
+   the camera at address. (Face-on is
    shown but disabled until a future release.) Choose **Right-handed** or
    **Left-handed** under *Golfer*; the choice is remembered for next time, and a
    swing's handedness can be switched later on the marking screen (*Golfer*):

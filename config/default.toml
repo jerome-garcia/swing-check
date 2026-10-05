@@ -92,6 +92,12 @@ still_min_ms = 150
 # Address is the last frame before the hands move this far (body units) from
 # where they rested.
 address_move_tolerance = 0.03
+# A takeaway often starts slower than "still": from there, address goes back while
+# the hands were at least this much farther away (body units) this long before...
+address_settle_ms = 100
+address_settle_tolerance = 0.004
+# ...and then this much earlier again, so it lands before the swing has started.
+address_margin_ms = 100
 # Extra smoothing applied to the hand path for phase detection only.
 smoothing_ms = 40
 # The downswing's lowest hand point is searched until the hands have risen

@@ -11,7 +11,9 @@ Steps:
      a small tolerance of the lowest point).
   3. Top: the highest hand point between D and the last time (before D) the
      hands were down at impact height.
-  4. Address: the last still stretch of hands at or before that low point.
+  4. Address: the last still stretch of hands at or before that low point, then
+     back to before the hands started creeping away (a takeaway often starts
+     too slowly to count as moving), and a little earlier still to be safe.
   5. Takeaway / early downswing: where the hands cross a set fraction of the
      address-to-top height on the way up and on the way down.
 """
@@ -152,6 +154,17 @@ def detect_phases(hands: np.ndarray, fps: float, scale: float, cfg: dict[str, An
     tol = cfg["address_move_tolerance"] * scale
     while address + 1 < top and np.linalg.norm(xy[address + 1] - rest) <= tol:
         address += 1
+    # The hands are on their way by now. Walk back while, looking a short window
+    # earlier, they were still clearly farther from here (moving steadily this way),
+    # then step back a margin: better a frame of standing still than the swing begun.
+    here = xy[address]
+    window = max(1, int(round(cfg["address_settle_ms"] * fps / 1000)))
+    creep = cfg["address_settle_tolerance"] * scale
+    with np.errstate(invalid="ignore"):
+        while (address - window >= 0 and np.linalg.norm(xy[address - window] - here)
+               - np.linalg.norm(xy[address] - here) >= creep):
+            address -= 1
+    address = max(0, address - int(round(cfg["address_margin_ms"] * fps / 1000)))
 
     # 5. Checkpoints.
     takeaway, early = checkpoints(y, address, top, impact, cfg["takeaway_fraction"], cfg["downswing_fraction"])
