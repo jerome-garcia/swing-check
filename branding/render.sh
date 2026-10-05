@@ -4,7 +4,7 @@
 #     -> branding/ko-fi-cover.png              (3000x1000)
 #     -> branding/swingcheck-brand-guide.pdf   (one A4 page)
 #     -> branding/swingcheck-brand-guide.png   (preview of the PDF)
-#     -> swingcheck/app/static/og-image.png    (link preview, 1200x630)
+#     -> swingcheck/app/static/og-image.jpg    (link preview, 1200x630, ~60 KB: keep it under 300 KB)
 cd "$(dirname "$0")"
 EDGE="/c/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"
 HERE="$(pwd -W)"
@@ -14,4 +14,5 @@ HERE="$(pwd -W)"
   --print-to-pdf="$HERE/swingcheck-brand-guide.pdf" "file:///$HERE/brand-guide.html"
 "$EDGE" --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=2 \
   --window-size=794,1123 --screenshot="$HERE/swingcheck-brand-guide.png" "file:///$HERE/brand-guide.html"
-"$EDGE" --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=1   --window-size=1200,630 --screenshot="$(cd ../swingcheck/app/static && pwd -W)/og-image.png" "file:///$HERE/link-preview.html"
+"$EDGE" --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=1   --window-size=1200,630 --screenshot="$HERE/link-preview.png" "file:///$HERE/link-preview.html"
+ffmpeg -v error -y -i link-preview.png -q:v 2 ../swingcheck/app/static/og-image.jpg && rm link-preview.png
