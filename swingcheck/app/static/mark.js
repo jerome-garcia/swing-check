@@ -431,8 +431,8 @@ export async function renderMark(view, id, isCurrent) {
     suggestNote.hidden = cur().suggested === undefined;
     suggestNote.replaceChildren(
       `This opens on a suggested frame, a best guess at your ${stepDef().title.toLowerCase()}.`, el("br"),
-      hasExample() ? "Check it against the example, and move the slider to the exact frame if it's off, before you click."
-        : "Check it, and move the slider to the exact frame if it's off, before you click.");
+      hasExample() ? "Before you click, check it against the example and move the slider to the exact frame if it's off."
+        : "Before you click, check it and move the slider to the exact frame if it's off.");
     showFrame(cur().frame);
     refresh(); // the frame-order check and the step tabs depend on the frame
   }
