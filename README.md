@@ -420,7 +420,7 @@ Full analysis takes about 1.3–1.4× a Ryzen 7 5800H laptop: 73 s for McIlroy
 queue, uploads in progress, disk, version; uploads, conversions, and analyses per day
 for a week (with failures); typical wait and analysis time; recent errors; the most common camera-check findings; and how many browsers
 uploaded each day (a code from the browser's key and a secret that changes daily and
-is never saved, so days can't be linked) and how many have swings stored now. Swings are deleted after 3 days,
+is never saved, so days can't be linked). Swings are deleted after 3 days,
 so the counts come from `admin-events.jsonl` in the swings folder: event, time,
 durations, and errors (swing folder blanked), no names, IPs, or keys, kept 90 days
 (the Privacy page says so). Hosted, Cloudflare Access guards `/admin` with an email

@@ -127,19 +127,10 @@ def summary(events: list[dict[str, Any]], live: dict[str, Any], now: float | Non
     }
 
 
-def live_status(jobs, uploading: int, runs_dir: Path, version: str, started: float,
-                keep_days: int | None = None) -> dict[str, Any]:
+def live_status(jobs, uploading: int, runs_dir: Path, version: str, started: float) -> dict[str, Any]:
     now = time.time()
     running = [j for j in jobs if j.state == "running"]
     disk = shutil.disk_usage(runs_dir)
-    owners = set()  # browsers with swings stored now (each swing records its owner's scrambled key)
-    for meta in runs_dir.glob("*/swing.json"):
-        try:
-            owner = json.loads(meta.read_text()).get("owner")
-        except (OSError, ValueError):
-            continue
-        if owner:
-            owners.add(owner)
     return {
         "version": version,
         "up_s": now - started,
@@ -147,8 +138,6 @@ def live_status(jobs, uploading: int, runs_dir: Path, version: str, started: flo
         "queued": sum(j.state == "queued" for j in jobs),
         "uploading": uploading,
         "swings_stored": sum(1 for p in runs_dir.iterdir() if p.is_dir()),
-        "browsers_stored": len(owners),
-        "keep_days": keep_days,
         "disk_free_gb": round(disk.free / 1e9, 1),
         "disk_used_pct": round(100 * (disk.total - disk.free) / disk.total),
     }
@@ -255,13 +244,11 @@ def page(data: dict[str, Any]) -> str:
         return (f'<div class="tile"><div class="label">{label}</div><div class="value">{value}</div>'
                 + (f'<div class="sub">{sub}</div>' if sub else "") + "</div>")
 
-    active = f"Active browsers ({live['keep_days']} days)" if live.get("keep_days") else "Active browsers"
     tiles = "".join([
         tile("Processing now", esc(running)),
         tile("In line", live["queued"]),
         tile("Uploading", live["uploading"]),
         tile("Swings stored", live["swings_stored"]),
-        tile(active, live["browsers_stored"]),
         tile("Disk used", f"{live['disk_used_pct']}%", f"{live['disk_free_gb']} GB free"),
         tile("Up for", _duration(live["up_s"]), esc(live["version"])),
     ])

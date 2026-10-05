@@ -33,7 +33,7 @@ def test_summary_counts_days_speed_and_problems():
         {"t": now, "event": "analyze", "ok": False, "wait_s": 4, "run_s": 5, "error": "Boom"},
     ]
     live = {"version": "v1", "up_s": 5, "running": [], "queued": 0, "uploading": 0, "swings_stored": 2,
-            "browsers_stored": 1, "keep_days": 3, "disk_free_gb": 30.0, "disk_used_pct": 18}
+            "disk_free_gb": 30.0, "disk_used_pct": 18}
     s = admin.summary(events, live, now)
     assert s["days"][0] == {"date": s["days"][0]["date"], "uploaders": 2, "upload": 3, "convert_ok": 1,
                             "convert_failed": 0, "analyze_ok": 1, "analyze_failed": 1}
@@ -42,7 +42,7 @@ def test_summary_counts_days_speed_and_problems():
     assert s["camera"] == [("You're small in the frame", 1)]
     page = admin.page(s)
     assert "SwingCheck admin" in page and "+1 failed" in page and "Boom" in page
-    assert "Active browsers (3 days)" in page and "Idle" in page and "In line" in page
+    assert "Active browsers" not in page and "Uploaders" in page and "Idle" in page and "In line" in page
     assert "one at a time" not in page and "since the last restart" not in page  # descriptions removed
     live["running"] = [{"kind": "analyze", "for_s": 45}]
     assert "Analyzing · 45 s" in admin.page(admin.summary(events, live, now))
@@ -95,10 +95,3 @@ def test_daily_codes_match_within_a_day_only():
     assert a == codes.code("owner-1", noon + 3600) != codes.code("owner-2", noon)
     assert codes.code("owner-1", noon + 86400) != a  # the next day: a new secret, so no link
 
-
-def test_browsers_with_swings_stored_are_counted(tmp_path):
-    for name, owner in (("a", "o1"), ("b", "o1"), ("c", "o2"), ("d", None)):
-        (tmp_path / name).mkdir()
-        (tmp_path / name / "swing.json").write_text(json.dumps({"owner": owner}))
-    live = admin.live_status([], 0, tmp_path, "v1", time.time(), 3)
-    assert live["swings_stored"] == 4 and live["browsers_stored"] == 2

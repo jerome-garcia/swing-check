@@ -536,8 +536,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     def admin_page(request: Request) -> HTMLResponse:
         if not admin_allowed(request):
             raise HTTPException(404, "Not Found")
-        live = admin.live_status(jobs.snapshot(), uploading, store.root, version, started_at,
-                                 limits["keep_days"] if limits else None)
+        live = admin.live_status(jobs.snapshot(), uploading, store.root, version, started_at)
         return HTMLResponse(admin.page(admin.summary(events.read(), live)),
                             headers={"Cache-Control": "no-store"})
 
