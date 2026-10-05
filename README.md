@@ -379,6 +379,14 @@ visitors' addresses rather than Cloudflare's.
 Back up the swings folder, or treat swings as disposable. Time one swing on a PC
 first to know how many swings a 2-CPU server handles per hour.
 
+**Scaling notes.** One app process only: jobs live in memory, so never run
+several workers. Jobs run one at a time (pose uses the whole CPU), so grow with a
+bigger server, not more processes. Frame images use one lock per open video, so
+visitors scrubbing different swings don't wait for each other, and finished jobs
+are forgotten after 6 hours. Not done yet: listing a visitor's swings reads every
+swing folder on the server to find theirs; once there are many visitors, keep
+each owner's swings in their own subfolder.
+
 **Later, cheapest long term.** MediaPipe also runs in the browser. Moving pose
 detection onto the user's device would leave the server serving static pages
 only (free on Cloudflare Pages or GitHub Pages): no uploads, no storage, no
@@ -393,7 +401,8 @@ detection, and trends across sessions.
 
 ## Setup (Windows)
 
-1. **Python 3.10+** ([python.org](https://www.python.org/downloads/)). Check with `py --version`.
+1. **Python 3.11** ([python.org](https://www.python.org/downloads/)). Check with `py --version`. Use 3.11
+   for the virtual environment: the app needs at least 3.11, and its MediaPipe and numpy versions are set up on it.
 2. **ffmpeg**:
 
    ```bash
