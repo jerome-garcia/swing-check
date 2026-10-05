@@ -58,7 +58,7 @@ export async function renderHistory(view, isCurrent) {
     view.replaceChildren(...head.filter(Boolean), el("div", { class: "empty" },
       el("h2", {}, "No swings yet"),
       el("p", {}, "Film one swing from behind (down-the-line), then upload the video to get started."),
-      el("a", { class: "btn primary", href: "#/new" }, "New swing")));
+      el("a", { class: "btn primary", href: "/new" }, "New swing")));
     return;
   }
 

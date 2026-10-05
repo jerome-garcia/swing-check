@@ -344,8 +344,8 @@ caching and basic abuse protection.
 3. ✅ **Automatic cleanup.** Done: swings are deleted **3 days** after upload. The
    original upload is kept until then, so Trim still works; with 4 swings for 3
    days the disk per visitor stays small.
-4. ✅ **Wording and legal.** Done: Terms of use (`#/terms`) and a Privacy notice
-   (`#/privacy`) in the app, linked from every page's footer, which also says
+4. ✅ **Wording and legal.** Done: Terms of use (`/terms`) and a Privacy notice
+   (`/privacy`) in the app, linked from every page's footer, which also says
    results are estimates, not coaching or medical advice; the PDF says it too.
    Hosted uploads need an "I agree" tick, checked by the server and saved in
    `swing.json` with the terms version (`TERMS_VERSION` in `static/legal.js`;
@@ -368,7 +368,9 @@ and the limits in `[hosted]` in `config/default.toml`.
 - **Private link.** Your swings shows "Copy private link"
   (`/#/claim/<key>`). Opening it on another device shows the same swings there.
   The key sits after the `#`, so it never reaches the server's or Caddy's logs,
-  and the app removes it from the address bar once used. Losing both the cookie
+  and the app removes it from the address bar once used. (Every other page has a
+  clean address, such as `/new` or `/swing/<id>/mark`, routed in the browser; the
+  server answers each with the app, and old `#/` links still open the right page.) Losing both the cookie
   and the link loses the swings, which is fine since they expire anyway.
 - **Limits.** Too big, too many swings, too many uploads from one IP address in a
   day (`max_uploads_per_ip_per_day`, so clearing cookies doesn't mean unlimited

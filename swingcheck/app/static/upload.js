@@ -1,5 +1,5 @@
 import { TERMS_VERSION } from "./legal.js";
-import { api, el, features, HAND_NAMES, listText, plural, progressBlock, swingUrl } from "./util.js";
+import { api, el, features, HAND_NAMES, listText, navigate, plural, progressBlock, swingUrl } from "./util.js";
 
 const HAND_KEY = "swingcheck.handedness"; // the last choice, so it's preset next time
 
@@ -44,7 +44,7 @@ export async function renderUpload(view, isCurrent) {
     view.replaceChildren(title,
       el("div", { class: "notice warn" },
         `You already have ${plural(used, "swing")}, the most you can keep. Delete one to add a new swing.`),
-      el("a", { class: "btn primary", href: "#/" }, "Go to your swings"));
+      el("a", { class: "btn primary", href: "/" }, "Go to your swings"));
     return;
   }
   let file = null;
@@ -139,7 +139,7 @@ export async function renderUpload(view, isCurrent) {
           // At 100% the server still saves and checks the file: don't leave the bar looking stuck.
           f => (f < 1 ? progress.update(f, `${Math.round(f * 100)}% uploaded`)
             : progress.update(null, "Uploaded. Saving and checking your video…")));
-        location.hash = swingUrl(res.id);
+        navigate(swingUrl(res.id));
       } catch (err) {
         progress.node.replaceWith(form);
         error.textContent = err.message;
@@ -152,10 +152,10 @@ export async function renderUpload(view, isCurrent) {
   el("section", { class: "panel" }, el("h2", {}, "2. Camera view"), el("div", { class: "choices" }, viewButtons)),
   el("section", { class: "panel" }, el("h2", {}, "3. Golfer"), el("div", { class: "choices" }, handButtons)),
   agreeBox ? el("label", { class: "agree", for: "agree" }, agreeBox,
-    el("span", {}, "I agree to the ", el("a", { href: "#/terms", target: "_blank" }, "Terms of use"), " and ",
-      el("a", { href: "#/privacy", target: "_blank" }, "Privacy notice"),
+    el("span", {}, "I agree to the ", el("a", { href: "/terms", target: "_blank" }, "Terms of use"), " and ",
+      el("a", { href: "/privacy", target: "_blank" }, "Privacy notice"),
       ", and I have the right to upload this video (it's of me, or of someone who agreed).")) : null,
-  el("div", { class: "actions" }, el("a", { class: "btn", href: "#/" }, "Cancel"), submit, submitHint));
+  el("div", { class: "actions" }, el("a", { class: "btn", href: "/" }, "Cancel"), submit, submitHint));
 
   view.replaceChildren(title, form);
   refresh();

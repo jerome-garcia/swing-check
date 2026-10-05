@@ -58,6 +58,15 @@ def test_page_addresses_its_css_and_js_by_fingerprint(client):
     assert "brand-version" in client.get(f"/style.css?v={digest}").text  # the query doesn't matter to the server
 
 
+def test_clean_page_addresses_get_the_app(client):
+    home = client.get("/").text
+    for path in ("/new", "/terms", "/privacy", "/swing/anything", "/swing/anything/mark"):
+        res = client.get(path)
+        assert res.status_code == 200 and res.text == home, path
+    assert client.get("/swing/a/b/c").status_code == 404  # not a page
+    assert client.get("/reference/reference.json").status_code == 200  # absolute: works from any page
+
+
 def test_fingerprint_changes_with_the_files(tmp_path, monkeypatch):
     for f in server.STATIC.iterdir():
         if f.is_file():

@@ -1,4 +1,4 @@
-// Terms of use and privacy notice, shown in the app (#/terms, #/privacy).
+// Terms of use and privacy notice, shown in the app (/terms, /privacy).
 // TERMS_VERSION is recorded with each hosted upload (the visitor agreed to this version);
 // change it whenever the wording of either page changes.
 
@@ -104,7 +104,7 @@ export async function renderLegal(view, page, isCurrent) {
   if (!isCurrent()) return;
   const isTerms = page === "terms";
   view.replaceChildren(el("article", { class: "legal" },
-    el("a", { class: "back", href: "#/" }, "← Your swings"),
+    el("a", { class: "back", href: "/" }, "← Your swings"),
     el("h1", {}, isTerms ? "Terms of use" : "Privacy notice"),
     ...(isTerms ? terms(hosted) : privacy(hosted)).filter(Boolean),
     el("p", { class: "subtle small" }, `Last updated ${UPDATED}.`)));

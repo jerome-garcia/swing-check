@@ -87,8 +87,15 @@ export function plural(n, word) {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
 }
 
+// Go to one of the app's pages without reloading (app.js routes on popstate).
+// replace: swap the current history entry instead of adding one.
+export function navigate(url, { replace = false } = {}) {
+  history[replace ? "replaceState" : "pushState"](null, "", url);
+  window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
 export function swingUrl(id, sub = "") {
-  return `#/swing/${encodeURIComponent(id)}${sub ? "/" + sub : ""}`;
+  return `/swing/${encodeURIComponent(id)}${sub ? "/" + sub : ""}`;
 }
 
 export function verdictChips(verdicts) {

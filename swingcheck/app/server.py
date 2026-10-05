@@ -475,9 +475,16 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
 
     page = index_page()
 
+    # The app's pages (clean addresses, routed in the browser: static/app.js). Opening or
+    # reloading any of them gets the app, which then shows that page.
     @app.get("/", include_in_schema=False)
     @app.get("/index.html", include_in_schema=False)
-    def index() -> HTMLResponse:
+    @app.get("/new", include_in_schema=False)
+    @app.get("/terms", include_in_schema=False)
+    @app.get("/privacy", include_in_schema=False)
+    @app.get("/swing/{swing_id}", include_in_schema=False)
+    @app.get("/swing/{swing_id}/mark", include_in_schema=False)
+    def index(swing_id: str | None = None) -> HTMLResponse:
         return HTMLResponse(page)
 
     app.mount("/", StaticFiles(directory=STATIC, html=True), name="static")

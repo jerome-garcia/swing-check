@@ -1,5 +1,5 @@
 import { renderResults } from "./results.js";
-import { api, el, expiryText, formatDate, HAND_NAMES, moreMenu, pollJob, postJSON, progressBlock, STATUS_TEXT,
+import { api, el, expiryText, formatDate, HAND_NAMES, moreMenu, navigate, pollJob, postJSON, progressBlock, STATUS_TEXT,
   swingUrl, VIEW_NAMES } from "./util.js";
 
 const JOB_TITLES = { convert: "Converting video", analyze: "Analyzing swing" };
@@ -9,7 +9,7 @@ const JOB_TITLES = { convert: "Converting video", analyze: "Analyzing swing" };
 export function swingHeader(s, actions = [], menuItems = []) {
   return el("div", { class: "page-head" },
     el("div", { class: "page-title" },
-      el("a", { class: "back", href: "#/" }, "← Your swings"),
+      el("a", { class: "back", href: "/" }, "← Your swings"),
       el("h1", {}, s.name),
       el("div", { class: "subtle small" },
         `${formatDate(s.created)} · ${VIEW_NAMES[s.view] || "View not set"} · ${HAND_NAMES[s.handedness] || HAND_NAMES.right}`
@@ -24,7 +24,7 @@ function deleteItem(s) {
       if (!confirm(`Delete "${s.name}" and all its files? This can't be undone.`)) return;
       try {
         await api(`/api/swings/${encodeURIComponent(s.id)}`, { method: "DELETE" });
-        location.hash = "#/";
+        navigate("/");
       } catch (err) { alert(err.message); }
     },
   };
@@ -77,7 +77,7 @@ export async function renderSwing(view, id, isCurrent) {
     return;
   }
   if (s.status === "converted") {
-    location.replace(swingUrl(id, "mark"));
+    navigate(swingUrl(id, "mark"), { replace: true });
     return;
   }
   // Results pages add Re-analyze and Report; Edit marks is always offered.

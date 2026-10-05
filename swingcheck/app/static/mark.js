@@ -1,4 +1,4 @@
-import { api, el, features, HAND_NAMES, listText, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
+import { api, el, features, HAND_NAMES, listText, navigate, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
 import { swingHeader } from "./swing.js";
 
 // Marking steps per view, all required. After address, one step per checkpoint, and
@@ -32,7 +32,7 @@ const POINT_INFO = {
   clubhead: { label: "Club neck", hint: "Where the shaft goes into the clubhead (the hosel)", color: "#ffffff", shape: "circle", dx: -70, dy: -10 },
   grip: { label: "Hands", hint: "Middle of your grip, between your two hands", color: "#ffffff", shape: "square", dx: 13, dy: -9 },
 };
-const REFERENCE_DIR = "reference"; // static/reference: the example swing shown beside each step
+const REFERENCE_DIR = "/reference"; // static/reference: the example swing shown beside each step
 const PLANE_COLOR = "#ff9f43"; // the address shaft line is the swing plane, in the brand's plane orange
 // Wording for points on a later checkpoint frame.
 const STEP_POINT_INFO = {
@@ -91,7 +91,7 @@ export async function renderMark(view, id, isCurrent) {
   ]);
   if (!isCurrent()) return;
   if (!s.video || (s.job && ["queued", "running"].includes(s.job.state))) {
-    location.replace(swingUrl(id));
+    navigate(swingUrl(id), { replace: true });
     return;
   }
 
@@ -617,7 +617,7 @@ export async function renderMark(view, id, isCurrent) {
       // Analyze straight away; the swing page shows the job's progress. If it can't start,
       // the marks are still saved and the swing page offers Analyze.
       try { await postJSON(`/api/swings/${encodeURIComponent(id)}/analyze`, {}); } catch { /* see above */ }
-      location.hash = swingUrl(id);
+      navigate(swingUrl(id));
     } catch (err) {
       saveError.textContent = err.message;
       saveError.hidden = false;
