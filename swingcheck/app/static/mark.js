@@ -140,38 +140,96 @@ export async function renderMark(view, id, isCurrent) {
   const ctx = canvas.getContext("2d");
   let preview = null; // scaled image for the current frame
   let full = null;    // full-resolution image, for the loupe
-  let loadToken = 0;
-  let fullTimer = null;
+  // Each frame is a round trip to the server, so: one request at a time with the newest
+  // frame winning (dragging the slider never queues up frames already passed), frames kept
+  // here and in the browser's cache (going back is instant), and once a frame settles, its
+  // neighbours load quietly so stepping with ‹ › or the arrow keys doesn't wait.
+  const images = new Map(); // url -> loaded image, least recently used first
+  const KEEP_IMAGES = 150;
+  const NEIGHBOURS = [1, -1, 2, -2, 3, -3, 10, -10]; // the step buttons: 1 and 10
+  let wanted = null; // frame waiting to be fetched
+  let fetching = false;
+  let settleTimer = null;
+  let settleToken = 0;
+
+  // The preview is scaled to the canvas; at or above the video's own width it's the full frame.
+  const previewWidth = () => (Math.round(canvas.width || 720) >= v.width ? null : Math.round(canvas.width || 720));
 
   function frameUrl(frame, width) {
-    return `/api/swings/${encodeURIComponent(id)}/frames/${frame}.jpg${width ? `?w=${width}` : ""}`;
+    const query = new URLSearchParams();
+    if (width) query.set("w", width);
+    if (v.version) query.set("c", v.version); // this conversion: lets the browser cache the frame
+    const qs = query.toString();
+    return `/api/swings/${encodeURIComponent(id)}/frames/${frame}.jpg${qs ? `?${qs}` : ""}`;
+  }
+
+  function cached(url) {
+    const img = images.get(url);
+    if (img) { images.delete(url); images.set(url, img); } // now the most recently used
+    return img || null;
   }
 
   function loadImage(url) {
+    const hit = cached(url);
+    if (hit) return Promise.resolve(hit);
     return new Promise((resolve, reject) => {
       const img = new Image();
-      img.onload = () => resolve(img);
+      img.onload = () => {
+        images.set(url, img);
+        if (images.size > KEEP_IMAGES) images.delete(images.keys().next().value);
+        resolve(img);
+      };
       img.onerror = () => reject(new Error("frame failed to load"));
       img.src = url;
     });
   }
 
-  async function showFrame(frame) {
-    const token = ++loadToken;
-    clearTimeout(fullTimer);
+  function display(frame, img) {
+    const width = previewWidth();
+    preview = img;
+    full = width ? cached(frameUrl(frame)) : img;
+    draw();
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(() => settle(frame), 200);
+  }
+
+  function showFrame(frame) {
+    ++settleToken; // stop loading the old frame's neighbours
+    clearTimeout(settleTimer);
+    const hit = cached(frameUrl(frame, previewWidth()));
+    if (hit) { wanted = null; display(frame, hit); return; }
     full = null;
-    const width = Math.min(v.width, Math.round(canvas.width || 720));
-    try {
-      const img = await loadImage(frameUrl(frame, width));
-      if (token !== loadToken) return;
-      preview = img;
-      draw();
-      // Once scrubbing settles, fetch full resolution for precise aiming.
-      fullTimer = setTimeout(async () => {
-        const big = await loadImage(frameUrl(frame)).catch(() => null);
-        if (token === loadToken && big) { full = big; draw(); }
-      }, 250);
-    } catch { /* a newer frame request superseded this one, or the server is busy */ }
+    wanted = frame;
+    fetchWanted();
+  }
+
+  async function fetchWanted() {
+    if (fetching) return; // the running loop picks up the newest wanted frame
+    fetching = true;
+    while (wanted !== null) {
+      const frame = wanted;
+      wanted = null;
+      const img = await loadImage(frameUrl(frame, previewWidth())).catch(() => null); // null: the server is busy
+      if (img && wanted === null && frame === cur().frame) display(frame, img);
+    }
+    fetching = false;
+  }
+
+  // Once the frame stays put: full resolution for precise aiming (if the preview is
+  // scaled), then the neighbours, one at a time, stopping as soon as the frame changes.
+  async function settle(frame) {
+    const token = ++settleToken;
+    const width = previewWidth();
+    if (width) {
+      const big = await loadImage(frameUrl(frame)).catch(() => null);
+      if (token !== settleToken) return;
+      if (big && frame === cur().frame) { full = big; draw(); }
+    }
+    for (const d of NEIGHBOURS) {
+      if (token !== settleToken) return;
+      const f = frame + d;
+      if (f >= 0 && f < v.frame_count) await loadImage(frameUrl(f, width)).catch(() => null);
+    }
   }
 
   // --- Layout ---------------------------------------------------------------

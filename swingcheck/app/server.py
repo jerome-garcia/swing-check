@@ -256,8 +256,14 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
                     "Trim it to just the swing on your phone, then upload it again.")
         return None
 
+    def conversion_token(folder: Path) -> str | None:
+        """Changes whenever the video is converted again (e.g. trimmed): frame URLs carry it."""
+        video = folder / "normalized.mp4"
+        return str(video.stat().st_mtime_ns) if video.exists() else None
+
     @app.get("/api/swings/{swing_id}/frames/{index}.jpg")
-    def frame_image(swing_id: str, index: int, request: Request, w: int | None = None) -> Response:
+    def frame_image(swing_id: str, index: int, request: Request, w: int | None = None,
+                    c: str | None = None) -> Response:
         folder = swing_or_404(swing_id, request)
         video = folder / "normalized.mp4"
         if not video.exists():
@@ -269,7 +275,11 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
             data = frames.jpeg(video, index, width=w if w and w >= 64 else None)
         except (IndexError, FileNotFoundError):
             raise HTTPException(404, "Frame not found") from None
-        return Response(data, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
+        # A frame never changes within one conversion, so with this conversion's token (?c=)
+        # the browser may keep it: going back to a frame is then instant. "private" keeps
+        # Cloudflare from caching it (frames belong to one visitor).
+        cache = "private, max-age=86400, immutable" if c and c == conversion_token(folder) else "no-store"
+        return Response(data, media_type="image/jpeg", headers={"Cache-Control": cache})
 
     @app.post("/api/swings/{swing_id}/marks")
     def save_swing_marks(swing_id: str, body: MarksIn, request: Request) -> dict[str, Any]:
@@ -376,6 +386,8 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
             path = folder / name
             detail[key] = json.loads(path.read_text()) if path.exists() else None
         info = VideoInfo.load(folder / "video.json") if (folder / "video.json").exists() else None
+        if detail["video"]:
+            detail["video"]["version"] = conversion_token(folder)
         detail["suggested"] = load_suggested(folder, info) if info else None
         detail["camera_check"] = load_camera_check(folder, info, detail["handedness"]) if info else None
         detail["files"] = sorted(p.name for p in folder.iterdir()

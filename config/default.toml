@@ -22,6 +22,10 @@ torso_cm = 50
 pose_max_height = 1080
 # Re-encode quality for the normalized clip (libx264 CRF; lower = better).
 crf = 18
+# A keyframe every this many frames. The marking screen jumps around the video, and
+# each jump decodes from the keyframe before it: x264's default (250) made a jump
+# cost 250-450 ms on a 2-CPU server. 15 keeps it short, for 1.5-2x the file size.
+keyframe_interval = 15
 # Warn if a clip's capture fps is at or below this (likely a flattened slo-mo).
 low_fps_warning = 60
 

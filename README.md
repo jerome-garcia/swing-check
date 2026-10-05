@@ -410,7 +410,20 @@ Full analysis takes about 1.3–1.4× a Ryzen 7 5800H laptop: 73 s for McIlroy
 several workers. Jobs run one at a time (pose uses the whole CPU), so grow with a
 bigger server, not more processes. Frame images use one lock per open video, so
 visitors moving through frames of different swings don't wait for each other, and finished jobs
-are forgotten after 6 hours. Not done yet: listing a visitor's swings reads every
+are forgotten after 6 hours.
+
+**Frame speed on the marking screen.** Each frame is a round trip (about 300 ms
+from Manila to Germany through Cloudflare) plus a seek on the server. Converted
+videos get a keyframe every 15 frames (`[ingest] keyframe_interval`): x264's
+default of 250 left 1–3 keyframes per clip, and a jump or a step back cost
+250–450 ms of decoding on the 2-CPU server. The browser asks for one frame at a
+time, newest wins (dragging the slider never queues up frames already passed),
+keeps frames it has loaded (frame URLs carry the conversion's token, `?c=`, and
+are cached `private` so Cloudflare never stores them), and once a frame settles
+it loads the full-resolution copy and the neighbours (±1, ±2, ±3, ±10), so the
+‹ › buttons and arrow keys show the next frame without a round trip.
+
+Not done yet: listing a visitor's swings reads every
 swing folder on the server to find theirs; once there are many visitors, keep
 each owner's swings in their own subfolder.
 

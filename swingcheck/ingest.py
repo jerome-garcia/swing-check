@@ -204,6 +204,7 @@ def normalize(
         "-vf", f"fps={fps:g}",
         "-fps_mode", "cfr",
         "-c:v", "libx264", "-preset", "fast", "-crf", str(ingest_cfg["crf"]),
+        "-g", str(ingest_cfg.get("keyframe_interval", 15)),
         "-pix_fmt", "yuv420p",
         "-movflags", "+faststart",
         "-progress", "pipe:1", "-nostats",

@@ -1,5 +1,6 @@
 import json
 import shutil
+import subprocess
 
 import numpy as np
 import pytest
@@ -163,6 +164,24 @@ def test_frame_images(client, converted):
     assert r.status_code == 200 and r.headers["content-type"] == "image/jpeg"
     assert r.content[:2] == b"\xff\xd8"
     assert client.get(f"/api/swings/{converted}/frames/9999.jpg").status_code == 404
+
+
+def test_frames_cache_only_for_this_conversion(client, converted):
+    token = client.get(f"/api/swings/{converted}").json()["video"]["version"]
+    assert token
+    url = f"/api/swings/{converted}/frames/5.jpg"
+    assert client.get(url).headers["cache-control"] == "no-store"  # no token: as before
+    cached = client.get(f"{url}?c={token}").headers["cache-control"]
+    assert "max-age" in cached and "private" in cached  # private: never kept by Cloudflare
+    assert client.get(f"{url}?c=stale").headers["cache-control"] == "no-store"  # an older conversion
+
+
+def test_conversion_has_short_keyframe_intervals(client, converted):
+    folder = client.app.state.store.path(converted)
+    out = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v", "-show_entries", "packet=flags",
+                          "-of", "csv", str(folder / "normalized.mp4")], capture_output=True, text=True, check=True)
+    flags = out.stdout.split()
+    assert len(flags) == 30 and sum("K" in f for f in flags) >= 2  # x264's default would be 1 for 30 frames
 
 
 def test_save_marks_moves_swing_to_marked(client, converted):
