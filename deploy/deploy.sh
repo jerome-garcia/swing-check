@@ -72,5 +72,7 @@ journalctl -u swingcheck -n 30 --no-pager >&2
 exit 1
 REMOTE
 
-curl -sf "$SITE/api/health" >/dev/null || die "$SITE didn't answer through Cloudflare"
+health=$(curl -sf "$SITE/api/health") || die "$SITE didn't answer through Cloudflare"
+live=$(printf '%s' "$health" | grep -o '"version":"[^"]*"' | cut -d'"' -f4 || true)
+[ "$live" = "$TAG" ] || die "$SITE reports version '${live:-none}', not $TAG"
 echo "Live: $SITE is on $TAG."

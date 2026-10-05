@@ -38,8 +38,17 @@ def client(runs):
     return TestClient(create_app(runs))
 
 
-def test_health_reports_jobs(client):
-    assert client.get("/api/health").json() == {"ok": True, "jobs": 0}
+def test_health_reports_jobs_and_version(client):
+    health = client.get("/api/health").json()
+    assert health["ok"] is True and health["jobs"] == 0
+    assert health["version"] and health["version"] == client.get("/api/features").json()["version"]
+
+
+def test_version_falls_back_to_the_package(monkeypatch):
+    def no_git(*args, **kwargs):
+        raise FileNotFoundError("git")
+    monkeypatch.setattr(server.subprocess, "run", no_git)
+    assert server.app_version().startswith("v")
 
 
 def test_lists_existing_runs(client):

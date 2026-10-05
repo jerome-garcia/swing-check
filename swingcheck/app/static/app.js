@@ -10,7 +10,7 @@ import { renderHistory } from "./history.js";
 import { renderLegal } from "./legal.js";
 import { renderSwing } from "./swing.js";
 import { renderUpload } from "./upload.js";
-import { el, postJSON } from "./util.js";
+import { el, features, postJSON } from "./util.js";
 
 // Ko-fi page for the footer's support link, e.g. "https://ko-fi.com/yourname".
 // Empty hides the footer.
@@ -21,6 +21,12 @@ if (KOFI_URL) {
   document.getElementById("support-link").href = KOFI_URL;
   document.getElementById("support").hidden = false;
 }
+// The running version in the footer, e.g. "v0.1.0-alpha".
+features().then(f => {
+  const version = document.getElementById("app-version");
+  version.textContent = f.version;
+  version.hidden = !f.version;
+}).catch(() => { /* the footer just goes without it */ });
 let navigation = 0;
 
 async function route() {

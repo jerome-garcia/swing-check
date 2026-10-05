@@ -6,6 +6,8 @@ import copy
 import json
 import logging
 import shutil
+import subprocess
+from importlib import metadata
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +36,23 @@ VIDEO_EXTENSIONS = {".mov", ".mp4", ".m4v", ".avi", ".mkv", ".webm", ".3gp"}
 # real clips yet. Existing face-on swings can still be opened. Flip this to enable it.
 FACE_ON_ENABLED = False
 FACE_ON_DISABLED_MESSAGE = "Face-on analysis is coming in a future release."
+
+
+def app_version() -> str:
+    """The running version for the footer: the release tag when a tag is checked out (as on the
+    server, e.g. "v0.1.0-alpha"), "<tag>-<commits since>-g<hash>" in development, else the
+    package version."""
+    try:
+        out = subprocess.run(["git", "-C", str(PROJECT_ROOT), "describe", "--tags", "--always"],
+                             capture_output=True, text=True, timeout=5)
+        if out.returncode == 0 and out.stdout.strip():
+            return out.stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        pass
+    try:
+        return "v" + metadata.version("swingcheck")
+    except metadata.PackageNotFoundError:
+        return "unknown"
 
 
 class CheckpointMarksIn(BaseModel):
@@ -77,6 +96,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     frames = FrameReader()
     config = load_config()
     limits = config["hosted"] if hosted else None
+    version = app_version()  # once: a release is a restart
     app = FastAPI(title="SwingCheck", docs_url=None, redoc_url=None)
     app.state.store = store
     app.state.jobs = jobs
@@ -160,13 +180,14 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     def health() -> dict[str, Any]:
         """For the deploy script: up, and how many jobs are queued or running (it waits
         for 0 before restarting, since a restart loses running jobs)."""
-        return {"ok": True, "jobs": jobs.pending()}
+        return {"ok": True, "jobs": jobs.pending(), "version": version}
 
     @app.get("/api/features")
     def features() -> dict[str, Any]:
         discover()
         built = {name for name, a in REGISTRY.items() if a.view == "dtl"}
         return {
+            "version": version,
             "face_on": FACE_ON_ENABLED,
             "face_on_message": FACE_ON_DISABLED_MESSAGE,
             "checkpoints": {"dtl": checkpoints_json("dtl", built)},
