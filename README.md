@@ -325,8 +325,8 @@ caching and basic abuse protection.
 
 **Before going public (needs code):**
 
-1. **Privacy between users.** Today everyone sees every swing. Add a private link
-   per user or swing (cheapest), or simple accounts.
+1. **Privacy between users.** Today everyone sees every swing. Decided: an
+   **owner key in a cookie**, with no sign-in and no database (see below).
 2. **Limits.** Maximum file size and clip length, one job at a time with a queue,
    and a cap on swings per visitor.
 3. **Automatic cleanup.** Delete the original upload once converted, and expire
@@ -336,6 +336,21 @@ caching and basic abuse protection.
    frames in `static/reference/`.
 5. **Restarts.** Jobs are lost on restart; fine at first, since the app already
    says so.
+
+**Privacy design (decided: owner key, no accounts).** On the first visit the
+server gives the browser a random owner key in a cookie (HttpOnly, Secure,
+SameSite=Lax). Each new swing records a hash of that key in its own
+`swing.json`, so the swings folder stays the only storage: no database. Every
+swing route (list, detail, frames, files, PDF, marking, analysis, delete) checks
+the owner and answers "not found" for anyone else. Swing IDs become random
+(~128 bits) instead of date + name, with the name kept for display. The app
+shows a "Your private link" to save, which signs another device into the same
+owner. Losing both the cookie and the link loses the swings, which is fine
+since they expire anyway. The owner key also counts swings for the per-visitor
+limit. A "hosted" setting turns all of this on; run locally, the app stays
+single-user exactly as today. Pages are marked noindex and keys never go in
+logs. Sign-in with accounts is not planned (it would need a database to
+maintain).
 
 **Running it.** Docker, run as a service, Caddy in front for automatic HTTPS.
 Back up the swings folder, or treat swings as disposable. Time one swing on a PC
