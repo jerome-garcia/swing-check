@@ -2,24 +2,25 @@ import { api, el, features, HAND_NAMES, listText, navigate, pollJob, postJSON, p
 import { swingHeader } from "./swing.js";
 
 // Marking steps per view, all required. After address, one step per checkpoint, and
-// each has its own frame (the pose model can't see the club, so you click it).
+// each has its own frame (the pose model can't see the club, so you click it). `frame`
+// is the position to find first, shown in the instruction bar before any click.
 const STEPS = {
   dtl: [
-    { key: "address", title: "Address", points: ["ball", "clubhead", "grip"],
+    { key: "address", title: "Address", points: ["ball", "clubhead", "grip"], frame: "set up and still, before the club moves",
       intro: "Move the slider to your address position (set up and still), then click the points. This frame is used for the address checks." },
-    { key: "takeaway", title: "Takeaway", points: ["clubhead"],
+    { key: "takeaway", title: "Takeaway", points: ["clubhead"], frame: "shaft parallel to the target line",
       intro: "Move the slider to where the shaft is parallel to the target line (from behind, it points at the camera). Click the clubhead. This frame is the takeaway checkpoint." },
-    { key: "halfway_back", title: "Halfway back", points: ["clubhead", "grip"],
+    { key: "halfway_back", title: "Halfway back", points: ["clubhead", "grip"], frame: "front arm parallel to the ground",
       intro: "Move the slider to where your front arm is parallel to the ground (hands about level with your front shoulder). Click the clubhead, then your hands. This frame is the halfway-back checkpoint." },
-    { key: "top", title: "Top", points: ["clubhead", "grip"],
+    { key: "top", title: "Top", points: ["clubhead", "grip"], frame: "the club stops going back",
       intro: "Move the slider to the top of your backswing (the moment the club stops going back). Click the clubhead, then your hands. This frame is the top checkpoint." },
-    { key: "downswing", title: "Downswing", points: ["clubhead"],
+    { key: "downswing", title: "Downswing", points: ["clubhead"], frame: "shaft parallel to the ground, coming down",
       intro: "Move the slider to where the shaft is parallel to the ground on the way down (hands about hip height). Click the clubhead. This frame is the downswing checkpoint." },
-    { key: "follow_through", title: "Follow-through", points: ["clubhead", "grip"],
+    { key: "follow_through", title: "Follow-through", points: ["clubhead", "grip"], frame: "back arm parallel to the ground, after impact",
       intro: "Move the slider to where your back arm is parallel to the ground after impact (hands about shoulder height, the mirror of halfway back; if your arms are hidden, pick where the shaft looks about as steep as at halfway back). Click the clubhead, then your hands. This frame is the follow-through checkpoint." },
   ],
   fo: [
-    { key: "address", title: "Address", points: ["ball"],
+    { key: "address", title: "Address", points: ["ball"], frame: "set up and still, before the club moves",
       intro: "Move the slider to your address position, then click the ball." },
   ],
 };
@@ -546,20 +547,34 @@ export async function renderMark(view, id, isCurrent) {
     const i = steps.findIndex(st => st.key === state.active);
     const after = steps[i + 1];
     const info = next ? pointInfo(state.active, next) : null;
+    // Before the first click of a step: find the right frame first (matching the example),
+    // then click. The suggested frame is only a guess.
+    const finding = Boolean(next) && !started(state.active);
+    const clicks = listText(stepDef().points.map(name => pointInfo(state.active, name).label.toLowerCase()));
+    refBox.classList.toggle("attention", finding && hasExample());
     const doneHint = after ? `Next step: ${after.title}.`
       : unfinished().length ? `Still to mark: ${unfinished()[0].title.toLowerCase()}.` : "Every step is marked.";
     hud.replaceChildren(
       el("div", { class: "hud-text" },
         el("span", { class: "hud-step" }, steps.length > 1 ? `Step ${i + 1} of ${steps.length} · ${stepDef().title}` : stepDef().title),
-        info
-          ? el("span", { class: "hud-next" }, el("span", { class: `swatch ${info.shape}` }), `Click the ${info.label.toLowerCase()}`)
-          : el("span", { class: "hud-next done" }, "✓ Step done"),
-        el("span", { class: "hud-hint" }, info ? info.hint : doneHint)),
+        finding
+          ? el("span", { class: "hud-next" }, el("span", { class: "hud-num" }, "1"),
+            `Find the frame: ${stepDef().frame}`)
+          : info
+            ? el("span", { class: "hud-next" }, el("span", { class: `swatch ${info.shape}` }), `Click the ${info.label.toLowerCase()}`)
+            : el("span", { class: "hud-next done" }, "✓ Step done"),
+        finding
+          ? el("span", { class: "hud-hint" }, hasExample()
+            ? "Move the slider until your swing matches the example. The frame it opens on is only a guess."
+            : "Move the slider to it. The frame it opens on is only a guess.")
+          : el("span", { class: "hud-hint" }, info ? info.hint : doneHint),
+        finding ? el("span", { class: "hud-then" }, el("span", { class: "hud-num" }, "2"), `Then click the ${clicks}`) : null),
       el("div", { class: "actions" },
         el("button", { class: "btn small hud-btn", type: "button", onclick: undo, disabled: !started(state.active) }, "Undo"),
         el("button", { class: "btn small hud-btn", type: "button", disabled: !started(state.active),
           onclick: () => { cur().points = {}; refresh(); } }, "Clear step"),
-        hasExample() ? el("button", { class: "btn small hud-btn", type: "button", onclick: () => scrollToEl(refBox) }, "See example") : null,
+        hasExample() ? el("button", { class: `btn small hud-btn ${finding ? "example-cta" : ""}`, type: "button",
+          onclick: () => scrollToEl(refBox) }, "See example") : null,
         !next && after ? el("button", { class: "btn small primary", type: "button", onclick: () => selectStep(after.key) }, `Next: ${after.title} ›`) : null,
         // Last step done: save once every step is marked, else go back to the first one left.
         !next && !after && !unfinished().length ? el("button", { class: "btn small primary", type: "button", onclick: save }, "Save and analyze") : null,
