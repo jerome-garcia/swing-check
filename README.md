@@ -661,7 +661,9 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    the line under it lists what's still to mark. The dark bar above the frame
    says what to click next in large type, with exactly where under it (for
    example *Click the ball*, *Center of the ball*); it flashes when it changes.
-   Each step opens on its suggested frame (the caption says *Suggested frame*); check it and move the slider to
+   Each step opens on its suggested frame (the caption says *Suggested frame*, and a
+   note above the instruction bar says to check it against the example before
+   clicking); check it and move the slider to
    the exact frame if needed with the slider, the ‹ › buttons or the arrow keys
    (Shift = 10 frames). **Back to the suggested frame** returns to it.
 

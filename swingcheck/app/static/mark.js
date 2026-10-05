@@ -236,6 +236,8 @@ export async function renderMark(view, id, isCurrent) {
   // --- Layout ---------------------------------------------------------------
   // Page offset that the sticky top bar covers, plus a little air.
   const stickyTop = () => (document.querySelector(".topbar")?.offsetHeight || 0) + 12;
+  // The top of the marking area: the suggested-frame note when it shows, else the instruction bar.
+  const markTop = () => (suggestNote.hidden ? hud : suggestNote);
 
   // Once, on opening: scroll so the instruction bar sits under the top bar, if the frame and
   // slider don't fit as is. Not when the camera check found problems: those stay in view.
@@ -244,7 +246,7 @@ export async function renderMark(view, id, isCurrent) {
     if (Array.isArray(s.camera_check) && s.camera_check.length) return;
     const caption = view.querySelector(".frame-caption");
     if (!caption || caption.getBoundingClientRect().bottom <= window.innerHeight) return;
-    window.scrollTo({ top: hud.getBoundingClientRect().top + window.scrollY - stickyTop() });
+    window.scrollTo({ top: markTop().getBoundingClientRect().top + window.scrollY - stickyTop() });
   }
 
   function fitCanvas() {
@@ -256,7 +258,7 @@ export async function renderMark(view, id, isCurrent) {
     // video isn't squeezed by the swing header above. Phones (one column, the page scrolls
     // anyway): use most of the screen height so points are easier to hit.
     const narrow = window.matchMedia("(max-width: 820px)").matches;
-    const hudToStage = stage.getBoundingClientRect().top - hud.getBoundingClientRect().top;
+    const hudToStage = stage.getBoundingClientRect().top - markTop().getBoundingClientRect().top;
     const maxH = narrow ? Math.max(320, window.innerHeight * 0.68)
       : Math.max(260, window.innerHeight - stickyTop() - hudToStage - 100);
     const scale = Math.min(maxW / v.width, maxH / v.height);
@@ -428,7 +430,8 @@ export async function renderMark(view, id, isCurrent) {
     backToSuggested.hidden = onSuggestion || cur().suggested === undefined;
     suggestNote.hidden = cur().suggested === undefined;
     suggestNote.textContent = `This opens on a suggested frame, a best guess at your ${stepDef().title.toLowerCase()}. `
-      + "Check it, and move the slider to the exact frame if it's off.";
+      + (hasExample() ? "Check it against the example, and move the slider to the exact frame if it's off, before you click."
+        : "Check it, and move the slider to the exact frame if it's off, before you click.");
     showFrame(cur().frame);
     refresh(); // the frame-order check and the step tabs depend on the frame
   }
@@ -475,7 +478,7 @@ export async function renderMark(view, id, isCurrent) {
     refBox.replaceChildren(
       el("div", { class: "ref-head" },
         el("div", { class: "ref-title" }, el("strong", {}, "Example to follow"),
-          el("button", { class: "btn small ref-back", type: "button", onclick: () => scrollToEl(hud) }, "↑ Back to marking")),
+          el("button", { class: "btn small ref-back", type: "button", onclick: () => scrollToEl(markTop()) }, "↑ Back to marking")),
         el("div", { class: "subtle small" }, `${reference.name} at ${stepDef().title.toLowerCase()}`
           + (s.handedness === "left" ? " (mirrored to match a left-handed swing)" : "")
           + ", for comparison. Not your swing: mark yours on your own video.")),
@@ -736,10 +739,10 @@ export async function renderMark(view, id, isCurrent) {
     el("div", { class: "mark-layout" },
       el("div", { class: "mark-main" },
         cameraCheck(s),
+        suggestNote,
         hud,
         el("div", { class: "stage" }, canvas),
         el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),
-        suggestNote,
         el("div", { class: "subtle small center frame-caption" }, frameLabel, " ", suggestedTag, " ", backToSuggested,
           el("span", { class: "keys-hint" }, " · ← → step, Shift = 10 frames"))),
       el("aside", { class: "mark-side stack" },
