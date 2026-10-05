@@ -18,6 +18,11 @@ from typing import Any
 # A job function receives a progress callback: progress(stage, fraction, message).
 JobFn = Callable[[Callable[[str, float | None, str], None]], Any]
 
+# Finished jobs are forgotten after this long, so a server that runs for months doesn't
+# keep every job ever. The swing page only needs a job while it runs, and a failed one
+# for its error message, which is read soon after.
+KEEP_FINISHED_S = 6 * 60 * 60
+
 
 @dataclass
 class Job:
@@ -30,6 +35,7 @@ class Job:
     message: str = "Waiting for another job to finish"
     error: str | None = None
     created: float = field(default_factory=time.time)
+    finished: float | None = None
 
     def to_json(self) -> dict[str, Any]:
         return asdict(self)
@@ -47,6 +53,7 @@ class JobManager:
     def submit(self, swing_id: str, kind: str, fn: JobFn) -> Job:
         job = Job(id=uuid.uuid4().hex[:12], swing_id=swing_id, kind=kind)
         with self._lock:
+            self._forget_old(time.time())
             self._jobs[job.id] = job
             self._fns[job.id] = fn
         self._queue.put(job.id)
@@ -74,6 +81,11 @@ class JobManager:
             jobs = [j for j in self._jobs.values() if j.swing_id == swing_id]
         return max(jobs, key=lambda j: j.created) if jobs else None
 
+    def _forget_old(self, now: float) -> None:
+        """Drop jobs that finished more than KEEP_FINISHED_S ago (call with the lock held)."""
+        for job_id in [j.id for j in self._jobs.values() if j.finished and now - j.finished > KEEP_FINISHED_S]:
+            del self._jobs[job_id]
+
     def wait(self, job_id: str, timeout: float = 600) -> Job:
         """Block until a job finishes (for tests)."""
         deadline = time.time() + timeout
@@ -99,9 +111,11 @@ class JobManager:
                 fn(progress)
                 with self._lock:
                     job.state, job.fraction, job.message = "done", 1.0, "Done"
+                    job.finished = time.time()
             except Exception as e:  # noqa: BLE001 - report any failure to the page
                 with self._lock:
                     job.state = "failed"
                     job.error = str(e) or e.__class__.__name__
                     job.message = "Failed"
+                    job.finished = time.time()
                 traceback.print_exc()

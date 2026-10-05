@@ -164,3 +164,4 @@ def test_local_mode_has_no_owners(tmp_path):
     assert client.get("/api/features").json()["hosted"] is None
     assert client.get("/api/owner").status_code == 404
     assert "set-cookie" not in client.get("/").headers
+
