@@ -31,6 +31,7 @@ class SwingMeta:
     name: str
     created: str  # ISO timestamp
     view: str | None = None
+    handedness: str = "right"  # "right" | "left": the golfer in this swing
     source_file: str | None = None  # original upload, inside the swing folder
     trim_start: float | None = None
     trim_end: float | None = None
@@ -65,12 +66,12 @@ class Store:
         return candidate
 
     # --- metadata ------------------------------------------------------------
-    def create(self, filename: str, view: str, owner: str | None = None) -> SwingMeta:
+    def create(self, filename: str, view: str, owner: str | None = None, handedness: str = "right") -> SwingMeta:
         """A new swing folder. An owned (hosted) swing gets a random, unguessable id."""
         swing_id = secrets.token_hex(16) if owner else self.new_id(filename)
         (self.root / swing_id).mkdir()
         meta = SwingMeta(id=swing_id, name=Path(filename).stem, created=datetime.now().isoformat(timespec="seconds"),
-                         view=view, owner=owner)
+                         view=view, owner=owner, handedness=handedness)
         self.save_meta(meta)
         return meta
 
@@ -111,6 +112,7 @@ class Store:
             return "converted"
         analysis = _read_json(folder / "analysis.json")
         if (analysis and analysis.get("view") == meta.view
+                and analysis.get("handedness", "right") == meta.handedness
                 and (folder / "analysis.json").stat().st_mtime >= (folder / "marks.json").stat().st_mtime):
             return "analyzed"
         return "marked"

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import shutil
@@ -48,6 +49,10 @@ class MarksIn(BaseModel):
 
 class ViewIn(BaseModel):
     view: str
+
+
+class HandednessIn(BaseModel):
+    handedness: str
 
 
 class TrimIn(BaseModel):
@@ -118,21 +123,32 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         if limits and jobs.pending() >= limits["max_queued_jobs"]:
             raise HTTPException(503, "SwingCheck is busy with other swings right now. Try again in a few minutes.")
 
+    def swing_config(meta) -> dict[str, Any]:
+        """The config for one swing: the app's, with this golfer's handedness."""
+        cfg = copy.deepcopy(config)
+        cfg["golfer"]["handedness"] = meta.handedness
+        return cfg
+
     def start_convert(swing_id: str, start: float | None = None, end: float | None = None):
         folder = store.path(swing_id)
         meta = store.meta(swing_id)
         source = folder / meta.source_file
+        cfg = swing_config(meta)
 
         def run(progress):
-            info = ingest(source, folder, config, start=start, end=end, progress=progress)
+            info = ingest(source, folder, cfg, start=start, end=end, progress=progress)
             # Starting frames for the marking screen. They're only a convenience: a clip where
             # the swing can't be found (or any other failure here) still converts.
             try:
-                suggest_frames(folder, info, config, progress=progress)
+                suggest_frames(folder, info, cfg, progress=progress)
             except Exception:  # noqa: BLE001
                 log.exception("Couldn't suggest frames for %s", swing_id)
 
         return jobs.submit(swing_id, "convert", run)
+
+    def check_handedness(handedness: str) -> None:
+        if handedness not in ("right", "left"):
+            raise HTTPException(400, "Choose right-handed or left-handed")
 
     def check_view(view: str) -> None:
         if view not in ("dtl", "fo"):
@@ -172,8 +188,9 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
 
     @app.post("/api/swings")
     def upload_swing(request: Request, file: UploadFile = File(...), view: str = Form(...),
-                     agreed_terms: str | None = Form(None)) -> dict[str, Any]:
+                     handedness: str = Form("right"), agreed_terms: str | None = Form(None)) -> dict[str, Any]:
         check_view(view)
+        check_handedness(handedness)
         if limits and not agreed_terms:
             raise HTTPException(400, "Agree to the Terms of use and Privacy notice to upload.")
         ext = Path(file.filename or "").suffix.lower()
@@ -182,7 +199,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         if limits and len(owned(request)) >= limits["max_swings"]:
             raise HTTPException(409, full_message())
         check_not_busy()
-        meta = store.create(file.filename or "swing", view, owner=owner(request))
+        meta = store.create(file.filename or "swing", view, owner=owner(request), handedness=handedness)
         meta.source_file = f"source{ext}"
         if limits:  # which terms this upload was agreed under, and when
             meta.notes["agreed_terms"] = {"version": agreed_terms[:40], "at": meta.created}
@@ -254,6 +271,19 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         store.save_meta(meta)  # marks made for the other view no longer count
         return with_expiry(store.summary(swing_id))
 
+    @app.post("/api/swings/{swing_id}/handedness")
+    def set_handedness(swing_id: str, body: HandednessIn, request: Request) -> dict[str, Any]:
+        """Right- or left-handed. Marks stay (they're points on the video); the analysis
+        is redone, since lead and trail swap."""
+        swing_or_404(swing_id, request)
+        check_handedness(body.handedness)
+        if jobs.active_for(swing_id):
+            raise HTTPException(409, "This swing is still being processed.")
+        meta = store.meta(swing_id)
+        meta.handedness = body.handedness
+        store.save_meta(meta)
+        return with_expiry(store.summary(swing_id))
+
     @app.post("/api/swings/{swing_id}/trim")
     def trim_swing(swing_id: str, body: TrimIn, request: Request) -> dict[str, Any]:
         folder = swing_or_404(swing_id, request)
@@ -284,8 +314,10 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         overrides = {k: v for k, v in body.phases.items() if k in ("address", "top", "impact")}
         check_not_busy()
 
+        cfg = swing_config(meta)
+
         def run(progress):
-            analyze(folder, meta.view, config, overrides=overrides, clear_overrides=body.reset_phases,
+            analyze(folder, meta.view, cfg, overrides=overrides, clear_overrides=body.reset_phases,
                     progress=progress)
 
         job = jobs.submit(swing_id, "analyze", run)
@@ -317,7 +349,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
             detail[key] = json.loads(path.read_text()) if path.exists() else None
         info = VideoInfo.load(folder / "video.json") if (folder / "video.json").exists() else None
         detail["suggested"] = load_suggested(folder, info) if info else None
-        detail["camera_check"] = load_camera_check(folder, info) if info else None
+        detail["camera_check"] = load_camera_check(folder, info, detail["handedness"]) if info else None
         detail["files"] = sorted(p.name for p in folder.iterdir()
                                  if p.suffix in (".mp4", ".png", ".txt") and p.name != "pose_debug.mp4")
         job = jobs.active_for(swing_id) or jobs.latest_for(swing_id)

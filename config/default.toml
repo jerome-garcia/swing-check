@@ -7,7 +7,7 @@
 # address frame (see [scale]), so they don't depend on camera distance.
 
 [golfer]
-handedness = "right"          # "right" | "left"
+handedness = "right"          # "right" | "left"; the app sets it per swing (upload page)
 # Target direction in the frame. "auto" infers it from handedness and view:
 #   fo  (camera facing golfer): right-handed -> target is screen-right
 #   dtl (camera behind golfer, looking at target): target is into the screen

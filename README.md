@@ -397,16 +397,23 @@ detection onto the user's device would leave the server serving static pages
 only (free on Cloudflare Pages or GitHub Pages): no uploads, no storage, no
 privacy worries. A big rewrite, so only if usage grows.
 
-### Left-handed golfers (planned)
+### Left-handed golfers (done)
 
-Today the checks, drawings and camera check follow one app-wide setting
-(`[golfer] handedness` in `config/default.toml`, right by default), with no choice
-in the app, and they were only tested on right-handed clips. The camera check
-can't guess handedness: a left-hander filmed correctly looks like a right-hander
-filmed from the target side. Plan: a Right-handed / Left-handed choice on the
-upload page saved with each swing, every check using the swing's own handedness,
-and validation on mirrored copies of the right-handed clips (a mirrored McIlroy
-should read the same as the original).
+Each swing has its own handedness, chosen on the upload page (remembered in the
+browser) and switchable on the marking screen. Every check, drawing and the camera
+check follow it; the McIlroy example is mirrored for a left-handed swing.
+
+MediaPipe tracks a mirrored (left-handed) golfer far less surely: on a mirrored
+copy of Tiger's clip the near knee scored 0.41 visibility against 0.99, so it went
+unmeasured. So a left-handed swing is tracked on mirrored frames, and the points
+are flipped back with left and right swapped (`MIRROR_INDEX` in
+`swingcheck/pose.py`); the golfer always sees their own, unmirrored video.
+
+Validated on mirrored copies of McIlroy, Tiger, Jolo and the amateur swing
+(video and marks flipped, set to left-handed): every checkpoint matches the
+original within about 2° or 2 cm, with the same "Work on first". The only status
+differences are rows sitting on a band edge (e.g. spine 26° vs 27° at the red
+line), from re-encoding the flipped video.
 
 ### Other ideas, not planned yet
 
@@ -564,8 +571,10 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    phone video and keeps the slo-mo frame rate. It then takes a quick look
    through the clip (about 5–20 s) to find your swing, so each marking step can
    open on a **suggested frame**, and checks the camera at address. (Face-on is
-   shown but disabled until a future release.) SwingCheck is for
-   **right-handed golfers only** for now; the upload page and the terms say so.
+   shown but disabled until a future release.) Choose **Right-handed** or
+   **Left-handed** under *Golfer*; the choice is remembered for next time, and a
+   swing's handedness can be switched later on the marking screen (*Golfer*):
+   the marks stay, and it's analyzed again.
 
    **Camera check.** The marking screen opens with the result: a green "✓ a good
    down-the-line view", or what to film differently: camera off to one side or

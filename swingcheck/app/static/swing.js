@@ -1,6 +1,6 @@
 import { renderResults } from "./results.js";
-import { api, el, expiryText, formatDate, moreMenu, pollJob, postJSON, progressBlock, STATUS_TEXT, swingUrl,
-  VIEW_NAMES } from "./util.js";
+import { api, el, expiryText, formatDate, HAND_NAMES, moreMenu, pollJob, postJSON, progressBlock, STATUS_TEXT,
+  swingUrl, VIEW_NAMES } from "./util.js";
 
 const JOB_TITLES = { convert: "Converting video", analyze: "Analyzing swing" };
 
@@ -12,7 +12,8 @@ export function swingHeader(s, actions = [], menuItems = []) {
       el("a", { class: "back", href: "#/" }, "← Your swings"),
       el("h1", {}, s.name),
       el("div", { class: "subtle small" },
-        `${formatDate(s.created)} · ${VIEW_NAMES[s.view] || "View not set"} · ${STATUS_TEXT[s.status]}`
+        `${formatDate(s.created)} · ${VIEW_NAMES[s.view] || "View not set"} · ${HAND_NAMES[s.handedness] || HAND_NAMES.right}`
+        + ` · ${STATUS_TEXT[s.status]}`
         + (expiryText(s) ? ` · ${expiryText(s)}` : ""))),
     el("div", { class: "actions" }, ...actions, moreMenu([...menuItems, deleteItem(s)])));
 }

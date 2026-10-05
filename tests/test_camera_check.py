@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from swingcheck.camera_check import camera_check
+from swingcheck.camera_check import camera_check, facing, facing_finding
 from swingcheck.config import load_config
 from swingcheck.models import LANDMARK_INDEX, LANDMARKS, PoseSeq
 
@@ -52,9 +52,15 @@ def test_face_on_or_angled_cameras_are_named():
     assert titles(spread_by(60)) == ["The camera may be off to one side"]             # ~0.41 torso
 
 
-def test_facing_the_wrong_way():
-    mirrored = {k: (W - x, y) for k, (x, y) in DTL.items()}
-    assert titles(mirrored) == ["You're facing left"]
+def test_facing_depends_on_handedness():
+    mirrored = {k: (W - x, y) for k, (x, y) in DTL.items()}  # a left-hander, filmed from behind
+    assert titles(mirrored) == []  # the camera itself is fine
+    assert facing(pose_of(DTL), 5) == 1 and facing(pose_of(mirrored), 5) == -1
+    assert facing_finding(-1, "right")["title"] == "You're facing left"
+    assert "switch this swing to left-handed" in facing_finding(-1, "right")["tip"]
+    assert facing_finding(-1, "left") is None and facing_finding(1, "right") is None
+    assert facing_finding(1, "left")["title"] == "You're facing right"
+    assert facing_finding(None, "right") is None  # no golfer found
 
 
 def test_framing_problems():

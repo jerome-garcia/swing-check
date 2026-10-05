@@ -1,12 +1,23 @@
 import { TERMS_VERSION } from "./legal.js";
-import { api, el, features, plural, progressBlock, swingUrl } from "./util.js";
+import { api, el, features, HAND_NAMES, plural, progressBlock, swingUrl } from "./util.js";
+
+const HAND_KEY = "swingcheck.handedness"; // the last choice, so it's preset next time
+
+function rememberedHand() {
+  try { return localStorage.getItem(HAND_KEY) === "left" ? "left" : "right"; } catch { return "right"; }
+}
+
+function rememberHand(hand) {
+  try { localStorage.setItem(HAND_KEY, hand); } catch { /* private window: just not remembered */ }
+}
 
 // Upload with XMLHttpRequest: fetch() can't report upload progress.
-function uploadWithProgress(file, viewChoice, agreed, onProgress) {
+function uploadWithProgress(file, viewChoice, hand, agreed, onProgress) {
   return new Promise((resolve, reject) => {
     const form = new FormData();
     form.append("file", file);
     form.append("view", viewChoice);
+    form.append("handedness", hand);
     if (agreed) form.append("agreed_terms", TERMS_VERSION);
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "/api/swings");
@@ -39,6 +50,7 @@ export async function renderUpload(view, isCurrent) {
   let file = null;
   // With face-on held back, down-the-line is the only choice, so preselect it.
   let viewChoice = faceOn ? null : "dtl";
+  let hand = rememberedHand();
 
   const fileName = el("div", { class: "subtle" }, "No video chosen");
   const input = el("input", {
@@ -71,6 +83,11 @@ export async function renderUpload(view, isCurrent) {
     unavailable ? el("span", { class: "badge soon" }, "Coming in a future release") : null);
   });
 
+  const handButtons = ["right", "left"].map(h => el("button", {
+    type: "button", class: "choice", "data-hand": h, onclick: () => { hand = h; refresh(); },
+  }, el("strong", {}, HAND_NAMES[h]),
+  el("span", { class: "subtle" }, h === "right" ? "Lead with your left side (most golfers)" : "Lead with your right side")));
+
   const error = el("div", { class: "notice error", hidden: true });
   const agreeBox = hosted ? el("input", { type: "checkbox", id: "agree", onchange: () => refresh() }) : null;
   const submit = el("button", { class: "btn primary", type: "submit", disabled: true }, "Upload and convert");
@@ -90,6 +107,7 @@ export async function renderUpload(view, isCurrent) {
 
   function refresh() {
     for (const b of viewButtons) b.classList.toggle("selected", b.dataset.view === viewChoice);
+    for (const b of handButtons) b.classList.toggle("selected", b.dataset.hand === hand);
     submit.disabled = !(file && viewChoice && (!agreeBox || agreeBox.checked));
   }
 
@@ -101,7 +119,8 @@ export async function renderUpload(view, isCurrent) {
       const progress = progressBlock("Uploading");
       form.replaceWith(progress.node);
       try {
-        const res = await uploadWithProgress(file, viewChoice, agreeBox ? agreeBox.checked : false,
+        rememberHand(hand);
+        const res = await uploadWithProgress(file, viewChoice, hand, agreeBox ? agreeBox.checked : false,
           f => progress.update(f, `${Math.round(f * 100)}% uploaded`));
         location.hash = swingUrl(res.id);
       } catch (err) {
@@ -113,8 +132,8 @@ export async function renderUpload(view, isCurrent) {
   },
   error,
   el("section", { class: "panel" }, el("h2", {}, "1. Video"), input, drop),
-  el("section", { class: "panel" }, el("h2", {}, "2. Camera view"), el("div", { class: "choices" }, viewButtons),
-    el("p", { class: "subtle small righty-note" }, "SwingCheck is for right-handed golfers for now. Left-handed support is planned.")),
+  el("section", { class: "panel" }, el("h2", {}, "2. Camera view"), el("div", { class: "choices" }, viewButtons)),
+  el("section", { class: "panel" }, el("h2", {}, "3. Golfer"), el("div", { class: "choices" }, handButtons)),
   agreeBox ? el("label", { class: "agree", for: "agree" }, agreeBox,
     el("span", {}, "I agree to the ", el("a", { href: "#/terms", target: "_blank" }, "Terms of use"), " and ",
       el("a", { href: "#/privacy", target: "_blank" }, "Privacy notice"),

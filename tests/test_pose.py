@@ -41,3 +41,20 @@ def test_pose_cache_roundtrip(tmp_path):
     assert list(loaded.detected()) == [True, False, True]
     assert np.allclose(loaded.data[0, :, :2], data[0, :, :2], atol=0.01)
     assert loaded.xy("nose", min_visibility=2.0)[2].tolist() != loaded.xy("nose")[2].tolist()
+
+
+def test_left_handed_swings_are_tracked_mirrored():
+    from swingcheck.config import load_config
+    from swingcheck.models import LANDMARKS
+    from swingcheck.pose import MIRROR_INDEX, _cache_params, mirrored
+    from tests.helpers import make_info
+
+    # Each point maps to its other-side twin, and mapping twice gets back to it.
+    assert all(MIRROR_INDEX[j] == i for i, j in enumerate(MIRROR_INDEX))
+    names = dict(zip(LANDMARKS, (LANDMARKS[j] for j in MIRROR_INDEX)))
+    assert names["left_knee"] == "right_knee" and names["mouth_left"] == "mouth_right" and names["nose"] == "nose"
+    right, left = load_config(), load_config()
+    left["golfer"]["handedness"] = "left"
+    assert not mirrored(right) and mirrored(left)
+    # Switching a swing's handedness re-runs pose (the cache is keyed on it).
+    assert _cache_params(make_info(), right) != _cache_params(make_info(), left)

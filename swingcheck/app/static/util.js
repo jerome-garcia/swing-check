@@ -43,6 +43,7 @@ export function el(tag, attrs = {}, ...children) {
 }
 
 export const VIEW_NAMES = { dtl: "Down-the-line", fo: "Face-on" };
+export const HAND_NAMES = { right: "Right-handed", left: "Left-handed" };
 
 // Which features the server has switched on (e.g. face-on is held for a future release).
 let featuresPromise = null;

@@ -1,4 +1,4 @@
-import { api, el, features, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
+import { api, el, features, HAND_NAMES, pollJob, postJSON, progressBlock, swingUrl } from "./util.js";
 import { swingHeader } from "./swing.js";
 
 // Marking steps per view, all required. After address, one step per checkpoint, and
@@ -381,14 +381,18 @@ export async function renderMark(view, id, isCurrent) {
         + `<g stroke="#fff" stroke-width="${r / 3.5}">${outline}</g></g>`;
     };
     const link = el("a", { href: url, target: "_blank", rel: "noopener", title: "Open full size" });
-    link.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Reference frame">`
+    // A right-handed example, mirrored for a left-handed golfer so it matches their view.
+    const mirror = s.handedness === "left" ? ` transform="translate(${w} 0) scale(-1 1)"` : "";
+    link.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Reference frame"><g${mirror}>`
       + `<image href="${url}" width="${w}" height="${h}"/>${shaft}`
-      + Object.entries(p).filter(([n]) => POINT_INFO[n]).map(([n, pt]) => mark(n, pt)).join("") + "</svg>";
+      + Object.entries(p).filter(([n]) => POINT_INFO[n]).map(([n, pt]) => mark(n, pt)).join("") + "</g></svg>";
     // Labelled as an example on the picture itself too, so it's never mistaken for your swing.
     link.append(el("span", { class: "ref-tag" }, "Example"));
     refBox.replaceChildren(
       el("div", { class: "ref-head" }, el("strong", {}, "Example to follow"),
-        el("div", { class: "subtle small" }, `${reference.name} at ${stepDef().title.toLowerCase()}, for comparison. Not your swing: mark yours on your own video.`)),
+        el("div", { class: "subtle small" }, `${reference.name} at ${stepDef().title.toLowerCase()}`
+          + (s.handedness === "left" ? " (mirrored to match a left-handed swing)" : "")
+          + ", for comparison. Not your swing: mark yours on your own video.")),
       link);
   }
 
@@ -602,6 +606,25 @@ export async function renderMark(view, id, isCurrent) {
     },
   }, choice === "dtl" ? "Down-the-line" : "Face-on"));
 
+  // --- Golfer: right- or left-handed -----------------------------------------
+  // Marks stay (they're points on the video); an analyzed swing is analyzed again.
+  const handButtons = ["right", "left"].map(choice => el("button", {
+    type: "button", class: `btn small ${choice === s.handedness ? "selected" : ""}`,
+    "aria-pressed": String(choice === s.handedness),
+    onclick: async () => {
+      if (choice === s.handedness) return;
+      if (s.status === "analyzed" && !confirm(`Switch to ${HAND_NAMES[choice].toLowerCase()}? Your marks stay; `
+          + "save and analyze again to update the results.")) return;
+      try {
+        await postJSON(`/api/swings/${encodeURIComponent(id)}/handedness`, { handedness: choice });
+        if (isCurrent()) await renderMark(view, id, isCurrent);
+      } catch (err) {
+        viewError.textContent = err.message;
+        viewError.hidden = false;
+      }
+    },
+  }, HAND_NAMES[choice]));
+
   // --- Keyboard -------------------------------------------------------------
   function onKey(e) {
     if (!isCurrent()) { document.removeEventListener("keydown", onKey); return; }
@@ -647,6 +670,9 @@ export async function renderMark(view, id, isCurrent) {
           el("summary", {}, el("strong", {}, "Trim the clip")),
           el("p", { class: "subtle small" }, "Cut out practice swings or idle time. Move the slider to a frame and set the start or end there."),
           trimBody),
+        el("details", { class: "panel" },
+          el("summary", {}, el("strong", {}, "Golfer"), el("span", { class: "subtle small" }, ` · ${HAND_NAMES[s.handedness] || HAND_NAMES.right}`)),
+          el("div", { class: "actions" }, handButtons)),
         el("details", { class: "panel" },
           el("summary", {}, el("strong", {}, "Camera view"), el("span", { class: "subtle small" }, ` · ${s.view === "fo" ? "Face-on" : "Down-the-line"}`)),
           el("div", { class: "actions" }, viewButtons),

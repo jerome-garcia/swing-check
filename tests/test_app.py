@@ -230,3 +230,17 @@ def test_conversion_lost_to_a_restart_can_run_again(client, runs):
     r = client.post(f"/api/swings/{meta.id}/trim", json={"start": None, "end": None})
     assert r.status_code == 200 and r.json()["job"]["kind"] == "convert"
     client.app.state.jobs.wait(r.json()["job"]["id"], timeout=60)  # don't leave it running at exit
+
+
+def test_handedness_is_per_swing_and_switching_it_asks_for_a_new_analysis(client, runs):
+    d = client.get("/api/swings/old_swing").json()
+    assert d["handedness"] == "right" and d["status"] == "analyzed"  # older swings: right-handed
+    assert client.post("/api/swings/old_swing/handedness", json={"handedness": "both"}).status_code == 400
+    r = client.post("/api/swings/old_swing/handedness", json={"handedness": "left"})
+    assert r.status_code == 200 and r.json()["handedness"] == "left"
+    assert r.json()["status"] == "marked"  # marks kept; the right-handed analysis no longer counts
+    r = client.post("/api/swings", files={"file": ("a.mov", b"x")}, data={"view": "dtl", "handedness": "left"})
+    assert client.get(f"/api/swings/{r.json()['id']}").json()["handedness"] == "left"
+    client.app.state.jobs.wait(r.json()["job"]["id"], timeout=60)
+    r = client.post("/api/swings", files={"file": ("a.mov", b"x")}, data={"view": "dtl", "handedness": "up"})
+    assert r.status_code == 400

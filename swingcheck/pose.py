@@ -48,9 +48,32 @@ def ensure_model(name: str) -> Path:
     return path
 
 
+# Left-handed swings are tracked on mirrored frames (see mirrored()): MediaPipe is far
+# surer of a right-handed golfer seen from behind (on a mirrored down-the-line clip the
+# near knee scored 0.41 visibility against 0.99 unmirrored). Points come back
+# un-mirrored, with left and right swapped, so everything downstream sees the real video.
+def _other_side(name: str) -> str:
+    if name.startswith("left_"):
+        return "right_" + name[len("left_"):]
+    if name.startswith("right_"):
+        return "left_" + name[len("right_"):]
+    if name.endswith(("_left", "_right")):  # mouth_left / mouth_right
+        return name.rsplit("_", 1)[0] + ("_right" if name.endswith("_left") else "_left")
+    return name
+
+
+MIRROR_INDEX = [LANDMARKS.index(_other_side(n)) for n in LANDMARKS]
+
+
+def mirrored(config: dict[str, Any]) -> bool:
+    """Track this swing on mirrored frames: a left-handed golfer."""
+    return config["golfer"]["handedness"] == "left"
+
+
 def _cache_params(info: VideoInfo, config: dict[str, Any]) -> dict[str, Any]:
     pose_cfg = config["pose"]
     return {
+        "mirrored": mirrored(config),
         "version": CACHE_VERSION,
         "video": {"width": info.width, "height": info.height, "fps": info.fps, "frame_count": info.frame_count,
                   "trim_start": info.trim_start, "trim_end": info.trim_end, "source_mtime": info.source_mtime},
@@ -159,6 +182,7 @@ def _extract_pose(
     scale = min(1.0, max_h / info.height) if max_h else 1.0
     size = (round(info.width * scale), round(info.height * scale))
 
+    mirror = mirrored(config)
     total_frames = info.frame_count or int(cv2.VideoCapture(str(video_path)).get(cv2.CAP_PROP_FRAME_COUNT))
     if data is None:
         data = np.full((total_frames, len(LANDMARKS), 4), np.nan)
@@ -172,13 +196,18 @@ def _extract_pose(
             if select is not None and not select(i):
                 continue
             small = cv2.resize(frame, size, interpolation=cv2.INTER_AREA) if scale < 1.0 else frame
+            if mirror:
+                small = cv2.flip(small, 1)
             rgb = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
             image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
             result = landmarker.detect_for_video(image, int(round(i * 1000 / info.fps)))
             data[i] = np.nan
             if result.pose_landmarks:
                 for j, lm in enumerate(result.pose_landmarks[0]):
-                    data[i, j] = (lm.x * info.width, lm.y * info.height, lm.z, lm.visibility)
+                    if mirror:  # back to the real frame: x flips, and a mirrored left is the real right
+                        data[i, MIRROR_INDEX[j]] = ((1 - lm.x) * info.width, lm.y * info.height, lm.z, lm.visibility)
+                    else:
+                        data[i, j] = (lm.x * info.width, lm.y * info.height, lm.z, lm.visibility)
             done += 1
             if done % 25 == 0 or done == todo:
                 progress(done, todo, label)
@@ -202,6 +231,8 @@ def segment_frame(frame: np.ndarray, config: dict[str, Any]) -> np.ndarray:
             min_pose_detection_confidence=pose_cfg["min_detection_confidence"],
             output_segmentation_masks=True,
         )
+        if mirrored(config):  # tracked like the pose (see MIRROR_INDEX); the mask is flipped back below
+            frame = cv2.flip(frame, 1)
         h, w = frame.shape[:2]
         max_h = config["ingest"]["pose_max_height"]
         scale = min(1.0, max_h / h) if max_h else 1.0
@@ -219,7 +250,8 @@ def segment_frame(frame: np.ndarray, config: dict[str, Any]) -> np.ndarray:
     # landmarker; reading a view of it later (when no resize below makes a copy, e.g.
     # a 576x1024 clip) crashes the whole process with an access violation.
     mask = np.array(result.segmentation_masks[0].numpy_view(), dtype=np.float32).squeeze()[:sh, :sw].copy()
-    return cv2.resize(mask, (w, h), interpolation=cv2.INTER_LINEAR) if mask.shape != (h, w) else mask
+    mask = cv2.resize(mask, (w, h), interpolation=cv2.INTER_LINEAR) if mask.shape != (h, w) else mask
+    return cv2.flip(mask, 1) if mirrored(config) else mask
 
 
 def get_pose(

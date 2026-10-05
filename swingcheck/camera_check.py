@@ -3,8 +3,9 @@
 Down-the-line means the camera straight behind the golfer's hands, looking at the
 target, so the golfer is seen side-on: the shoulders and hips overlap left to right.
 Seen from the front (or from well off to the side) they spread apart. Also checked:
-which way the golfer faces, how big they are in the frame, whether head or feet are
-cut off, and whether the body is clear enough to track.
+how big they are in the frame, whether head or feet are cut off, and whether the body
+is clear enough to track. Which way they face is measured separately (facing()) and
+judged against the swing's handedness when it's shown (facing_finding()).
 
 Each finding is {"level": "warn" | "flag", "title", "tip"} in plain words; no findings
 means the camera looks right.
@@ -61,15 +62,6 @@ def camera_check(pose: PoseSeq, address: int | None, config: dict[str, Any]) -> 
         findings.append(finding("warn", "The camera may be off to one side",
                                 f"Your shoulders and hips look wider than they should from behind. {BEHIND_TIP}"))
 
-    # Facing: from behind the hands, a right-handed golfer faces right in the video.
-    expected = 1 if config["golfer"]["handedness"] == "right" else -1
-    facing = np.sign(point("nose")[0] - hip_mid[0])
-    if facing == -expected and spread <= cfg["side_on_flag"]:
-        side = "right" if expected == 1 else "left"
-        findings.append(finding("flag", f"You're facing {'left' if side == 'right' else 'right'}",
-                                f"Filmed from behind your hands, a {config['golfer']['handedness']}-handed golfer faces "
-                                f"{side} in the video. The camera may be on the target side: move it behind your hands."))
-
     # Framing: size, and head or feet cut off.
     top = min(point("nose")[1], point("left_ear")[1], point("right_ear")[1])
     bottom = max(point(n)[1] for n in ("left_ankle", "right_ankle", "left_heel", "right_heel"))
@@ -92,6 +84,33 @@ def camera_check(pose: PoseSeq, address: int | None, config: dict[str, Any]) -> 
                                 "Film in even light without strong light behind you, and wear clothes that stand "
                                 "out from the background."))
     return findings
+
+
+def facing(pose: PoseSeq, address: int | None) -> int | None:
+    """Which way the golfer faces at address: +1 right (nose ahead of the hips in x), -1 left.
+    From behind the hands, a right-handed golfer faces right and a left-handed one left."""
+    detected = np.where(pose.detected())[0]
+    if not len(detected):
+        return None
+    near = detected[np.argsort(np.abs(detected - (address if address is not None else detected[0])))[:SAMPLES]]
+    data = pose.data[near]
+    nose = np.nanmedian(data[:, LANDMARK_INDEX["nose"], 0])
+    hips = np.nanmedian(data[:, [LANDMARK_INDEX["left_hip"], LANDMARK_INDEX["right_hip"]], 0])
+    side = np.sign(nose - hips)
+    return int(side) if side else None
+
+
+def facing_finding(side: int | None, handedness: str) -> dict[str, str] | None:
+    """The "facing the wrong way" finding for a swing of this handedness, if it applies."""
+    expected = 1 if handedness == "right" else -1
+    if side is None or side == expected:
+        return None
+    other = "left" if handedness == "right" else "right"
+    return finding("flag", f"You're facing {'left' if expected == 1 else 'right'}",
+                   f"Filmed from behind your hands, a {handedness}-handed golfer faces "
+                   f"{'right' if expected == 1 else 'left'} in the video. If you swing {other}-handed, switch "
+                   f"this swing to {other}-handed. If not, the camera may be on the target side: move it behind "
+                   "your hands.")
 
 
 def finding(level: str, title: str, tip: str) -> dict[str, str]:
