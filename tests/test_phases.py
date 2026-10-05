@@ -187,8 +187,8 @@ def test_marked_takeaway_replaces_detected_one(tmp_path):
 def test_takeaway_counts_hands_moving_back_not_just_up():
     # Down the line, the hands first move back (sideways on screen) and only then rise.
     from swingcheck.phases import checkpoints
-    back = np.stack([np.linspace(300, 260, 11), np.full(11, 800.0)], axis=1)   # 40 px back, flat
-    up = np.stack([np.full(30, 260.0), np.linspace(800, 500, 31)[1:]], axis=1)  # then 300 px up
-    xy = np.concatenate([back, up, np.tile([[260.0, 790.0]], (5, 1))])
+    back = np.stack([np.linspace(300, 220, 11), np.full(11, 800.0)], axis=1)   # 80 px back, flat
+    up = np.stack([np.full(30, 220.0), np.linspace(800, 500, 31)[1:]], axis=1)  # then 300 px up
+    xy = np.concatenate([back, up, np.tile([[220.0, 790.0]], (5, 1))])
     takeaway, _ = checkpoints(xy, address=0, top=40, impact=45, takeaway_fraction=0.12, downswing_fraction=0.35)
-    assert takeaway == 6  # 12% of the 340 px path, while still moving back; height alone would wait until it rose
+    assert takeaway == 6  # 12% of the 380 px path, while still moving back; height alone would wait until it rose
