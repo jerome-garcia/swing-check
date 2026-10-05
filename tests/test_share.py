@@ -39,8 +39,8 @@ def test_share_shows_one_summary_and_stop_sharing_ends_it(tmp_path):
     page = visitor.get(f"/s/{code}")
     assert page.status_code == 200
     assert "Juan" not in page.text  # never the video's file name
-    assert f"/s/{code}/preview.jpg" in page.text and 'property="og:image"' in page.text
-    assert "Address" in page.text and "Fix" in page.text and "Front arm too steep" in page.text
+    assert f'location.replace("/s/{code}/summary.pdf")' in page.text  # straight on to the PDF
+    assert f"/s/{code}/preview.jpg" in page.text and 'property="og:image"' in page.text  # the preview card
     assert "2 checkpoints: 1 good, 0 to watch, and 1 to fix." in page.text
     pdf = visitor.get(f"/s/{code}/summary.pdf")
     assert pdf.status_code == 200 and pdf.headers["content-type"] == "application/pdf"
@@ -69,7 +69,6 @@ def test_hosted_share_link_works_for_anyone_but_the_swing_stays_private(tmp_path
 
     stranger = TestClient(create_app(tmp_path, hosted=True))
     assert stranger.get(f"/s/{code}").status_code == 200
-    assert "Link works until" in stranger.get(f"/s/{code}").text
     assert stranger.get(f"/api/swings/{meta.id}").status_code == 404  # the swing itself: still private
     assert stranger.post(f"/api/swings/{meta.id}/share", json={}).status_code == 404
     assert stranger.delete(f"/api/swings/{meta.id}/share").status_code == 404

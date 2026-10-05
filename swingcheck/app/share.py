@@ -1,9 +1,9 @@
 """Shared swing summaries: a link anyone can open, made only when the golfer asks.
 
 Sharing saves a snapshot inside the swing's folder: the summary PDF, a preview picture
-(the address, top, and impact frames), and the checkpoint list. A page at /s/<code>
-shows the picture and the list, links to the PDF, and gives Messenger and others a
-preview card. The code is random and separate from the owner's key, so the link shows
+(the address, top, and impact frames), and the checkpoint counts for the preview card.
+The link /s/<code> opens the PDF straight away (after a tiny page that only carries the
+card for Messenger and others). The code is random and separate from the owner's key, so the link shows
 this one summary and nothing else. Stop sharing deletes the snapshot; the swing's own
 deletion (hosted: a few days after upload) takes it too.
 
@@ -14,11 +14,9 @@ from __future__ import annotations
 
 import html
 import secrets
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from swingcheck.app.admin import LOGO
 from swingcheck.checkpoints import DTL_CHECKPOINTS
 
 PDF_FILE = "shared-summary.pdf"
@@ -57,51 +55,25 @@ def write_preview(summary_png: Path, out: Path) -> bool:
     return bool(ok)
 
 
-def page(share: dict[str, Any], base_url: str, details: str, until: datetime | None, has_preview: bool) -> str:
-    """The shared page: brand bar, preview picture, checkpoint list, PDF button, and an
-    invitation to check your own swing. `details` is e.g. "Down-the-line · Right-handed"."""
+def page(share: dict[str, Any], base_url: str) -> str:
+    """The shared link: straight to the PDF. Link previews (Messenger and others) read the
+    card from this page's tags, which their crawlers fetch without running scripts; a
+    browser goes on to the PDF at once (replace, so Back doesn't land here again)."""
     esc = html.escape
     code = share["code"]
     items = share.get("items", [])
     counts = {s: sum(i["status"] == s for i in items) for s in ("ok", "warn", "flag")}
     parts = [f"{counts['ok']} good", f"{counts['warn']} to watch", f"{counts['flag']} to fix"]
     description = f"{len(items)} checkpoints: {', '.join(parts[:-1])}, and {parts[-1]}."
+    pdf = f"/s/{code}/summary.pdf"
     preview_url = f"{base_url}/s/{code}/preview.jpg"
-    rows = "".join(
-        f'<li><span class="score-dot {esc(i["status"])}">{i["number"]}</span>'
-        f'<span><strong>{esc(i["title"])}</strong> <span class="word {esc(i["status"])}">'
-        f'{STATUS_WORD.get(i["status"], "")}</span><br><span class="subtle">{esc(i["label"])}</span></span></li>'
-        for i in items)
-    until_text = f" · Link works until {until:%b} {until.day}" if until else ""
-    og_image = (f'<meta property="og:image" content="{preview_url}"><meta name="twitter:image" content="{preview_url}">'
-                if has_preview else "")
-    picture = (f'<a href="/s/{code}/summary.pdf"><img class="share-img" src="/s/{code}/preview.jpg" '
-               'alt="Address, top, and impact frames"></a>' if has_preview else "")
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex"><meta name="theme-color" content="#123824">
-<title>Swing check · SwingCheck</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css">
+<meta name="robots" content="noindex"><title>Swing check · SwingCheck</title><link rel="icon" href="/favicon.svg">
 <meta property="og:type" content="website"><meta property="og:site_name" content="SwingCheck">
 <meta property="og:title" content="A golf swing, checked"><meta property="og:description" content="{esc(description)}">
-<meta property="og:url" content="{base_url}/s/{code}"><meta name="twitter:card" content="summary_large_image">{og_image}
-<script>try {{ if (localStorage.getItem("swingcheck.theme") === "light") document.documentElement.dataset.theme = "light"; }} catch {{}}</script>
-<style>
-  main {{ max-width: 760px; }}
-  .share-img {{ width: 100%; height: auto; display: block; border-radius: var(--radius); }}
-  .share-list {{ list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }}
-  .share-list li {{ display: flex; gap: 12px; align-items: flex-start; }}
-  .share-list .score-dot {{ flex: none; }}
-  .word {{ font-size: 13px; font-weight: 700; }} .word.ok {{ color: var(--ok); }}
-  .word.warn {{ color: var(--warn); }} .word.flag {{ color: var(--flag); }}
-</style></head><body>
-<header class="topbar"><a class="brand" href="/" aria-label="SwingCheck">{LOGO}<span class="brand-text">
-  <span class="brand-name">SwingCheck</span></span></a>
-  <a class="btn primary" href="/new">Check your swing</a></header>
-<main class="stack">
-<section><h1>Swing check</h1><div class="subtle small">{esc(details)}{esc(until_text)}</div></section>
-{picture}
-<section class="panel"><h2>Checkpoints</h2><p class="subtle">{esc(description)}</p><ul class="share-list">{rows}</ul></section>
-<div class="actions"><a class="btn primary" href="/s/{code}/summary.pdf">View the PDF</a>
-  <a class="btn" href="/new">Check your own swing →</a></div>
-<p class="subtle small">Checked with SwingCheck from a phone video: estimates for practice, not professional coaching.</p>
-</main></body></html>"""
+<meta property="og:url" content="{base_url}/s/{code}"><meta property="og:image" content="{preview_url}">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="{preview_url}">
+<script>location.replace("{pdf}");</script>
+<style>body {{ background: #101311; color: #e9ece6; font: 16px system-ui, sans-serif; margin: 24px; }} a {{ color: #7fd49a; }}</style>
+</head><body><p>Opening the swing summary… <a href="{pdf}">Open the PDF</a></p></body></html>"""

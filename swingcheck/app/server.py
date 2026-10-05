@@ -541,14 +541,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     @app.get("/s/{code}", include_in_schema=False)
     def shared_page(code: str, request: Request) -> HTMLResponse:
         meta = shared_or_404(code)
-        folder = store.path(meta.id)
-        until = hosting.expires_at(meta.created, limits["keep_days"]) if limits and meta.created else None
-        details = " · ".join(["Face-on" if meta.view == "fo" else "Down-the-line",
-                              "Left-handed" if meta.handedness == "left" else "Right-handed",
-                              "Driver or wood" if meta.club == "driver" else "Iron or wedge"])
-        return HTMLResponse(share.page(meta.notes["share"], site_url(request), details, until,
-                                       (folder / share.PREVIEW_FILE).exists()),
-                            headers={"Cache-Control": "no-cache"})
+        return HTMLResponse(share.page(meta.notes["share"], site_url(request)), headers={"Cache-Control": "no-cache"})
 
     @app.get("/s/{code}/summary.pdf", include_in_schema=False)
     def shared_pdf(code: str) -> FileResponse:

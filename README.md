@@ -822,9 +822,10 @@ to fix), built from the last analysis; **Edit marks**, the text report and
 header names only the checkpoint whose lines are on screen.
 
 **Share summary** makes a link anyone can open (`/s/<code>`, opens the share
-sheet on a phone, copies the link on a computer): a page with the address, top,
-and impact frames, the 8 checkpoints with their results, and **View the PDF**,
-plus a preview card in Messenger and similar apps. It's a snapshot saved inside
+sheet on a phone, copies the link on a computer) that goes straight to the summary
+PDF. Messenger and similar apps show a preview card for it (the address, top, and
+impact frames and the checkpoint counts), read from a tiny page that sends a
+browser on to the PDF at once. It's a snapshot saved inside
 the swing's folder (`swingcheck/app/share.py`): never the video or its file name,
 and the code is random and separate from your key. **Share again** updates it at
 the same link after a re-analysis; **Stop sharing** ends it at once, and it ends
