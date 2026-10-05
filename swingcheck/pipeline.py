@@ -109,7 +109,7 @@ def suggest_frames(run_dir: Path, info: VideoInfo, config: dict[str, Any],
     camera = camera_check(pose, frames["address"] if frames else None, config)
     if frames is None and pose.detected().any():
         camera.append({"level": "warn", "title": "Couldn't find the swing automatically",
-                       "tip": "You can still mark it: scrub to each position yourself. If the clip holds more "
+                       "tip": "You can still mark it: move the slider to each position yourself. If the clip holds more "
                               "than one swing, trim it to one."})
     path.write_text(json.dumps({"video_signature": video_signature(info), "phases": frames, "camera": camera},
                                indent=2))

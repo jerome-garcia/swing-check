@@ -224,7 +224,7 @@ function phaseAdjuster(s, phase, startFrame, onApply, onCancel) {
     n === -10 ? "«" : n === -1 ? "‹" : n === 1 ? "›" : "»");
   show(frame);
   return el("div", { class: "adjuster" },
-    el("p", { class: "small" }, `Scrub to the right ${PHASE_LABELS[phase].toLowerCase()} frame, then set it.`),
+    el("p", { class: "small" }, `Move the slider to the right ${PHASE_LABELS[phase].toLowerCase()} frame, then set it.`),
     el("div", { class: "adjust-stage" }, img),
     el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),
     el("div", { class: "subtle small center" }, label),

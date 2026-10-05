@@ -119,7 +119,7 @@ short irons and wedges 55–65°. The reference photo used to set these measured
 58° at 25%.
 
 **3. Takeaway (implemented).** On the **Takeaway** step of the marking screen,
-you scrub to where the shaft is parallel to the target line (from behind it
+you move the slider to where the shaft is parallel to the target line (from behind it
 points at the camera) and click the clubhead (only the clubhead: the hands
 don't matter here); that frame is the takeaway checkpoint. Settings live in `[analyzers.takeaway]`.
 
@@ -156,7 +156,7 @@ for reference. If the takeaway isn't marked, this checkpoint says so instead of
 guessing.
 
 **4. Halfway back (implemented).** On the **Halfway back** step of the marking
-screen, scrub to where your **lead arm is parallel to the ground** (hands about
+screen, move the slider to where your **lead arm is parallel to the ground** (hands about
 level with your lead shoulder) and click the **clubhead** (or the highest point
 of the shaft you can see, if the clubhead is out of frame) and your **hands**.
 Settings live in `[analyzers.halfway_back]`.
@@ -182,7 +182,7 @@ tracked biceps line moved too much to judge a few centimetres reliably.
 The key frame shows the shaft line, in its result color, carried down to the
 ball's level, and a tick from where it lands to the ball.
 
-**5. Top (implemented).** On the **Top** marking step, scrub to the top of your
+**5. Top (implemented).** On the **Top** marking step, move the slider to the top of your
 backswing (the moment the club stops going back) and click the **clubhead** and
 your **hands**. Body points come from tracking. Settings live in
 `[analyzers.top]`.
@@ -210,7 +210,7 @@ swing plane line and a shoulder plane) was tried here and dropped. The key
 frame shows the spine (white), the lead arm in its color, and a dashed green
 line square to the spine where the arm should be.
 
-**6. Downswing (implemented).** On the **Downswing** marking step, scrub to
+**6. Downswing (implemented).** On the **Downswing** marking step, move the slider to
 where the **shaft is parallel to the ground on the way down** (P6, hands about
 hip height; the mirror of the takeaway) and click the **clubhead** (only the
 clubhead: neither measurement uses the hands). On the key frame a dashed line
@@ -253,7 +253,7 @@ where the rear of the hips is at impact, and the spine now (colored) vs at
 address (dashed).
 
 **8. Follow-through (implemented).** On the **Follow-through** marking step,
-scrub to where your **trail arm is parallel to the ground after impact** (hands
+move the slider to where your **trail arm is parallel to the ground after impact** (hands
 about shoulder height: the mirror of halfway back) and click the **clubhead**
 and your **hands**. From behind, the hands are often hidden behind your body
 here: click the lowest point of the shaft you can see instead (any two points
@@ -382,7 +382,7 @@ first to know how many swings a 2-CPU server handles per hour.
 **Scaling notes.** One app process only: jobs live in memory, so never run
 several workers. Jobs run one at a time (pose uses the whole CPU), so grow with a
 bigger server, not more processes. Frame images use one lock per open video, so
-visitors scrubbing different swings don't wait for each other, and finished jobs
+visitors moving through frames of different swings don't wait for each other, and finished jobs
 are forgotten after 6 hours. Not done yet: listing a visitor's swings reads every
 swing folder on the server to find theirs; once there are many visitors, keep
 each owner's swings in their own subfolder.
@@ -391,6 +391,17 @@ each owner's swings in their own subfolder.
 detection onto the user's device would leave the server serving static pages
 only (free on Cloudflare Pages or GitHub Pages): no uploads, no storage, no
 privacy worries. A big rewrite, so only if usage grows.
+
+### Left-handed golfers (planned)
+
+Today the checks, drawings and camera check follow one app-wide setting
+(`[golfer] handedness` in `config/default.toml`, right by default), with no choice
+in the app, and they were only tested on right-handed clips. The camera check
+can't guess handedness: a left-hander filmed correctly looks like a right-hander
+filmed from the target side. Plan: a Right-handed / Left-handed choice on the
+upload page saved with each swing, every check using the swing's own handedness,
+and validation on mirrored copies of the right-handed clips (a mirrored McIlroy
+should read the same as the original).
 
 ### Other ideas, not planned yet
 
@@ -548,7 +559,8 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    phone video and keeps the slo-mo frame rate. It then takes a quick look
    through the clip (about 5–20 s) to find your swing, so each marking step can
    open on a **suggested frame**, and checks the camera at address. (Face-on is
-   shown but disabled until a future release.)
+   shown but disabled until a future release.) SwingCheck is for
+   **right-handed golfers only** for now; the upload page and the terms say so.
 
    **Camera check.** The marking screen opens with the result: a green "✓ a good
    down-the-line view", or what to film differently: camera off to one side or
@@ -562,11 +574,11 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    the line under it lists what's still to mark. The dark bar above the frame
    says what to click next in large type, with exactly where under it (for
    example *Click the ball*, *Center of the ball*); it flashes when it changes.
-   Each step opens on its suggested frame (the caption says *Suggested frame*); check it and scrub to
+   Each step opens on its suggested frame (the caption says *Suggested frame*); check it and move the slider to
    the exact frame if needed with the slider, the ‹ › buttons or the arrow keys
    (Shift = 10 frames). **Back to the suggested frame** returns to it.
 
-   **Address.** Scrub to your set-up position, then click:
+   **Address.** Move the slider to your set-up position, then click:
    - the **ball**
    - the **club neck**, where the shaft goes into the clubhead (the hosel), not
      the clubface: the shaft line through it is your swing plane
@@ -580,22 +592,22 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    up and still. If a swing was saved with the wrong camera view, switch it
    under **Camera view** at the top of this screen.
 
-   **Takeaway.** Switch to the **Takeaway** step, scrub to where the
+   **Takeaway.** Switch to the **Takeaway** step, move the slider to where the
    shaft is parallel to the target line (from behind it points at the camera),
    and click the **clubhead**. That frame becomes the takeaway checkpoint.
 
-   **Halfway back.** Switch to the **Halfway back** step, scrub to
+   **Halfway back.** Switch to the **Halfway back** step, move the slider to
    where your lead arm is parallel to the ground, and click the **clubhead**
    (or the highest point of the shaft you can see) and then your **hands**.
 
-   **Top.** Switch to the **Top** step, scrub to where the club stops
+   **Top.** Switch to the **Top** step, move the slider to where the club stops
    going back, and click the **clubhead** and then your **hands**.
 
-   **Downswing.** Switch to the **Downswing** step, scrub to where
+   **Downswing.** Switch to the **Downswing** step, move the slider to where
    the shaft is parallel to the ground coming down, and click the
    **clubhead**.
 
-   **Follow-through.** Switch to the **Follow-through** step, scrub
+   **Follow-through.** Switch to the **Follow-through** step, move the slider
    to where your trail arm is parallel to the ground after impact, and click
    the **clubhead** and then your **hands** (or the lowest point of the shaft
    you can see, if your hands are hidden).
@@ -615,7 +627,7 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    analyze** asks once whether to go ahead.
 
    **Trim the clip** (below the points) cuts out practice swings or idle time:
-   scrub to a frame, press **Start here** or **End here**, then **Apply trim**.
+   move the slider to a frame, press **Start here** or **End here**, then **Apply trim**.
    Your points are kept.
 3. **Save and analyze.** Saving your marks starts the analysis straight away.
    Tracking your body takes about a minute for a few seconds of 240 fps slo-mo
@@ -636,7 +648,7 @@ settings, or **Delete** to remove it and its files.
 ### When the impact frame is wrong
 
 Impact is the one checkpoint found automatically. If its frame is off, open
-**Impact frame** on the results page, press **Adjust impact**, scrub to the
+**Impact frame** on the results page, press **Adjust impact**, move the slider to the
 right frame, and press **Set as impact**. The swing is re-analyzed with your
 frame, which is remembered. **Reset to automatic** goes back to detection. Every
 other checkpoint uses the frame you marked; change those with **Edit marks**.
@@ -791,7 +803,7 @@ Other useful settings:
 | Warning that the clip is 30 or 60 fps when you filmed slo-mo | The file was re-exported on the way off the phone. Use the original (see Filming). |
 | Phone can't open the app | Start with `swingcheck --phone`, check the phone is on the same Wi-Fi, and allow Python through the Windows firewall on private networks. |
 | "Can't reach the SwingCheck app" or "The app was restarted while this was running" | The app stopped (its terminal was closed or it was restarted) during a conversion or analysis. Analysis runs inside the app, so closing it stops the job. Start `swingcheck` again and press **Try again**. |
-| Address checks measured on the wrong frame | **Edit marks**, scrub to your set-up position, and save again. |
+| Address checks measured on the wrong frame | **Edit marks**, move the slider to your set-up position, and save again. |
 | Upper back reads rounded but isn't | Loose clothing changes the outline; check the line drawn on the address key frame. |
 | Wrong impact frame | **Adjust impact** under Impact frame on the results page. |
 | A check says "Not measured" | A body point wasn't tracked at that moment: usually lighting, part of the body out of frame, or baggy clothing. |

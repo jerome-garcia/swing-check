@@ -6,21 +6,21 @@ import { swingHeader } from "./swing.js";
 const STEPS = {
   dtl: [
     { key: "address", title: "Address", points: ["ball", "clubhead", "grip"],
-      intro: "Scrub to your address position (set up and still), then click the points. This frame is used for the address checks." },
+      intro: "Move the slider to your address position (set up and still), then click the points. This frame is used for the address checks." },
     { key: "takeaway", title: "Takeaway", points: ["clubhead"],
-      intro: "Scrub to where the shaft is parallel to the target line (from behind, it points at the camera). Click the clubhead. This frame is the takeaway checkpoint." },
+      intro: "Move the slider to where the shaft is parallel to the target line (from behind, it points at the camera). Click the clubhead. This frame is the takeaway checkpoint." },
     { key: "halfway_back", title: "Halfway back", points: ["clubhead", "grip"],
-      intro: "Scrub to where your front arm is parallel to the ground (hands about level with your front shoulder). Click the clubhead, then your hands. This frame is the halfway-back checkpoint." },
+      intro: "Move the slider to where your front arm is parallel to the ground (hands about level with your front shoulder). Click the clubhead, then your hands. This frame is the halfway-back checkpoint." },
     { key: "top", title: "Top", points: ["clubhead", "grip"],
-      intro: "Scrub to the top of your backswing (the moment the club stops going back). Click the clubhead, then your hands. This frame is the top checkpoint." },
+      intro: "Move the slider to the top of your backswing (the moment the club stops going back). Click the clubhead, then your hands. This frame is the top checkpoint." },
     { key: "downswing", title: "Downswing", points: ["clubhead"],
-      intro: "Scrub to where the shaft is parallel to the ground on the way down (hands about hip height). Click the clubhead. This frame is the downswing checkpoint." },
+      intro: "Move the slider to where the shaft is parallel to the ground on the way down (hands about hip height). Click the clubhead. This frame is the downswing checkpoint." },
     { key: "follow_through", title: "Follow-through", points: ["clubhead", "grip"],
-      intro: "Scrub to where your back arm is parallel to the ground after impact (hands about shoulder height, the mirror of halfway back; if your arms are hidden, pick where the shaft looks about as steep as at halfway back). Click the clubhead, then your hands. This frame is the follow-through checkpoint." },
+      intro: "Move the slider to where your back arm is parallel to the ground after impact (hands about shoulder height, the mirror of halfway back; if your arms are hidden, pick where the shaft looks about as steep as at halfway back). Click the clubhead, then your hands. This frame is the follow-through checkpoint." },
   ],
   fo: [
     { key: "address", title: "Address", points: ["ball"],
-      intro: "Scrub to your address position, then click the ball." },
+      intro: "Move the slider to your address position, then click the ball." },
   ],
 };
 // Label offsets (CSS px) keep the ball and clubhead labels apart; those points sit together.
@@ -334,7 +334,7 @@ export async function renderMark(view, id, isCurrent) {
 
   // The step opened on a suggested frame: say so, and offer a way back to it after scrubbing.
   const suggestedTag = el("span", { class: "suggested-tag", hidden: true,
-    title: "Found automatically. Check it and scrub to the exact frame if needed." }, "Suggested frame");
+    title: "Found automatically. Check it and move the slider to the exact frame if needed." }, "Suggested frame");
   const backToSuggested = el("button", { class: "linkish", type: "button", hidden: true,
     onclick: () => setFrame(cur().suggested) }, "Back to the suggested frame");
   // A quiet reminder under the scrubber: the suggestion is a guess, the exact frame is theirs to pick.
@@ -349,7 +349,7 @@ export async function renderMark(view, id, isCurrent) {
     backToSuggested.hidden = onSuggestion || cur().suggested === undefined;
     suggestNote.hidden = cur().suggested === undefined;
     suggestNote.textContent = `This opens on a suggested frame, a best guess at your ${stepDef().title.toLowerCase()}. `
-      + "Check it and scrub to the exact frame if it's off.";
+      + "Check it, and move the slider to the exact frame if it's off.";
     showFrame(cur().frame);
     refresh(); // the frame-order check and the step tabs depend on the frame
   }
@@ -645,7 +645,7 @@ export async function renderMark(view, id, isCurrent) {
           refBox),
         el("details", { class: "panel" },
           el("summary", {}, el("strong", {}, "Trim the clip")),
-          el("p", { class: "subtle small" }, "Cut out practice swings or idle time. Scrub to a frame and set the start or end there."),
+          el("p", { class: "subtle small" }, "Cut out practice swings or idle time. Move the slider to a frame and set the start or end there."),
           trimBody),
         el("details", { class: "panel" },
           el("summary", {}, el("strong", {}, "Camera view"), el("span", { class: "subtle small" }, ` · ${s.view === "fo" ? "Face-on" : "Down-the-line"}`)),
