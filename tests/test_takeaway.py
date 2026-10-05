@@ -38,7 +38,7 @@ def pose(mirror=False, spine_lost=0.0, knee_lost=0.0, legs=True):
 
 
 ADDR_CLUBHEAD = BALL + (-25, 10)
-ADDR_GRIP = np.array([560.0, 820.0])
+ADDR_GRIP = np.array([512.0, 852.0])  # the shaft points at the belt buckle (25% up the torso)
 
 
 def on_line(inside_by):
@@ -192,3 +192,17 @@ def test_untracked_leg_is_not_measured():
     v = run(inside_by=0.0, legs=False)
     assert v.rows[2].status == "error" and v.rows[2].value == "Not measured"
     assert v.status == "ok"
+
+
+def test_upright_setup_is_judged_against_the_belt_buckle_line(monkeypatch):
+    # Hands high: the address shaft points 65% up the torso, above the belt. Taking the
+    # club straight back along that steep shaft line is outside the swing plane, which
+    # runs from the clubhead to the top of the belt-buckle zone instead.
+    import sys
+    here = sys.modules[__name__]
+    monkeypatch.setattr(here, "ADDR_GRIP", np.array([560.0, 820.0]))
+    on_own_shaft = run(inside_by=0.0)
+    assert on_own_shaft.measurements["clubhead_inside_line"] < -0.03  # toward the ball
+    # A setup that already points at the belt buckle keeps its own shaft line.
+    monkeypatch.setattr(here, "ADDR_GRIP", np.array([512.0, 852.0]))
+    assert run(inside_by=0.0).measurements["clubhead_inside_line"] == pytest.approx(0.0, abs=1e-3)

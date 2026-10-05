@@ -167,6 +167,9 @@ back_bulge_watch_max = 0.09
 # Key check: extended up past the hands, the line should point roughly at the
 # belt buckle. Measured as where it crosses the torso, as a share of the way
 # from hip center (0) to shoulder center (1, i.e. 100%).
+# The swing plane later checkpoints use runs from the clubhead toward the belt
+# buckle: the shaft line if it points inside this green zone, else the line to its
+# nearest edge.
 belt_min = 0.0     # green 0-45% up the torso
 belt_max = 0.45
 belt_watch_min = -0.10   # yellow from 10% below the hips...

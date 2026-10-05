@@ -3,7 +3,7 @@
 On the frame you mark where the shaft is parallel to the ground coming down
 (P6, the mirror of the takeaway), using the clubhead you click:
 
-  down the plane  the clubhead's distance from the address shaft line, square
+  down the plane  the clubhead's distance from the swing plane line, square
                   to it (as at the takeaway). Coming down it should be on the
                   line or a little under it (behind the hands). Above the line
                   = over the top (steep); far under = stuck (too flat).
@@ -138,7 +138,7 @@ def downswing(ctx: SwingContext) -> Verdict:
             "clubhead_under_line": round(under, 3),
             "shallowing_vs_takeaway": round(shallowing, 3) if shallowing is not None else None,
             "downswing_frame": f,
-            "units": "share of torso length, square to the address shaft line; under: + = behind the line "
+            "units": "share of torso length, square to the swing plane line; under: + = behind the line "
                      "(golfer's side), - = above it; shallowing: + = flatter coming down than at the takeaway",
         },
         rows=[

@@ -1,6 +1,11 @@
 """Down-the-line checkpoint 2: swing plane at address.
 
 The line through the clicked clubhead (hosel) and grip is the shaft plane.
+The swing plane that later checkpoints are judged against runs from the clubhead
+toward the belt buckle: it is the shaft line when that points at the belt buckle,
+and otherwise the line to the nearest edge of the belt-buckle zone, so a too-upright
+(or too-flat) setup doesn't set a too-upright (or too-flat) reference for the rest
+of the swing.
 Two things are checked on the address frame:
 
   points at   where that line, extended up past the hands, crosses the
@@ -42,14 +47,42 @@ def torso_crossing(clubhead, grip, hip, shoulder) -> float:
 
 
 
-def swing_plane_line(ctx: SwingContext, show: tuple[int, int] | None) -> list[Overlay]:
-    """The swing plane line (the address shaft line, clubhead through grip) across the
-    whole frame, labeled, with a grey boundary line either side marking the on-plane
-    corridor (the takeaway's green band, [analyzers.takeaway] line_tolerance). Every
-    checkpoint from 2 to 8 draws it on its key frame, so the clubhead can be judged
-    against it by eye."""
+def address_torso(ctx: SwingContext) -> tuple[np.ndarray, np.ndarray]:
+    """Hip center and shoulder center on the address frame (the trail side if a center is missing)."""
+    f = ctx.marks.address_frame
+    hip = ctx.midpoint("left_hip", "right_hip")[f]
+    shoulder = ctx.midpoint("left_shoulder", "right_shoulder")[f]
+    if not (np.all(np.isfinite(hip)) and np.all(np.isfinite(shoulder))):
+        hip = ctx.value(ctx.track(ctx.side("hip", "trail")), f, "back hip")
+        shoulder = ctx.value(ctx.track(ctx.side("shoulder", "trail")), f, "back shoulder")
+    return hip, shoulder
+
+
+def plane_points(ctx: SwingContext) -> tuple[np.ndarray, np.ndarray]:
+    """Two points on the swing plane line: the address clubhead, and a second point toward
+    the belt buckle. That's the grip when the shaft points at the belt buckle; otherwise the
+    nearest edge of the belt-buckle zone on the torso. Falls back to the grip if the torso
+    isn't tracked or the shaft never points at it."""
     pts = ctx.marks.points
     ch0, gr0 = np.asarray(pts["clubhead"], float), np.asarray(pts["grip"], float)
+    cfg = ctx.config["analyzers"]["swing_plane"]
+    try:
+        hip, shoulder = address_torso(ctx)
+        u = torso_crossing(ch0, gr0, hip, shoulder)
+    except (MissingData, ValueError, IndexError, np.linalg.LinAlgError):
+        return ch0, gr0
+    if cfg["belt_min"] <= u <= cfg["belt_max"]:
+        return ch0, gr0
+    return ch0, hip + float(np.clip(u, cfg["belt_min"], cfg["belt_max"])) * (shoulder - hip)
+
+
+def swing_plane_line(ctx: SwingContext, show: tuple[int, int] | None) -> list[Overlay]:
+    """The swing plane line (from the address clubhead toward the belt buckle, see
+    plane_points) across the whole frame, labeled, with a grey boundary line either side
+    marking the on-plane corridor (the takeaway's green band, [analyzers.takeaway]
+    line_tolerance). Every checkpoint from 2 to 8 draws it on its key frame, so the
+    clubhead can be judged against it by eye."""
+    ch0, gr0 = plane_points(ctx)
     if np.linalg.norm(gr0 - ch0) < 1:
         return []
     d = (gr0 - ch0) / np.linalg.norm(gr0 - ch0)
@@ -68,11 +101,7 @@ def swing_plane(ctx: SwingContext) -> Verdict:
     if np.linalg.norm(grip - clubhead) < 5:
         raise MissingData("The clubhead and hands marks are on top of each other. Mark them again.")
 
-    hip = ctx.midpoint("left_hip", "right_hip")[f]
-    shoulder = ctx.midpoint("left_shoulder", "right_shoulder")[f]
-    if not (np.all(np.isfinite(hip)) and np.all(np.isfinite(shoulder))):
-        hip = ctx.value(ctx.track(ctx.side("hip", "trail")), f, "back hip")
-        shoulder = ctx.value(ctx.track(ctx.side("shoulder", "trail")), f, "back shoulder")
+    hip, shoulder = address_torso(ctx)
 
     angle = shaft_angle_deg(clubhead, grip)
     u = torso_crossing(clubhead, grip, hip, shoulder)
@@ -111,7 +140,8 @@ def swing_plane(ctx: SwingContext) -> Verdict:
 
     # Drawing: the swing plane line across the whole frame, kept on screen for the whole
     # video so the clubhead can be followed against it; plus the belt-buckle zone on the
-    # torso, where the line crosses it, and the result.
+    # torso, where the shaft crosses it, and the result. If the shaft misses the belt
+    # buckle, it is drawn dashed to where it points, and the plane runs to the zone instead.
     s = ctx.scale
     t = shoulder - hip
     cross = hip + u * t
@@ -120,6 +150,8 @@ def swing_plane(ctx: SwingContext) -> Verdict:
     color = STATUS_COLORS[status]
     overlays = swing_plane_line(ctx, (0, len(ctx.pose) - 1)) + [
         Overlay("segment", zone, REFERENCE_COLOR, "", show, 6),  # the target
+        *([Overlay("dashed", [tuple(clubhead), tuple(cross)], color, "", show, 2)]  # your shaft, off the plane
+          if aim_status != "ok" else []),
         spot_mark(cross, color, show),
         Overlay("text", [(float(cross[0]) + 0.12 * s, float(cross[1]))], color, aim, show),
     ]

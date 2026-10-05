@@ -58,7 +58,7 @@ of the swing.
 |---|---|---|---|
 | 1 | **Address / alignment** | Arms perpendicular to the ground, spine tilt at the right angle, knee bend correct (plus back rounding) | ✅ Implemented |
 | 2 | **Swing plane** | At address, a line through the clubhead and shaft points you click is the swing plane; check that its angle is correct and that it points roughly at the belt buckle | ✅ Implemented |
-| 3 | **Takeaway** | When the club is parallel to the target line in the takeaway, the clubhead is still on the address shaft line (on plane) | ✅ Implemented |
+| 3 | **Takeaway** | When the club is parallel to the target line in the takeaway, the clubhead is still on the swing plane line (on plane) | ✅ Implemented |
 | 4 | **Backswing (halfway back)** | At lead arm parallel, the shaft points back at or just inside the golf ball ("hands split the biceps" was tried and dropped) | ✅ Implemented |
 | 5 | **Top of backswing** | The lead (left) arm matches the shoulders, 90° to the spine (hands-on-plane was tried and dropped) | ✅ Implemented |
 | 6 | **Downswing** | With the shaft parallel to the ground coming down, the club is back on plane and flatter than at the takeaway (shallowing) | ✅ Implemented |
@@ -124,6 +124,15 @@ line crosses it. Settings live in `[analyzers.swing_plane]`.
 | **Shaft points at** (key check) | where the extended shaft line crosses your torso, as % of the way from hip center (0%) to shoulder center (100%) | 0–45%: **Points at your belt buckle** | −10–0%: *just below your belt*; 45–60%: *just above your belt* | below −10%: **Points below your belt** (shaft too flat: too far from the ball / hands too low); above 60%: **Points above your belt** (too upright: too close / hands too high) |
 | **Shaft angle** | angle of the line above horizontal | 45–65° | 40–45° or 65–70° | below 40° or above 70° (check the club and camera height) |
 
+**The swing plane line** that checkpoints 3–8 are judged against starts at the
+address clubhead and points at the belt buckle. When your shaft already points
+there (green), it is your shaft line. When it doesn't, the plane runs to the
+nearest edge of the belt-buckle zone instead (0% or 45% up the torso), and your
+shaft is drawn dashed to where it points. So a too-upright setup (hands high,
+standing close) doesn't give you a too-upright plane to swing along, and a
+too-flat one doesn't give you a too-flat plane. Swings that point at the belt
+buckle, including McIlroy's and Tiger's, are unchanged.
+
 Typical shaft angles by club, for reference: driver 45–50°, mid-irons 50–55°,
 short irons and wedges 55–65°. The reference photo used to set these measured
 53°, pointing 30% of the way up the torso; Tiger and McIlroy measure 55° and
@@ -136,7 +145,7 @@ don't matter here); that frame is the takeaway checkpoint. Settings live in `[an
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Clubhead vs swing plane** | distance of the clubhead from the swing plane line (checkpoint 2's line), square to it, as % of torso length | within ±20% (≈10 cm): **Clubhead on the swing plane** | 20–50%: *clubhead slightly toward you / toward the ball* | past 50% (≈25 cm): *clubhead too far toward you* (pulled inside or rolled open) or *too far toward the ball* (picked up outside) |
+| **Clubhead vs swing plane** | distance of the clubhead from the swing plane line (checkpoint 2's line, toward the belt buckle), square to it, as % of torso length | within ±20% (≈10 cm): **Clubhead on the swing plane** | 20–50%: *clubhead slightly toward you / toward the ball* | past 50% (≈25 cm): *clubhead too far toward you* (pulled inside or rolled open) or *too far toward the ball* (picked up outside) |
 | **Spine bend kept** | spine bend (hip center → shoulder center, from vertical) on the takeaway frame vs address, from tracking | up to 6° more upright or 5° more bent: **posture kept** | 6–10° more upright (*slightly standing up*) or 5–10° more bent (*slightly bending over*) | more than 10°: **standing up** early or **bending over** |
 | **Back knee bend kept** | trail knee flex (180° − hip-knee-ankle angle) on the takeaway frame vs address, from tracking | up to 5° straighter or 8° more bent: **flex kept** | more than 5° straighter (*slightly straightening*; past 10°, *straightening*) or more than 8° more bent (*sinking*) | never: a watch item (see below) |
 
@@ -150,7 +159,7 @@ isn't tracked, that row says "not measured" and the others decide.
 
 Where your hands are doesn't matter for this check. The rule started as "the
 club covers the hands", but that depends on where the hands went, and the
-clubhead staying on the address shaft line is the cleaner on-plane test.
+clubhead staying on the swing plane line is the cleaner on-plane test.
 
 Good players vary here, which is why the yellow band is wide: McIlroy reads 4%
 outside (on plane); Tiger 38% inside on one clip and 21% outside on another;
@@ -161,7 +170,7 @@ so a camera pointed 5° off the target line moves it sideways by about 18% of
 torso length. The thresholds (`line_tolerance`, `flag_distance`) are a first
 guess from these few swings; tune them as more clips come in.
 
-The key frame shows the address shaft line (magenta) with the on-plane band
+The key frame shows the swing plane line (magenta) with the on-plane band
 either side (grey), a tick from the clubhead square to the line, and the hands
 for reference. If the takeaway isn't marked, this checkpoint says so instead of
 guessing.
@@ -236,7 +245,7 @@ moved. Settings live in `[analyzers.downswing]`.
 
 Why compare with the takeaway and not shaft angles: at P6, like at the
 takeaway, the shaft points roughly at the camera, so its angle on screen is
-unreliable, but the clubhead's position against the address shaft line is
+unreliable, but the clubhead's position against the swing plane line is
 not. Shallowing needs the takeaway marked; without it the card shows the
 plane check only. No reference photo for this one: the bands are from
 standard teaching, checked on McIlroy (13% under the line, 17% flatter than

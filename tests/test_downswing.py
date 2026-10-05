@@ -15,7 +15,7 @@ PHASES = Phases(address=0, takeaway=20, top=40, early_downswing=50, impact=60)
 HIP = np.array([300.0, 700.0])  # golfer on the left, ball on the right (right-hander, DTL)
 BALL = np.array([800.0, 1150.0])
 ADDR_CLUBHEAD = BALL + (-25, 10)
-ADDR_GRIP = np.array([560.0, 820.0])
+ADDR_GRIP = np.array([512.0, 852.0])  # the shaft points at the belt buckle (25% up the torso)
 HANDS = np.array([520.0, 760.0])
 
 

@@ -37,7 +37,7 @@ import numpy as np
 
 from swingcheck.analyzers import (MissingData, Overlay, Row, STATUS_COLORS, SwingContext, Verdict, clubhead_mark, grade,
                                   register)
-from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
+from swingcheck.analyzers.dtl_swing_plane import plane_points, swing_plane_line
 from swingcheck.analyzers.dtl_body import posture_kept, trail_knee_kept, with_body
 
 HOLD_MS = 400  # how long the takeaway overlays stay up in the annotated video
@@ -45,7 +45,8 @@ HOLD_MS = 400  # how long the takeaway overlays stay up in the annotated video
 
 @dataclass
 class AddressLine:
-    """The address shaft line (clicked clubhead -> grip) and its golfer-side normal."""
+    """The swing plane line (address clubhead toward the belt buckle, dtl_swing_plane.plane_points)
+    and its golfer-side normal."""
 
     clubhead: np.ndarray
     grip: np.ndarray
@@ -58,9 +59,8 @@ class AddressLine:
 
 
 def address_line(ctx: SwingContext) -> AddressLine:
-    pts = ctx.marks.points
-    ball = np.asarray(pts["ball"], float)
-    ch0, gr0 = np.asarray(pts["clubhead"], float), np.asarray(pts["grip"], float)
+    ball = np.asarray(ctx.marks.points["ball"], float)
+    ch0, gr0 = plane_points(ctx)
     if np.linalg.norm(gr0 - ch0) < 1:
         raise MissingData("The address clubhead and hands marks are on top of each other. Mark them again.")
     # "Toward the golfer" on screen: from the ball toward the hips at address.
@@ -148,7 +148,7 @@ def takeaway(ctx: SwingContext) -> Verdict:
             "line_tolerance": tol,
             "flag_distance": flag_at,
             "takeaway_frame": f,
-            "units": "share of torso length, square to the address shaft line; + = golfer's side (inside), "
+            "units": "share of torso length, square to the swing plane line; + = golfer's side (inside), "
                      "- = ball side (outside)",
         },
         rows=[
