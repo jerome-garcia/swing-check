@@ -247,15 +247,15 @@ def page(data: dict[str, Any]) -> str:
     esc = html.escape
     live = data["live"]
     doing = {"convert": "Converting", "analyze": "Analyzing"}
-    running = ", ".join(f"{doing.get(r['kind'], r['kind'])} · {_duration(r['for_s'])}"
-                        for r in live["running"]) or "Idle"
+    running = ", ".join(doing.get(r["kind"], r["kind"]) for r in live["running"]) or "Idle"
+    elapsed = ", ".join(_duration(r["for_s"]) for r in live["running"])  # small, under the value
 
     def tile(label: str, value: Any, sub: str = "") -> str:
         return (f'<div class="tile"><div class="label">{label}</div><div class="value">{value}</div>'
                 + (f'<div class="sub">{sub}</div>' if sub else "") + "</div>")
 
     tiles = "".join([
-        tile("Processing now", esc(running)),
+        tile("Processing now", esc(running), elapsed),
         tile("In line", live["queued"], f"avg wait {_duration(data['speed']['average_wait_s'])}"),
         tile("Uploading", live["uploading"], f"avg upload {_duration(data['speed']['average_upload_s'])}"),
         tile("Swings stored", live["swings_stored"], _size(live.get("swings_bytes", 0))),

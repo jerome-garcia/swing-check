@@ -48,7 +48,7 @@ def test_summary_counts_days_speed_and_problems():
     assert "avg wait 22 s" in page and "avg upload 21 s" in page and "412 MB" in page
     assert "one at a time" not in page and "since the last restart" not in page  # descriptions removed
     live["running"] = [{"kind": "analyze", "for_s": 45}]
-    assert "Analyzing · 45 s" in admin.page(admin.summary(events, live, now))
+    assert '<div class="value">Analyzing</div><div class="sub">45 s</div>' in admin.page(admin.summary(events, live, now))
     hour = admin.datetime.fromtimestamp(now, admin.LOCAL_TZ).hour
     assert s["hours"]["upload"][hour] == 4 and s["hours"]["analyze"][hour] == 1 and sum(s["hours"]["analyze"]) == 1
     assert page.count("<polyline") == 2  # the hour chart: uploads and analyses
