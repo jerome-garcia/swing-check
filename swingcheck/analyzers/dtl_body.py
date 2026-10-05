@@ -15,7 +15,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from swingcheck.analyzers import REFERENCE_COLOR, STATUS_COLORS, Grade, Overlay, Row, SwingContext, deg_text, grade
+from swingcheck.analyzers import (REFERENCE_COLOR, STATUS_COLORS, WATCH_ONLY, Grade, Overlay, Row, SwingContext, deg_text,
+                                  grade)
 from swingcheck.geometry import angle_between_deg, tilt_from_vertical_deg
 
 ORDER = {"ok": 0, "warn": 1, "flag": 2}
@@ -140,7 +141,7 @@ def trail_knee_kept(ctx: SwingContext, f: int, forward: float, show: tuple[int, 
     detail = "" if change == 0 else f" ({change}° {'straighter' if lost > 0 else 'more bent'})"
     row = Row("Back knee bend kept", f"{deg_text(flex1)} ({deg_text(flex0)} at address)", word + detail, status,
               good=_either_way(cfg["knee_straighten_max"], "straighter", cfg["knee_bend_max"], "more bent", "up to"),
-              fix="none (a watch item only)")
+              fix=WATCH_ONLY)
     col = STATUS_COLORS[status]
     s = ctx.scale
     overlays = [

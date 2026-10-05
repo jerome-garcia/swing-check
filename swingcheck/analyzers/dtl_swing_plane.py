@@ -24,7 +24,7 @@ import numpy as np
 
 from swingcheck.analyzers import (MissingData, Overlay, PLANE_BAND_COLOR, PLANE_COLOR, REFERENCE_COLOR, Row,
                                   STATUS_COLORS, SwingContext, Verdict, deg_text, grade, register, spot_mark,
-                                  watch_at_most)
+                                  WATCH_ONLY, watch_at_most)
 
 
 
@@ -189,6 +189,6 @@ def swing_plane(ctx: SwingContext) -> Verdict:
                 fix=f"more than {ctx.distance_text(cfg['belt_watch_min'])} below or "
                     f"{ctx.distance_text(cfg['belt_watch_max'])} above your hips"),
             Row("Shaft angle", deg_text(angle), angle_text, angle_status,
-                good=f"{cfg['angle_min']:g}–{cfg['angle_max']:g}° from the ground"),  # never Fix: no red range
+                good=f"{cfg['angle_min']:g}–{cfg['angle_max']:g}° from the ground", fix=WATCH_ONLY),
         ],
     )

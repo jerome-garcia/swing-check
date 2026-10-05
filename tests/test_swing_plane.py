@@ -102,7 +102,7 @@ def test_angle_has_its_own_bands():
     assert {r.label: r.status for r in v.rows}["Shaft angle"] == "warn"
     assert v.status == "warn"
     assert "Points at your belt buckle" in v.label and "shaft too flat" in v.label
-    assert {r.label: r.fix for r in v.rows}["Shaft angle"] == ""
+    assert {r.label: r.fix for r in v.rows}["Shaft angle"] == "none (a watch item only)"
 
 
 def test_driver_has_its_own_ranges():

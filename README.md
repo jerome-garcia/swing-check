@@ -112,7 +112,9 @@ there's no pro driver clip to tune them on yet). Everything else is the same.
 
 When something is out of range, the card says how far and which way to move,
 rounded up so following it lands you in green (e.g. *Spine bend 29°: Bend 2°
-more*, with *Good 30–45°* and *Fix under 25° or over 50°* below it), and the
+more*, with *Good 30–45°* and *Fix under 25° or over 50°* below it; a row that's
+never red, like the shaft angle or the trail knee, says *Fix none (a watch item
+only)*), and the
 summary gives a plain fix, leading with the hips:
 standing tall with straight knees and reaching arms usually comes from too
 little hip hinge. The key frame adds a dashed white **aim** line for each

@@ -83,7 +83,7 @@ def test_same_line_bands(back, status, label):
     v = run(inside_by=0.0, back=back)
     row = v.rows[1]
     assert row.status == status and row.note.lower() == label.lower()
-    assert row.fix == "" and v.status != "flag"  # the follow-through is never Fix
+    assert row.fix == "none (a watch item only)" and v.status != "flag"  # the follow-through is never Fix
 
 
 def test_without_halfway_back_shaft_only():

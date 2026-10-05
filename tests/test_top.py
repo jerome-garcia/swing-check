@@ -132,7 +132,7 @@ def test_hands_vs_trail_heel_bands(out, status, label):
         assert v.status == status  # the arm is green, so the hands decide
         assert v.measurements["hands_out_from_heel"] == pytest.approx(out, abs=1e-3)
         assert row.value.endswith("toward the ball" if out >= 0 else "behind")
-        assert (row.good, row.fix) == ("within 8 cm of your heel", "")  # never Fix: no red range
+        assert (row.good, row.fix) == ("within 8 cm of your heel", "none (a watch item only)")
         assert (label.lower() in v.label.lower()) == (status != "ok")
         assert (v.tip == "") == (status == "ok")
 

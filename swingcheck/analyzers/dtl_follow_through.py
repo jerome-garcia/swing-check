@@ -19,7 +19,7 @@ from __future__ import annotations
 import numpy as np
 
 from swingcheck.analyzers import (BALL_COLOR, MissingData, Overlay, PAST_COLOR, Row, STATUS_COLORS, SwingContext,
-                                  Verdict, clubhead_mark, grade, hands_mark, register, spot_mark, watch_at_most)
+                                  Verdict, clubhead_mark, grade, hands_mark, register, spot_mark, WATCH_ONLY, watch_at_most)
 from swingcheck.analyzers.dtl_halfway_back import landing_ranges, landing_text, shaft_landing
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 
@@ -76,7 +76,7 @@ def follow_through(ctx: SwingContext) -> Verdict:
         same_value = ("Same line" if abs(ctx.cm(diff)) < 0.75 else
                       f"{ctx.distance_text(diff)} {'steeper' if steeper else 'flatter'}")
         same_row = Row("Vs halfway back", same_value, same_label, same_status,
-                       good=f"within {ctx.distance_text(cfg['same_line_max'])} at the ball")  # never Fix
+                       good=f"within {ctx.distance_text(cfg['same_line_max'])} at the ball", fix=WATCH_ONLY)
     else:
         same_row = Row("Vs halfway back", "Not measured", "Mark halfway back to compare the way through with the way back",
                        "error")
@@ -133,7 +133,7 @@ def follow_through(ctx: SwingContext) -> Verdict:
         },
         rows=[
             Row("Shaft points at", landing_text(ctx, inside_by), shaft_label, shaft_status,
-                good=ranges[0]),  # never Fix
+                good=ranges[0], fix=WATCH_ONLY),
             same_row,
         ],
         overlays=swing_plane_line(ctx, show) + overlays,

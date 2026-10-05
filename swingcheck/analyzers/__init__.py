@@ -102,6 +102,10 @@ def spot_mark(xy, color: Color, show: tuple[int, int] | None, label: str = "") -
     return Overlay("ring", [(float(xy[0]), float(xy[1]))], color, label, show, 2)
 
 
+# The "Fix" range line for a measurement that is never Fix (see watch_at_most).
+WATCH_ONLY = "none (a watch item only)"
+
+
 def watch_at_most(g: Grade) -> Grade:
     """For a measurement that's a style point more than a fault (it varies with the club,
     the camera, or good players' own styles): past its red limit it's still only "warn"

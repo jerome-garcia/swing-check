@@ -26,7 +26,7 @@ from __future__ import annotations
 import numpy as np
 
 from swingcheck.analyzers import (MissingData, Overlay, REFERENCE_COLOR, Row, STATUS_COLORS, SwingContext, Verdict,
-                                  clubhead_mark, deg_text, grade, hands_mark, register, spot_mark, watch_at_most)
+                                  clubhead_mark, deg_text, grade, hands_mark, register, spot_mark, WATCH_ONLY, watch_at_most)
 from swingcheck.analyzers.dtl_body import posture_kept, with_body
 from swingcheck.analyzers.dtl_swing_plane import swing_plane_line
 from swingcheck.geometry import angle_between_deg
@@ -104,7 +104,7 @@ def top(ctx: SwingContext) -> Verdict:
         heel_value = ("Right above it" if abs(ctx.cm(out)) < 0.75 else
                       f"{ctx.distance_text(out)} {'toward the ball' if out >= 0 else 'behind'}")
         heel_row = Row("Hands vs back heel", heel_value, heel_label.removeprefix("Hands ").capitalize(), heel_status,
-                       good=f"within {ctx.distance_text(cfg['heel_max'])} of your heel")  # never Fix
+                       good=f"within {ctx.distance_text(cfg['heel_max'])} of your heel", fix=WATCH_ONLY)
     else:
         out, heel_status, heel_label, heel_meaning, heel_tip = None, "ok", "", "", ""
         heel_row = Row("Hands vs back heel", "Not measured", "Back heel not tracked around the top", "error")
