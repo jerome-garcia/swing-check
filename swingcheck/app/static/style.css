@@ -562,6 +562,8 @@ button.score-item:hover { background: var(--surface-2); }
 /* Marking: the suggested starting frame, the reference swing, and mark checks. */
 .suggested-tag { display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); font-weight: 600; }
 .suggested-tag[hidden] { display: none; }
+.suggest-note { margin: 0; text-align: center; font-size: 13px; color: var(--muted); }
+.suggest-note[hidden] { display: none; }
 .linkish { background: none; border: 0; padding: 0; color: var(--accent, var(--ok)); text-decoration: underline; cursor: pointer; font: inherit; }
 .linkish[hidden] { display: none; }
 .ref-frame { margin: 4px 0 0; padding-top: 12px; border-top: 1px solid var(--border); }

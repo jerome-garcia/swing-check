@@ -337,6 +337,8 @@ export async function renderMark(view, id, isCurrent) {
     title: "Found automatically. Check it and scrub to the exact frame if needed." }, "Suggested frame");
   const backToSuggested = el("button", { class: "linkish", type: "button", hidden: true,
     onclick: () => setFrame(cur().suggested) }, "Back to the suggested frame");
+  // A quiet reminder under the scrubber: the suggestion is a guess, the exact frame is theirs to pick.
+  const suggestNote = el("p", { class: "suggest-note", hidden: true });
 
   function setFrame(f) {
     cur().frame = clampFrame(f);
@@ -345,6 +347,9 @@ export async function renderMark(view, id, isCurrent) {
     const onSuggestion = cur().suggested !== undefined && cur().frame === cur().suggested;
     suggestedTag.hidden = !onSuggestion;
     backToSuggested.hidden = onSuggestion || cur().suggested === undefined;
+    suggestNote.hidden = cur().suggested === undefined;
+    suggestNote.textContent = `This opens on a suggested frame, a best guess at your ${stepDef().title.toLowerCase()}. `
+      + "Check it and scrub to the exact frame if it's off.";
     showFrame(cur().frame);
     refresh(); // the frame-order check and the step tabs depend on the frame
   }
@@ -624,6 +629,7 @@ export async function renderMark(view, id, isCurrent) {
         hud,
         el("div", { class: "stage" }, canvas),
         el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),
+        suggestNote,
         el("div", { class: "subtle small center frame-caption" }, frameLabel, " ", suggestedTag, " ", backToSuggested,
           el("span", { class: "keys-hint" }, " · ← → step, Shift = 10 frames"))),
       el("aside", { class: "mark-side stack" },
