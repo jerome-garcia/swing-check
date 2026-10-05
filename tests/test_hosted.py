@@ -35,7 +35,7 @@ def bob(app):
 
 def upload(client, name="swing.mov", data=b"not really a video"):
     """Upload a clip and let its conversion finish (a fake clip just fails to convert)."""
-    r = client.post("/api/swings", files={"file": (name, data)}, data={"view": "dtl"})
+    r = client.post("/api/swings", files={"file": (name, data)}, data={"view": "dtl", "agreed_terms": "2026-10-05"})
     if r.status_code == 200:
         client.app.state.jobs.wait(r.json()["job"]["id"], timeout=60)
     return r
@@ -60,6 +60,14 @@ def test_each_visitor_sees_only_their_own_swings(alice, bob):
     assert bob.post(f"/api/swings/{swing_id}/analyze", json={}).status_code == 404
     assert bob.delete(f"/api/swings/{swing_id}").status_code == 404
     assert alice.get(f"/api/swings/{swing_id}").status_code == 200  # still there
+
+
+def test_upload_needs_agreement_to_the_terms(alice, app):
+    r = alice.post("/api/swings", files={"file": ("a.mov", b"x")}, data={"view": "dtl"})
+    assert r.status_code == 400 and "Terms" in r.json()["detail"]
+    swing_id = upload(alice).json()["id"]
+    notes = json.loads((app.state.store.path(swing_id) / "swing.json").read_text())["notes"]
+    assert notes["agreed_terms"]["version"] == "2026-10-05" and notes["agreed_terms"]["at"]
 
 
 def test_owner_cookie_and_no_indexing(alice):

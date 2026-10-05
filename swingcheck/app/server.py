@@ -166,8 +166,11 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         return {"swings": len(owned(request))}
 
     @app.post("/api/swings")
-    def upload_swing(request: Request, file: UploadFile = File(...), view: str = Form(...)) -> dict[str, Any]:
+    def upload_swing(request: Request, file: UploadFile = File(...), view: str = Form(...),
+                     agreed_terms: str | None = Form(None)) -> dict[str, Any]:
         check_view(view)
+        if limits and not agreed_terms:
+            raise HTTPException(400, "Agree to the Terms of use and Privacy notice to upload.")
         ext = Path(file.filename or "").suffix.lower()
         if ext not in VIDEO_EXTENSIONS:
             raise HTTPException(400, f"That doesn't look like a video ({ext or 'no extension'}). Use .mov or .mp4.")
@@ -176,6 +179,8 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         check_not_busy()
         meta = store.create(file.filename or "swing", view, owner=owner(request))
         meta.source_file = f"source{ext}"
+        if limits:  # which terms this upload was agreed under, and when
+            meta.notes["agreed_terms"] = {"version": agreed_terms[:40], "at": meta.created}
         with open(store.path(meta.id) / meta.source_file, "wb") as out:
             shutil.copyfileobj(file.file, out, length=1024 * 1024)
         store.save_meta(meta)

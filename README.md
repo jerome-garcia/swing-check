@@ -10,8 +10,10 @@ of far. The down-the-line analysis is being built as **eight checkpoints**
 through the swing; see [Roadmap](#roadmap) for what each one checks and which
 are done. **Face-on** analysis is held back for a future release.
 
-Everything runs locally with Python, OpenCV, MediaPipe Pose and ffmpeg. Nothing
-is uploaded anywhere.
+It's built with Python, OpenCV, MediaPipe Pose and ffmpeg. Run on your own
+computer, everything stays there and nothing is uploaded anywhere. The online
+version (hosted mode, below) keeps each video on the server for 3 days; the app's
+Terms of use and Privacy notice pages explain it.
 
 ### Support SwingCheck
 
@@ -333,11 +335,15 @@ caching and basic abuse protection.
 3. ✅ **Automatic cleanup.** Done: swings are deleted **3 days** after upload. The
    original upload is kept until then, so Trim still works; with 3 swings for 3
    days the disk per visitor stays small.
-4. **Wording and legal.** Drop "Nothing is uploaded anywhere" and add a short
-   privacy note (it stores videos of people). Replace the McIlroy broadcast
-   frames in `static/reference/`.
-5. **Restarts.** Jobs are lost on restart; fine at first, since the app already
-   says so.
+4. ✅ **Wording and legal.** Done: Terms of use (`#/terms`) and a Privacy notice
+   (`#/privacy`) in the app, linked from every page's footer, which also says
+   results are estimates, not coaching or medical advice; the PDF says it too.
+   Hosted uploads need an "I agree" tick, checked by the server and saved in
+   `swing.json` with the terms version (`TERMS_VERSION` in `static/legal.js`;
+   bump it when the wording changes). The McIlroy example frames stay, with a
+   not-affiliated note in the terms. Not reviewed by a lawyer.
+5. ✅ **Restarts.** Done: a job lost to a restart says so. Analysis just needs
+   Analyze again; a lost conversion shows "Convert again".
 
 **Hosted mode (built).** `swingcheck --hosted` turns it on; run without it, the
 app stays single-user exactly as before. The code is in `swingcheck/app/hosted.py`

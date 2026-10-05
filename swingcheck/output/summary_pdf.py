@@ -300,7 +300,10 @@ def summary_pdf(folder: Path, swing_name: str, created: str, analysis: dict[str,
         "ring = ball or another spot.",
         "Each measurement lists its Good range and its Fix range; anything in between is Watch (yellow).",
         f"Distances are rough estimates in centimetres, scaled from a typical {torso_cm:g} cm torso.",
-    ] + list(analysis.get("warnings", []))
+    ] + list(analysis.get("warnings", [])) + [
+        "Results are automatic estimates from video, for practice only: not professional coaching or medical "
+        "advice. Practice safely, and see a coach or doctor before changing your swing if you have pain or an injury.",
+    ]
     doc.font(8.5)
     need = 12 + sum(doc.para(CONTENT_W - 4, 4.2, n, dry=True) + 1.5 for n in notes)
     if doc.get_y() + need > doc.h - 18:

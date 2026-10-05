@@ -143,7 +143,7 @@ export async function pollJob(jobId, onUpdate, isCurrent = () => true) {
       offlineSince = null;
     } catch (err) {
       if (err.status === 404) {
-        throw new Error("The app was restarted while this was running, so it stopped. Start it again from here.");
+        throw new Error("SwingCheck restarted while this was running, so it stopped. Start it again from here.");
       }
       if (!err.offline) throw err;
       offlineSince ??= Date.now();

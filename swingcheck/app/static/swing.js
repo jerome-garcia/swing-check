@@ -1,5 +1,6 @@
 import { renderResults } from "./results.js";
-import { api, el, expiryText, formatDate, moreMenu, pollJob, progressBlock, STATUS_TEXT, swingUrl, VIEW_NAMES } from "./util.js";
+import { api, el, expiryText, formatDate, moreMenu, pollJob, postJSON, progressBlock, STATUS_TEXT, swingUrl,
+  VIEW_NAMES } from "./util.js";
 
 const JOB_TITLES = { convert: "Converting video", analyze: "Analyzing swing" };
 
@@ -32,7 +33,16 @@ function deleteItem(s) {
 async function showJob(view, s, job, isCurrent) {
   const progress = progressBlock(JOB_TITLES[job.kind] || "Working");
   view.replaceChildren(swingHeader(s), progress.node);
-  const done = await pollJob(job.id, j => progress.update(j.fraction, j.message), isCurrent);
+  let done;
+  try {
+    done = await pollJob(job.id, j => progress.update(j.fraction, j.message), isCurrent);
+  } catch (err) {
+    // Usually a restart: the job is gone, so show the swing as it was left.
+    if (!isCurrent()) return;
+    progress.node.replaceWith(el("div", { class: "notice error" }, err.message),
+      el("button", { class: "btn primary", type: "button", onclick: () => renderSwing(view, s.id, isCurrent) }, "Continue"));
+    return;
+  }
   if (done && isCurrent()) await renderSwing(view, s.id, isCurrent);
 }
 
@@ -45,8 +55,21 @@ export async function renderSwing(view, id, isCurrent) {
     await showJob(view, s, job, isCurrent);
     return;
   }
+  if (s.status === "uploaded" && !job) {
+    // Uploaded but no conversion on record: SwingCheck restarted before it finished.
+    const convertAgain = async () => {
+      try {
+        const res = await postJSON(`/api/swings/${encodeURIComponent(id)}/trim`, { start: s.trim_start, end: s.trim_end });
+        await showJob(view, s, res.job, isCurrent);
+      } catch (err) { alert(err.message); }
+    };
+    view.replaceChildren(swingHeader(s),
+      el("div", { class: "notice" }, "This video's conversion stopped before it finished, most likely because SwingCheck restarted."),
+      el("button", { class: "btn primary", type: "button", onclick: convertAgain }, "Convert again"));
+    return;
+  }
   if (s.status === "uploaded") {
-    const reason = job && job.state === "failed" ? job.error : "The video hasn't been converted.";
+    const reason = job.state === "failed" ? job.error : "The video hasn't been converted.";
     view.replaceChildren(swingHeader(s),
       el("div", { class: "notice error" }, `Couldn't convert this video: ${reason}`),
       el("p", { class: "subtle" }, "Delete it and try the original file from your phone, as .mov or .mp4."));

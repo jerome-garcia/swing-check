@@ -4,8 +4,10 @@
 //   #/swing/<id>       the swing (progress, results, or the next step)
 //   #/swing/<id>/mark  mark points
 //   #/claim/<key>      hosted: a private link, opening that owner's swings here
+//   #/terms, #/privacy terms of use and privacy notice
 
 import { renderHistory } from "./history.js";
+import { renderLegal } from "./legal.js";
 import { renderSwing } from "./swing.js";
 import { renderUpload } from "./upload.js";
 import { el, postJSON } from "./util.js";
@@ -32,7 +34,8 @@ async function route() {
       history.replaceState(null, "", "#/");
       await postJSON("/api/owner/claim", { key: parts[1] });
       await renderHistory(view, isCurrent);
-    } else if (parts.length === 0) await renderHistory(view, isCurrent);
+    } else if (parts[0] === "terms" || parts[0] === "privacy") await renderLegal(view, parts[0], isCurrent);
+    else if (parts.length === 0) await renderHistory(view, isCurrent);
     else if (parts[0] === "new") await renderUpload(view, isCurrent);
     else if (parts[0] === "swing" && parts[1] && parts[2] === "mark") {
       const { renderMark } = await import("./mark.js");

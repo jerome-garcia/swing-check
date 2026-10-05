@@ -88,7 +88,19 @@ a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visibl
 main { max-width: 1160px; margin: 0 auto; padding: 24px 20px 72px; }
 
 .site-footer { max-width: 1160px; margin: -40px auto 0; padding: 8px 20px 40px; }
-.site-footer[hidden] { display: none; }
+.support-card[hidden] { display: none; }
+.legal-line { margin: 16px 0 0; text-align: center; font-size: 13px; color: var(--muted); }
+.legal-line a { color: inherit; }
+.legal { max-width: 720px; }
+.legal h1 { margin-bottom: 12px; }
+.legal-section { margin-top: 20px; }
+.legal-section h2 { margin-bottom: 6px; }
+.legal p, .legal li { color: var(--text); }
+.legal p { margin: 0 0 10px; }
+.legal ul { margin: 0; padding-left: 20px; }
+.legal li { margin-bottom: 6px; }
+.agree { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+.agree input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--accent); flex: none; }
 .support-card { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 16px; align-items: stretch; padding: 20px;
   color: var(--on-deep); background: linear-gradient(160deg, var(--deep-2), var(--deep)); border-radius: var(--radius); }
 .support-card h2, .support-card h3, .support-card p { margin: 0; }

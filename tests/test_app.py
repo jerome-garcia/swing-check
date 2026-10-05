@@ -217,3 +217,15 @@ def test_detail_includes_suggested_frames_for_this_video(client, runs):
     assert client.get("/api/swings/old_swing").json()["suggested"] == {"address": 3, "top": 50}
     (folder / SUGGEST_FILE).write_text(json.dumps({"video_signature": {**sig, "frame_count": 1}, "phases": {"top": 50}}))
     assert client.get("/api/swings/old_swing").json()["suggested"] is None
+
+
+def test_conversion_lost_to_a_restart_can_run_again(client, runs):
+    # Uploaded, but the app restarted before converting: no job on record.
+    meta = client.app.state.store.create("clip.mov", "dtl")
+    meta.source_file = "source.mov"
+    (runs / meta.id / "source.mov").write_bytes(b"not really a video")
+    client.app.state.store.save_meta(meta)
+    d = client.get(f"/api/swings/{meta.id}").json()
+    assert d["status"] == "uploaded" and d["job"] is None
+    r = client.post(f"/api/swings/{meta.id}/trim", json={"start": None, "end": None})
+    assert r.status_code == 200 and r.json()["job"]["kind"] == "convert"

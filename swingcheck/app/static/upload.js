@@ -1,11 +1,13 @@
+import { TERMS_VERSION } from "./legal.js";
 import { api, el, features, plural, progressBlock, swingUrl } from "./util.js";
 
 // Upload with XMLHttpRequest: fetch() can't report upload progress.
-function uploadWithProgress(file, viewChoice, onProgress) {
+function uploadWithProgress(file, viewChoice, agreed, onProgress) {
   return new Promise((resolve, reject) => {
     const form = new FormData();
     form.append("file", file);
     form.append("view", viewChoice);
+    if (agreed) form.append("agreed_terms", TERMS_VERSION);
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "/api/swings");
     xhr.upload.onprogress = e => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
@@ -70,6 +72,7 @@ export async function renderUpload(view, isCurrent) {
   });
 
   const error = el("div", { class: "notice error", hidden: true });
+  const agreeBox = hosted ? el("input", { type: "checkbox", id: "agree", onchange: () => refresh() }) : null;
   const submit = el("button", { class: "btn primary", type: "submit", disabled: true }, "Upload and convert");
 
   function setFile(f) {
@@ -87,7 +90,7 @@ export async function renderUpload(view, isCurrent) {
 
   function refresh() {
     for (const b of viewButtons) b.classList.toggle("selected", b.dataset.view === viewChoice);
-    submit.disabled = !(file && viewChoice);
+    submit.disabled = !(file && viewChoice && (!agreeBox || agreeBox.checked));
   }
 
   const form = el("form", {
@@ -98,7 +101,7 @@ export async function renderUpload(view, isCurrent) {
       const progress = progressBlock("Uploading");
       form.replaceWith(progress.node);
       try {
-        const res = await uploadWithProgress(file, viewChoice,
+        const res = await uploadWithProgress(file, viewChoice, agreeBox ? agreeBox.checked : false,
           f => progress.update(f, `${Math.round(f * 100)}% uploaded`));
         location.hash = swingUrl(res.id);
       } catch (err) {
@@ -111,6 +114,10 @@ export async function renderUpload(view, isCurrent) {
   error,
   el("section", { class: "panel" }, el("h2", {}, "1. Video"), input, drop),
   el("section", { class: "panel" }, el("h2", {}, "2. Camera view"), el("div", { class: "choices" }, viewButtons)),
+  agreeBox ? el("label", { class: "agree", for: "agree" }, agreeBox,
+    el("span", {}, "I agree to the ", el("a", { href: "#/terms", target: "_blank" }, "Terms of use"), " and ",
+      el("a", { href: "#/privacy", target: "_blank" }, "Privacy notice"),
+      ", and I have the right to upload this video (it's of me, or of someone who agreed).")) : null,
   el("div", { class: "actions" }, el("a", { class: "btn", href: "#/" }, "Cancel"), submit));
 
   view.replaceChildren(title, form);
