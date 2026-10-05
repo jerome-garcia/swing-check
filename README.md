@@ -300,6 +300,52 @@ down-the-line from the marking screen.
 | **Weight shift** | How far the hips moved toward the target by impact (low point / fat shots) |
 | **Head drift** | Whether the head moved away from the target by impact |
 
+### Hosting online (planned)
+
+SwingCheck runs on your own computer today. The plan is to host it on one cheap
+server so anyone can use it for free, with Ko-fi and InstaPay tips covering the cost.
+
+**What the app needs from a server.** CPU for a minute or two per swing (ffmpeg
+conversion, MediaPipe pose on every frame, the annotated video), about 1–2 GB of
+RAM while a swing is processed, and disk for the swings (tens of MB each). It's
+one process with jobs in memory and swings as folders, so a single always-on
+server fits.
+
+**Where.** Prices are rough; check before buying.
+
+| Option | Cost | Fit |
+|---|---|---|
+| **Hetzner Cloud, 2 vCPU / 4 GB** | ~€4–6/month (EU), more in Singapore | **Chosen.** Enough RAM for MediaPipe, real disk; the Singapore region is close to Philippine users |
+| DigitalOcean / Vultr / Linode, 2 GB | ~$12/month | Easy, but more money for less; the $4–6 1 GB plans are too small |
+| Oracle Cloud free tier (ARM) | free | MediaPipe on ARM can be a hassle, and free accounts get reclaimed |
+| Render / Railway / Fly free tiers | free–cheap | Poor fit: they sleep, have little RAM, and the disk can be wiped |
+
+Plus a domain (~$10/year) with Cloudflare's free plan in front for HTTPS,
+caching and basic abuse protection.
+
+**Before going public (needs code):**
+
+1. **Privacy between users.** Today everyone sees every swing. Add a private link
+   per user or swing (cheapest), or simple accounts.
+2. **Limits.** Maximum file size and clip length, one job at a time with a queue,
+   and a cap on swings per visitor.
+3. **Automatic cleanup.** Delete the original upload once converted, and expire
+   swings after 30–90 days. Disk is what grows the bill.
+4. **Wording and legal.** Drop "Nothing is uploaded anywhere" and add a short
+   privacy note (it stores videos of people). Replace the McIlroy broadcast
+   frames in `static/reference/`.
+5. **Restarts.** Jobs are lost on restart; fine at first, since the app already
+   says so.
+
+**Running it.** Docker, run as a service, Caddy in front for automatic HTTPS.
+Back up the swings folder, or treat swings as disposable. Time one swing on a PC
+first to know how many swings a 2-CPU server handles per hour.
+
+**Later, cheapest long term.** MediaPipe also runs in the browser. Moving pose
+detection onto the user's device would leave the server serving static pages
+only (free on Cloudflare Pages or GitHub Pages): no uploads, no storage, no
+privacy worries. A big rewrite, so only if usage grows.
+
 ### Other ideas, not planned yet
 
 Backswing sway, vertical head movement, early extension, automatic club
