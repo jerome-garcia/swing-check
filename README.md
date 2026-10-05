@@ -1,5 +1,8 @@
 # SwingCheck
 
+**Alpha:** features, results and limits may still change. The app says so with a
+badge in the header, a footer line and the Terms.
+
 A golf swing analyzer that runs on your own computer. Upload a **down-the-line**
 video of one swing, click the ball and club, and it gives you an annotated
 video, key frames and a verdict for each check. Open it in your browser on the

@@ -82,6 +82,10 @@ a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visibl
 }
 .brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 750; font-size: 19px; text-decoration: none; letter-spacing: -0.035em; }
 .brand-mark { width: 28px; height: 28px; flex: none; }
+.stage-badge {
+  margin-left: 2px; padding: 2px 7px; border: 1px solid var(--bright); border-radius: 999px;
+  color: var(--bright); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+}
 .topbar .btn.primary { background: var(--bright); border-color: var(--bright); color: var(--deep); }
 .topbar a:focus-visible { box-shadow: 0 0 0 3px rgba(79, 176, 109, 0.6); }
 
