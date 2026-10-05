@@ -3,7 +3,9 @@
 It never shows anyone's swings. Swings are deleted after a few days, so daily counts
 come from a small event log next to them (admin-events.jsonl): what happened, when, and
 how long it took. No videos, file names, IP addresses, or owner keys go in it, and
-events older than KEEP_DAYS are dropped.
+events older than KEEP_DAYS are dropped. To count unique uploaders per day, an upload
+carries a code from the browser's key and a secret that changes every day and is never
+saved (DailyCode): the same browser matches itself within a day, but days can't be linked.
 
 Hosted, the page is behind Cloudflare Access (an email one-time code), and the app also
 checks the address Access vouches for against SWINGCHECK_ADMIN_EMAIL; without that
@@ -12,8 +14,11 @@ setting the page doesn't exist. Run locally, it's open (it's your own computer).
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import html
 import json
+import secrets
 import shutil
 import statistics
 import threading
@@ -60,17 +65,38 @@ class EventLog:
         return events
 
 
+class DailyCode:
+    """Codes for counting unique uploaders per day without following anyone across days:
+    a keyed hash of the owner with a secret made fresh each (Philippine) day and kept only
+    in memory. A restart mid-day starts a new secret, so a browser may count twice then."""
+
+    def __init__(self) -> None:
+        self._day = None
+        self._secret = b""
+        self._lock = threading.Lock()
+
+    def code(self, owner: str, now: float | None = None) -> str:
+        day = datetime.fromtimestamp(now or time.time(), LOCAL_TZ).date()
+        with self._lock:
+            if day != self._day:
+                self._day, self._secret = day, secrets.token_bytes(32)
+            return hmac.new(self._secret, owner.encode(), hashlib.sha256).hexdigest()[:16]
+
+
 def summary(events: list[dict[str, Any]], live: dict[str, Any], now: float | None = None) -> dict[str, Any]:
     """Everything the page shows, as plain data (also handy for tests)."""
     now = now or time.time()
     today = datetime.fromtimestamp(now, LOCAL_TZ).date()
     days = [today - timedelta(days=i) for i in range(DAYS_SHOWN)]
     per_day = {d: Counter() for d in days}
+    uploaders = {d: set() for d in days}
     for e in events:
         d = datetime.fromtimestamp(e["t"], LOCAL_TZ).date()
         if d in per_day:
             name = e["event"] if e["event"] == "upload" else f"{e['event']}_{'ok' if e.get('ok') else 'failed'}"
             per_day[d][name] += 1
+            if e["event"] == "upload" and e.get("u"):
+                uploaders[d].add(e["u"])
 
     week_ago = now - DAYS_SHOWN * 86400
     jobs = [e for e in events if e["event"] in ("convert", "analyze") and e["t"] >= week_ago]
@@ -82,7 +108,7 @@ def summary(events: list[dict[str, Any]], live: dict[str, Any], now: float | Non
                      for title in e.get("camera", []))
     return {
         "live": live,
-        "days": [{"date": d.isoformat(), **{k: per_day[d][k] for k in (
+        "days": [{"date": d.isoformat(), "uploaders": len(uploaders[d]), **{k: per_day[d][k] for k in (
             "upload", "convert_ok", "convert_failed", "analyze_ok", "analyze_failed")}} for d in days],
         "speed": {
             "median_wait_s": round(statistics.median(waits)) if waits else None,
@@ -97,10 +123,19 @@ def summary(events: list[dict[str, Any]], live: dict[str, Any], now: float | Non
     }
 
 
-def live_status(jobs, uploading: int, runs_dir: Path, version: str, started: float) -> dict[str, Any]:
+def live_status(jobs, uploading: int, runs_dir: Path, version: str, started: float,
+                keep_days: int | None = None) -> dict[str, Any]:
     now = time.time()
     running = [j for j in jobs if j.state == "running"]
     disk = shutil.disk_usage(runs_dir)
+    owners = set()  # browsers with swings stored now (each swing records its owner's scrambled key)
+    for meta in runs_dir.glob("*/swing.json"):
+        try:
+            owner = json.loads(meta.read_text()).get("owner")
+        except (OSError, ValueError):
+            continue
+        if owner:
+            owners.add(owner)
     return {
         "version": version,
         "up_s": now - started,
@@ -108,6 +143,8 @@ def live_status(jobs, uploading: int, runs_dir: Path, version: str, started: flo
         "queued": sum(j.state == "queued" for j in jobs),
         "uploading": uploading,
         "swings_stored": sum(1 for p in runs_dir.iterdir() if p.is_dir()),
+        "browsers_stored": len(owners),
+        "keep_days": keep_days,
         "disk_free_gb": round(disk.free / 1e9, 1),
         "disk_used_pct": round(100 * (disk.total - disk.free) / disk.total),
     }
@@ -136,7 +173,7 @@ def page(data: dict[str, Any]) -> str:
     live = data["live"]
     running = ", ".join(f"{r['kind']} ({_duration(r['for_s'])})" for r in live["running"]) or "nothing"
     rows = "".join(
-        f"<tr><td>{esc(datetime.fromisoformat(d['date']).strftime('%a %b %d'))}</td><td>{d['upload']}</td>"
+        f"<tr><td>{esc(datetime.fromisoformat(d['date']).strftime('%a %b %d'))}</td><td>{d['uploaders']}</td><td>{d['upload']}</td>"
         f"<td>{_count(d['convert_ok'], d['convert_failed'])}</td><td>{_count(d['analyze_ok'], d['analyze_failed'])}</td></tr>"
         for d in data["days"])
     problems = "".join(
@@ -165,17 +202,19 @@ def page(data: dict[str, Any]) -> str:
 <section class="panel"><h2>Now</h2><div class="grid2">
   <div><div class="muted">Running</div><div class="stat">{esc(running)}</div></div>
   <div><div class="muted">Queued · uploading</div><div class="stat">{live['queued']} · {live['uploading']}</div></div>
-  <div><div class="muted">Swings stored</div><div class="stat">{live['swings_stored']}</div></div>
+  <div><div class="muted">Swings stored · from browsers</div><div class="stat">{live['swings_stored']} · {live['browsers_stored']}</div>
+    <div class="muted">{f"browsers with swings from the last {live['keep_days']} days" if live.get('keep_days') else "browsers with swings stored"}</div></div>
   <div><div class="muted">Disk</div><div class="stat">{live['disk_used_pct']}% used</div><div class="muted">{live['disk_free_gb']} GB free</div></div>
   <div><div class="muted">Version · up for</div><div class="stat">{esc(live['version'])}</div><div class="muted">{_duration(live['up_s'])}</div></div>
 </div></section>
 <section class="panel"><h2>Last {DAYS_SHOWN} days</h2>
-<table><tr><th>Day (PHT)</th><th>Uploads</th><th>Converted</th><th>Analyzed</th></tr>{rows}</table>
+<table><tr><th>Day (PHT)</th><th>Uploaders</th><th>Uploads</th><th>Converted</th><th>Analyzed</th></tr>{rows}</table>
+<p class="muted">Uploaders: different browsers that uploaded that day (one person on phone and laptop counts twice).</p>
 <p class="muted">Typical wait in line {_duration(speed['median_wait_s'])} (longest {_duration(speed['longest_wait_s'])}) ·
 typical analysis {_duration(speed['median_analysis_s'])}</p></section>
 <section class="panel"><h2>Recent problems</h2><ul>{problems}</ul></section>
 <div class="grid2">
-<section class="panel"><h2>Golfers (30 days)</h2><p>Right-handed {hands.get('right', 0)} · left-handed {hands.get('left', 0)}</p></section>
+<section class="panel"><h2>Swings by handedness (30 days)</h2><p>Right-handed {hands.get('right', 0)} · left-handed {hands.get('left', 0)}</p></section>
 <section class="panel"><h2>Camera check (30 days)</h2><ul>{camera}</ul></section>
 </div>
 </main></body></html>"""

@@ -97,6 +97,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     visitor sees only their own swings, with limits; otherwise it's single-user."""
     store = Store(runs_dir or PROJECT_ROOT / "runs")
     events = admin.EventLog(store.root / admin.EVENTS_FILE)
+    daily_codes = admin.DailyCode()
     started_at = time.time()
 
     def job_finished(job) -> None:
@@ -267,7 +268,8 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
                 store.delete(meta.id)
                 raise HTTPException(400, too_long)
         job = start_convert(meta.id)
-        events.add("upload", view=view, handedness=handedness)
+        who = owner(request)  # hosted: a code that matches this browser today only (admin.DailyCode)
+        events.add("upload", view=view, handedness=handedness, **({"u": daily_codes.code(who)} if who else {}))
         return {"id": meta.id, "job": job.to_json()}
 
     def clip_too_long(path: Path) -> str | None:
@@ -534,7 +536,8 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     def admin_page(request: Request) -> HTMLResponse:
         if not admin_allowed(request):
             raise HTTPException(404, "Not Found")
-        live = admin.live_status(jobs.snapshot(), uploading, store.root, version, started_at)
+        live = admin.live_status(jobs.snapshot(), uploading, store.root, version, started_at,
+                                 limits["keep_days"] if limits else None)
         return HTMLResponse(admin.page(admin.summary(events.read(), live)),
                             headers={"Cache-Control": "no-store"})
 

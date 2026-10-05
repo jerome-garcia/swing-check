@@ -25,22 +25,24 @@ def test_log_drops_old_events(tmp_path):
 def test_summary_counts_days_speed_and_problems():
     now = time.time()
     events = [
-        {"t": now, "event": "upload", "handedness": "left"},
-        {"t": now, "event": "upload", "handedness": "right"},
+        {"t": now, "event": "upload", "handedness": "left", "u": "aaa"},
+        {"t": now, "event": "upload", "handedness": "right", "u": "aaa"},  # same browser, same day
+        {"t": now, "event": "upload", "handedness": "right", "u": "bbb"},
         {"t": now, "event": "convert", "ok": True, "wait_s": 2, "run_s": 10, "camera": ["You're small in the frame"]},
         {"t": now, "event": "analyze", "ok": True, "wait_s": 60, "run_s": 80},
         {"t": now, "event": "analyze", "ok": False, "wait_s": 4, "run_s": 5, "error": "Boom"},
     ]
     live = {"version": "v1", "up_s": 5, "running": [], "queued": 0, "uploading": 0, "swings_stored": 2,
-            "disk_free_gb": 30.0, "disk_used_pct": 18}
+            "browsers_stored": 1, "keep_days": 3, "disk_free_gb": 30.0, "disk_used_pct": 18}
     s = admin.summary(events, live, now)
-    assert s["days"][0] == {"date": s["days"][0]["date"], "upload": 2, "convert_ok": 1, "convert_failed": 0,
-                            "analyze_ok": 1, "analyze_failed": 1}
+    assert s["days"][0] == {"date": s["days"][0]["date"], "uploaders": 2, "upload": 3, "convert_ok": 1,
+                            "convert_failed": 0, "analyze_ok": 1, "analyze_failed": 1}
     assert s["speed"] == {"median_wait_s": 4, "longest_wait_s": 60, "median_analysis_s": 80}
-    assert s["problems"][0]["error"] == "Boom" and s["handedness"] == {"left": 1, "right": 1}
+    assert s["problems"][0]["error"] == "Boom" and s["handedness"] == {"left": 1, "right": 2}
     assert s["camera"] == [("You're small in the frame", 1)]
     page = admin.page(s)
     assert "SwingCheck admin" in page and "+1 failed" in page and "Boom" in page
+    assert "Swings by handedness" in page and "from the last 3 days" in page
 
 
 def test_admin_is_open_on_your_own_computer(tmp_path):
@@ -72,6 +74,25 @@ def test_uploads_and_jobs_are_logged_without_anything_personal(tmp_path):
     events = [json.loads(line) for line in log.splitlines()]
     assert [e["event"] for e in events] == ["upload", "convert"]
     assert events[0]["handedness"] == "left" and events[1]["ok"] is False and events[1]["error"]
+    assert len(events[0]["u"]) == 16  # today's code for this browser, not its key or owner hash
     swing_id = r.json()["id"]
-    for secret in ("Juan", swing_id, "testclient", client.cookies.get("swingcheck_owner")):
+    from swingcheck.app.hosted import owner_of
+    key = client.cookies.get("swingcheck_owner")
+    for secret in ("Juan", swing_id, "testclient", key, owner_of(key)):
         assert secret not in log
+
+
+def test_daily_codes_match_within_a_day_only():
+    codes = admin.DailyCode()
+    noon = 1791172800  # a midday in the Philippines
+    a = codes.code("owner-1", noon)
+    assert a == codes.code("owner-1", noon + 3600) != codes.code("owner-2", noon)
+    assert codes.code("owner-1", noon + 86400) != a  # the next day: a new secret, so no link
+
+
+def test_browsers_with_swings_stored_are_counted(tmp_path):
+    for name, owner in (("a", "o1"), ("b", "o1"), ("c", "o2"), ("d", None)):
+        (tmp_path / name).mkdir()
+        (tmp_path / name / "swing.json").write_text(json.dumps({"owner": owner}))
+    live = admin.live_status([], 0, tmp_path, "v1", time.time(), 3)
+    assert live["swings_stored"] == 4 and live["browsers_stored"] == 2
