@@ -185,10 +185,16 @@ def write_outputs(run_dir: Path, annotator: Annotator, frame_range: tuple[int, i
                 continue
             footer = f"{annotator.segment_name(i)}   frame {i}   {i / fps:.3f}s{slow_note}"
             if video and in_range:
+                out = annotator.render(frame, i, footer)
+                # Drawn at full size, then scaled down for the video only (key frames stay full size).
+                width = out_cfg["video_max_width"]
+                if width and out.shape[1] > width:
+                    height = round(out.shape[0] * width / out.shape[1] / 2) * 2  # x264 needs even sizes
+                    out = cv2.resize(out, (width, height), interpolation=cv2.INTER_AREA)
                 if writer is None:
                     written["video"] = run_dir / "annotated.mp4"
-                    writer = VideoWriter(written["video"], frame.shape[1], frame.shape[0], playback)
-                writer.write(annotator.render(frame, i, footer))
+                    writer = VideoWriter(written["video"], out.shape[1], out.shape[0], playback, crf=out_cfg["video_crf"])
+                writer.write(out)
             for stem, ann, big, phase in stills.get(i, []):
                 img = ann.render(frame, i, f"{phase.replace('_', ' ')}   frame {i}   {i / fps:.3f}s", big_label=big)
                 if stem in freeze_names:

@@ -333,6 +333,13 @@ freeze_frames = ["address", "top", "impact"]
 # The annotated video plays at most this many frames per second, so a 240 fps
 # clip comes out as 4x slow motion at 60.
 max_playback_fps = 60
+# The annotated video is drawn at full size, then saved at most this wide (0 = full
+# size) at this quality (libx264 CRF; lower = better). 720 at 23 looks the same on
+# screen as full size at 20 and is about a third of the size (6.8 -> 2.1 MB on a
+# 5 s clip), so it plays without stalling on a slow connection. Video only: the key
+# frames and the analysis use full-size frames.
+video_max_width = 720
+video_crf = 23
 
 [hosted]
 # Only used when the app runs on a public server (`swingcheck --hosted`); see

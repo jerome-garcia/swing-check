@@ -747,8 +747,10 @@ other checkpoint uses the frame you marked; change those with **Edit marks**.
 ### Where your swings are stored
 
 Each swing is a folder in `runs/` in the project. It holds the original upload,
-the converted video, your marks, the analysis, `annotated.mp4`, the key frame
-images and `report.txt`. Back up or delete that folder like any other files.
+the converted video, your marks, the analysis, `annotated.mp4` (saved 720 px wide
+to stay quick to load), the full-size key frame images and `report.txt`. The page
+shows small JPEG copies of the key frames (`*.w720.jpg`, `*.w360.jpg`, made on first
+view); **Open full size** opens the PNG. Back up or delete that folder like any other files.
 
 ---
 
