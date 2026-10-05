@@ -65,6 +65,12 @@ export function formatDate(iso) {
   return d.toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
+// A key-frame PNG as shown on the page: a small JPEG copy (the server makes it; see
+// web_image), cached by the browser and checked for changes on each visit.
+export function imageUrl(id, png, width = 720) {
+  return `${fileUrl(id, png.replace(/\.png$/, ".jpg"), false)}?w=${width}`;
+}
+
 export function fileUrl(id, name, bust = true) {
   const url = `/files/${encodeURIComponent(id)}/${encodeURIComponent(name)}`;
   return bust ? `${url}?t=${Date.now()}` : url;

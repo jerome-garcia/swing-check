@@ -332,3 +332,28 @@ def test_handedness_is_per_swing_and_switching_it_asks_for_a_new_analysis(client
     client.app.state.jobs.wait(r.json()["job"]["id"], timeout=60)
     r = client.post("/api/swings", files={"file": ("a.mov", b"x")}, data={"view": "dtl", "handedness": "up"})
     assert r.status_code == 400
+
+
+def test_key_frames_are_shown_as_small_cached_jpegs(tmp_path):
+    import cv2
+    import numpy as np
+
+    client = TestClient(create_app(tmp_path))
+    meta = client.app.state.store.create("swing.mp4", "dtl")
+    folder = tmp_path / meta.id
+    cv2.imwrite(str(folder / "check_top.png"), np.random.default_rng(0).integers(0, 255, (1920, 1080, 3), np.uint8))
+    r = client.get(f"/files/{meta.id}/check_top.jpg?w=720")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/jpeg"
+    assert r.headers["cache-control"] == "no-cache" and r.headers.get("etag")
+    assert cv2.imdecode(np.frombuffer(r.content, np.uint8), cv2.IMREAD_COLOR).shape[:2] == (1280, 720)
+    small = client.get(f"/files/{meta.id}/check_top.jpg?w=360").content
+    assert cv2.imdecode(np.frombuffer(small, np.uint8), cv2.IMREAD_COLOR).shape[1] == 360
+    # Unchanged: the browser's copy is still good. Re-analyzed (a newer PNG): a new picture.
+    assert client.get(f"/files/{meta.id}/check_top.jpg?w=720", headers={"if-none-match": r.headers["etag"]}).status_code == 304
+    import os
+    import time
+    later = time.time_ns() + 10**9
+    os.utime(folder / "check_top.png", ns=(later, later))
+    assert client.get(f"/files/{meta.id}/check_top.jpg?w=720", headers={"if-none-match": r.headers["etag"]}).status_code == 200
+    assert client.get(f"/files/{meta.id}/nothing.jpg").status_code == 404
+    assert "check_top.w720.jpg" not in client.get(f"/api/swings/{meta.id}").json().get("files", [])

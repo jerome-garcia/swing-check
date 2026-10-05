@@ -42,6 +42,34 @@ FACE_ON_ENABLED = False
 FACE_ON_DISABLED_MESSAGE = "Face-on analysis is coming in a future release."
 
 
+# Key frames are saved as full-size PNGs (6 MB or so, for the PDF and "Open full size");
+# the page shows JPEG copies this wide instead (a few hundred KB, a thumbnail far less).
+WEB_IMAGE_WIDTHS = (360, 720)
+
+
+def web_image(png: Path, width: int) -> Path:
+    """A JPEG copy of a key-frame PNG at most `width` px wide (one of WEB_IMAGE_WIDTHS), made
+    on first request next to it and remade if the PNG is newer (a re-analysis)."""
+    width = min((w for w in WEB_IMAGE_WIDTHS if w >= width), default=WEB_IMAGE_WIDTHS[-1])
+    out = png.with_name(f"{png.stem}.w{width}.jpg")
+    if out.exists() and out.stat().st_mtime_ns >= png.stat().st_mtime_ns:
+        return out
+    import cv2
+
+    img = cv2.imread(str(png))
+    if img is None:
+        raise HTTPException(404, "File not found")
+    if img.shape[1] > width:
+        img = cv2.resize(img, (width, round(img.shape[0] * width / img.shape[1])), interpolation=cv2.INTER_AREA)
+    ok, data = cv2.imencode(".jpg", img, [cv2.IMWRITE_JPEG_QUALITY, 82])
+    if not ok:
+        raise HTTPException(500, "Couldn't make the picture")
+    tmp = out.with_suffix(f".{os.getpid()}.tmp")
+    tmp.write_bytes(data.tobytes())
+    tmp.replace(out)  # atomic: two requests at once can't serve half a file
+    return out
+
+
 def app_version() -> str:
     """The running version for the footer: the release tag when a tag is checked out (as on the
     server, e.g. "v0.1.0-alpha"), "<tag>-<commits since>-g<hash>" in development, else the
@@ -451,8 +479,21 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         return {"deleted": swing_id}
 
     @app.get("/files/{swing_id}/{name}")
-    def swing_file(swing_id: str, name: str, request: Request) -> FileResponse:
+    def swing_file(swing_id: str, name: str, request: Request, w: int = WEB_IMAGE_WIDTHS[-1]) -> Response:
         swing_or_404(swing_id, request)
+        if name.endswith(".jpg"):  # a picture for the page: a small JPEG of the PNG
+            try:
+                png = store.file(swing_id, name[:-4] + ".png")
+            except SwingNotFound:
+                raise HTTPException(404, "File not found") from None
+            # Revalidated each time (cheap: 304 when unchanged), so a re-analysis shows at once.
+            path = web_image(png, w)
+            st = path.stat()
+            etag = f'"{st.st_mtime_ns:x}-{st.st_size:x}"'
+            headers = {"Cache-Control": "no-cache", "ETag": etag}
+            if request.headers.get("if-none-match") == etag:
+                return Response(status_code=304, headers=headers)
+            return FileResponse(path, media_type="image/jpeg", headers=headers)
         try:
             path = store.file(swing_id, name)
         except SwingNotFound:

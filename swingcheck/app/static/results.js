@@ -1,5 +1,5 @@
 import {
-  checkpointStates, el, features, fileUrl, listText, pollJob, postJSON, progressBlock, scorecard, STATUS_WORD, swingUrl,
+  checkpointStates, el, features, fileUrl, imageUrl, listText, pollJob, postJSON, progressBlock, scorecard, STATUS_WORD, swingUrl,
 } from "./util.js";
 
 const PHASE_LABELS = {
@@ -141,11 +141,12 @@ function checkpointStepper(s, states, focusPick) {
     const name = [`check_${cp.analyzer}.png`, cp.phase ? `${cp.phase}.png` : null].find(f => f && s.files.includes(f));
     const frame = cp.phase && s.analysis && s.analysis.phases ? s.analysis.phases[cp.phase] : undefined;
     let url = null;
-    if (name) url = fileUrl(s.id, name);
-    else if (frame !== undefined && s.video) url = `/api/swings/${encodeURIComponent(s.id)}/frames/${frame}.jpg?w=720`;
+    let src = null;
+    if (name) [url, src] = [fileUrl(s.id, name), imageUrl(s.id, name)]; // full-size PNG to open, small JPEG to show
+    else if (frame !== undefined && s.video) url = src = `/api/swings/${encodeURIComponent(s.id)}/frames/${frame}.jpg?w=720`;
     if (!url) return el("div", { class: "step-frame empty-frame" }, "Mark this checkpoint to see its frame");
     return el("a", { class: "step-frame", href: url, target: "_blank", rel: "noopener", title: "Open full size" },
-      el("img", { src: url, alt: `${cp.title} frame` }));
+      el("img", { src, alt: `${cp.title} frame` }));
   }
 
   function card({ cp, verdict, state }, i) {
@@ -201,7 +202,7 @@ function freezeFrames(s) {
     el("div", { class: "freeze-row" }, names.map(n => {
       const url = fileUrl(s.id, `${n}.png`);
       return el("a", { class: "freeze", href: url, target: "_blank", rel: "noopener" },
-        el("img", { src: url, alt: `${PHASE_LABELS[n]} frame`, loading: "lazy" }),
+        el("img", { src: imageUrl(s.id, `${n}.png`, 360), alt: `${PHASE_LABELS[n]} frame`, loading: "lazy" }),
         el("span", {}, PHASE_LABELS[n]));
     })));
 }
