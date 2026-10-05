@@ -100,7 +100,7 @@ class Marks:
         path.write_text(json.dumps(asdict(self), indent=2))
 
     @classmethod
-    def load(cls, path: Path) -> "Marks":
+    def load(cls, path: Path) -> Marks:
         data = json.loads(path.read_text())
         data["points"] = _points(data["points"])
         data["checkpoints"] = {

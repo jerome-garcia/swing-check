@@ -84,7 +84,7 @@ def test_report_lists_phases_and_flags():
 @pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg not on PATH")
 def test_each_check_gets_its_own_key_frame(tmp_path):
     with VideoWriter(tmp_path / "normalized.mp4", 108, 192, 240.0) as w:
-        for i in range(100):
+        for _ in range(100):
             w.write(np.zeros((192, 108, 3), np.uint8))
     a = Verdict(status="ok", label="a", summary="", phase="address", name="posture", title="Posture",
                 overlays=[Overlay("point", [(30.0, 100.0)], (0, 0, 255))])

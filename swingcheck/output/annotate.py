@@ -54,7 +54,7 @@ class Annotator:
             (phases.impact, len(self.path) - 1, FOLLOW_COLOR),
         ]
 
-    def only(self, verdict: Verdict) -> "Annotator":
+    def only(self, verdict: Verdict) -> Annotator:
         """A copy that draws just this verdict (its overlays and header line), for its key frame."""
         clone = copy.copy(self)
         clone.verdicts = [verdict]

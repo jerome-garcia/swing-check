@@ -25,7 +25,6 @@ def pose(mirror=False, spine_lost=0.0, knee_lost=0.0):
     """spine_lost / knee_lost: degrees of spine bend / trail knee flex lost by halfway
     back (from frame 15, clear of smoothing)."""
     data = np.full((80, len(LANDMARKS), 4), np.nan)
-    trail = "left" if mirror else "right"
     for f in range(80):
         bend = np.radians(SPINE_BEND - (spine_lost if f >= 15 else 0.0))
         flex = np.radians(KNEE_FLEX - (knee_lost if f >= 15 else 0.0))

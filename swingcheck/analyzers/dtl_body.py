@@ -32,7 +32,7 @@ class BodyCheck:
 
 
 
-def with_body(status: str, label: str, meaning: str, tip: str, body: list["BodyCheck"]) -> tuple[str, str, str, str]:
+def with_body(status: str, label: str, meaning: str, tip: str, body: list[BodyCheck]) -> tuple[str, str, str, str]:
     """A check's result with its body rows folded in: the worst status, faults appended
     to the label and the summary sentence, and their tips added."""
     status = max([status] + [b.status for b in body], key=ORDER.__getitem__)

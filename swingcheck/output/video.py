@@ -59,7 +59,7 @@ class VideoWriter:
         if self.proc.wait() != 0:
             raise RuntimeError(f"ffmpeg failed writing {self.path}: {err.strip()}")
 
-    def __enter__(self) -> "VideoWriter":
+    def __enter__(self) -> VideoWriter:
         return self
 
     def __exit__(self, *exc: object) -> None:

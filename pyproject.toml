@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "swingcheck"
 version = "0.1.0"
 description = "Local golf swing analyzer: pose-based checks for DTL and face-on clips."
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "numpy>=1.24",
     "opencv-python>=4.8",
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7", "httpx>=0.27"]
+dev = ["pytest>=7", "httpx>=0.27", "ruff>=0.6"]
 
 [project.scripts]
 swingcheck = "swingcheck.app.__main__:main"
@@ -31,3 +31,17 @@ include = ["swingcheck*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+# pyflakes, pycodestyle, bugbear, pyupgrade. (No import sorting: the code keeps compact
+# multi-name imports.)
+select = ["E", "F", "W", "B", "UP"]
+ignore = [
+    "E501",  # long lines: user-facing messages read better unbroken
+    "B008",  # FastAPI's File(...) / Form(...) defaults
+    "B905",  # zip() without strict=: lengths are checked where it matters
+]

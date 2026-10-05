@@ -48,7 +48,7 @@ class VideoInfo:
         path.write_text(json.dumps(asdict(self), indent=2))
 
     @classmethod
-    def load(cls, path: Path) -> "VideoInfo":
+    def load(cls, path: Path) -> VideoInfo:
         return cls(**json.loads(path.read_text()))
 
 

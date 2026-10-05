@@ -840,8 +840,10 @@ Overlay kinds are documented in `swingcheck/analyzers/__init__.py`.
 
 ## Development
 
-Run the tests with `pytest`. Some tests need `ffmpeg` on the PATH and are
-skipped without it.
+Run the tests with `pytest` and the linter with `ruff check swingcheck tests`
+(both come with `pip install -e ".[dev]"`). Some tests need `ffmpeg` on the PATH
+and are skipped without it. GitHub runs both on every push
+(`.github/workflows/tests.yml`), with ffmpeg installed.
 
 The app's footer Ko-fi link comes from `KOFI_URL` at the top of
 `swingcheck/app/static/app.js` (empty hides it).

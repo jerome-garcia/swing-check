@@ -85,7 +85,7 @@ def takeaway(ctx: SwingContext) -> Verdict:
     clubhead = np.asarray(mark.points["clubhead"], float)
     f = mark.frame
     line = address_line(ctx)
-    ch0, gr0, normal, toward_golfer = line.clubhead, line.grip, line.normal, line.toward_golfer
+    ch0, normal, toward_golfer = line.clubhead, line.normal, line.toward_golfer
     inside_by = line.inside_by(ctx, clubhead)
 
     if inside_by > flag_at:
@@ -131,7 +131,6 @@ def takeaway(ctx: SwingContext) -> Verdict:
     # Body: posture and trail knee kept from address.
     forward = -toward_golfer  # screen x direction toward the ball
     body = [posture_kept(ctx, f, forward, show), trail_knee_kept(ctx, f, forward, show)]
-    plane_status = status
     status, label, meaning, tip = with_body(status, label, meaning, tip, body)
     for b in body:
         overlays += b.overlays

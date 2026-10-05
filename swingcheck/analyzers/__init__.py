@@ -64,7 +64,7 @@ class Grade(str):
 
     depth: float
 
-    def __new__(cls, status: str, depth: float = 0.0) -> "Grade":
+    def __new__(cls, status: str, depth: float = 0.0) -> Grade:
         g = super().__new__(cls, status)
         g.depth = depth
         return g
@@ -87,17 +87,17 @@ def deg_text(deg: float) -> str:
     return f"{round(float(deg)):.0f}°"
 
 
-def clubhead_mark(xy, color: Color, show: tuple[int, int] | None, label: str = "") -> "Overlay":
+def clubhead_mark(xy, color: Color, show: tuple[int, int] | None, label: str = "") -> Overlay:
     """The clubhead: a solid circle."""
     return Overlay("circle", [(float(xy[0]), float(xy[1]))], color, label, show, 2)
 
 
-def hands_mark(xy, color: Color, show: tuple[int, int] | None, label: str = "") -> "Overlay":
+def hands_mark(xy, color: Color, show: tuple[int, int] | None, label: str = "") -> Overlay:
     """The hands: a solid square."""
     return Overlay("square", [(float(xy[0]), float(xy[1]))], color, label, show, 2)
 
 
-def spot_mark(xy, color: Color, show: tuple[int, int] | None, label: str = "") -> "Overlay":
+def spot_mark(xy, color: Color, show: tuple[int, int] | None, label: str = "") -> Overlay:
     """The ball, a heel, where a shaft line lands: a hollow ring."""
     return Overlay("ring", [(float(xy[0]), float(xy[1]))], color, label, show, 2)
 

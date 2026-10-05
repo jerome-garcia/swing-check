@@ -18,7 +18,7 @@ def videos(tmp_path):
     for n in range(3):
         path = tmp_path / f"v{n}.mp4"
         with VideoWriter(path, 64, 48, 30.0) as w:
-            for i in range(20):
+            for _ in range(20):
                 w.write(np.full((48, 64, 3), n * 80, np.uint8))
         paths.append(path)
     return paths
