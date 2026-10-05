@@ -15,3 +15,6 @@ config/local.toml
 
 # Local tool settings
 .claude/
+
+# Original GCash QR screenshot (shows part of the mobile number); only the cropped instapay-qr.png ships
+swingcheck/app/static/support/gcash_qr.jpeg

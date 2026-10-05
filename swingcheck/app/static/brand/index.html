@@ -1,0 +1,164 @@
+<!doctype html>
+<!-- SwingCheck brand guidelines, one page. Served at /brand/ by the app. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SwingCheck brand</title>
+<link rel="icon" href="logo.svg">
+<style>
+  :root {
+    --fairway: #2b7a47; --deep: #123824; --bright: #4fb06d; --plane: #ff9f43;
+    --ok: #2b8a4b; --warn: #b77a14; --flag: #c23d36;
+    --paper: #f4f5f2; --white: #ffffff; --ink: #1a1d19; --muted: #5f665d; --line: #dfe2db;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; }
+  .page { max-width: 1160px; margin: 0 auto; padding: 32px 20px 48px; }
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; }
+  header img { width: 48px; height: 48px; }
+  .wordmark { font-weight: 750; font-size: 32px; letter-spacing: -0.035em; line-height: 1; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+  .cover { display: block; width: 100%; aspect-ratio: 3 / 1; border-radius: 12px; margin-bottom: 20px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .wide { grid-column: span 2; }
+  section { background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; }
+  h2 { font-size: 16px; margin: 0 0 10px; letter-spacing: -0.01em; }
+  h3 { font-size: 13px; margin: 14px 0 6px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+  p, li { font-size: 14px; }
+  p { margin: 0 0 8px; }
+  ul { margin: 0; padding-left: 18px; }
+  li { margin-bottom: 4px; }
+  code { font: 13px ui-monospace, Consolas, monospace; background: var(--paper); padding: 1px 5px; border-radius: 4px; }
+  .do { color: var(--ok); font-weight: 700; }
+  .dont { color: var(--flag); font-weight: 700; }
+
+  /* Logo */
+  .logos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .logo-tile { display: flex; align-items: center; justify-content: center; gap: 10px; height: 96px; border-radius: 8px; }
+  .logo-tile img { width: 40px; height: 40px; }
+  .logo-tile span { font-weight: 750; font-size: 24px; letter-spacing: -0.035em; }
+  .on-light { background: var(--paper); }
+  .on-dark { background: linear-gradient(160deg, #1d5a37, var(--deep)); color: #fff; }
+
+  /* Colors */
+  .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .swatch { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: 13px; }
+  .chip { height: 56px; }
+  .swatch div:last-child { padding: 6px 8px; }
+  .swatch b { display: block; font-size: 13px; }
+  .swatch span { color: var(--muted); font: 12px ui-monospace, Consolas, monospace; }
+
+  /* Type */
+  .type-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .type-row:last-child { border-bottom: 0; }
+  .type-row small { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+  /* Status */
+  .dots { display: flex; gap: 8px; margin: 4px 0 10px; }
+  .dot { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 14px; }
+  .legend { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+
+  footer { margin-top: 20px; color: var(--muted); font-size: 13px; }
+
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } .wide { grid-column: auto; } .swatches { grid-template-columns: repeat(2, 1fr); } }
+  @media print { body { background: #fff; } .page { padding: 0; } section { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <img src="logo.svg" alt="">
+    <div>
+      <div class="wordmark">SwingCheck</div>
+      <p>Brand guidelines · one page</p>
+    </div>
+  </header>
+
+  <img class="cover" src="ko-fi-cover.jpg" alt="SwingCheck cover: the logo, the tagline and eight checkpoint badges on dark green">
+
+  <div class="grid">
+    <section>
+      <h2>Name</h2>
+      <p><b>SwingCheck</b>: one word, capital S and capital C.</p>
+      <p><span class="dont">Not</span> Swing Check, swing-check, Swingcheck or SC.</p>
+      <p>All caps (<b>SWINGCHECK</b>) only in small spaced-out labels, like the PDF header.</p>
+      <p>In code, files and commands it stays lowercase: <code>swingcheck</code>.</p>
+    </section>
+
+    <section class="wide">
+      <h2>Logo</h2>
+      <div class="logos">
+        <div class="logo-tile on-light"><img src="logo.svg" alt=""><span>SwingCheck</span></div>
+        <div class="logo-tile on-dark"><img src="logo-on-dark.svg" alt=""><span>SwingCheck</span></div>
+      </div>
+      <h3>Use</h3>
+      <ul>
+        <li>The mark is a golf ball on a Fairway green disc. On dark green, use the white ball with a soft white ring (<code>logo-on-dark.svg</code>).</li>
+        <li>Keep clear space around it of at least half its width; don't go smaller than 20 px.</li>
+        <li><span class="dont">Don't</span> recolor, stretch, outline, rotate or add shadows to it.</li>
+      </ul>
+    </section>
+
+    <section class="wide">
+      <h2>Color</h2>
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:var(--fairway)"></div><div><b>Fairway</b><span>#2B7A47</span></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--deep)"></div><div><b>Deep green</b><span>#123824</span></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--bright)"></div><div><b>Bright green</b><span>#4FB06D</span></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--plane)"></div><div><b>Plane orange</b><span>#FF9F43</span></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--paper)"></div><div><b>Paper</b><span>#F4F5F2</span></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--ink)"></div><div><b>Ink</b><span>#1A1D19</span></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--muted)"></div><div><b>Muted</b><span>#5F665D</span></div></div>
+        <div class="swatch"><div class="chip" style="background:var(--line)"></div><div><b>Line</b><span>#DFE2DB</span></div></div>
+      </div>
+      <p style="margin-top:10px">Fairway is the brand color: buttons, links, the logo. Deep green is for big dark
+        backgrounds like the cover. Bright green replaces Fairway in dark mode. Plane orange is only for swing lines.</p>
+    </section>
+
+    <section>
+      <h2>Status colors</h2>
+      <div class="dots">
+        <span class="dot" style="background:var(--ok)">1</span><span class="dot" style="background:var(--ok)">2</span>
+        <span class="dot" style="background:var(--warn)">3</span><span class="dot" style="background:var(--flag)">4</span>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--ok)"></i><b>Good</b> · #2B8A4B</span>
+        <span><i style="background:var(--warn)"></i><b>Watch</b> · #B77A14</span>
+        <span><i style="background:var(--flag)"></i><b>Fix</b> · #C23D36</span>
+      </div>
+      <p style="margin-top:10px">These mean results only. Never use red or amber for decoration.</p>
+    </section>
+
+    <section>
+      <h2>Type</h2>
+      <p>The system font: Segoe UI on Windows, SF Pro on Apple, Roboto on Android. No web fonts.</p>
+      <div class="type-row"><span class="wordmark" style="font-size:24px">SwingCheck</span><small>Wordmark · 750, −3.5%</small></div>
+      <div class="type-row"><b style="font-size:24px">Page title</b><small>24 px · 700</small></div>
+      <div class="type-row"><b style="font-size:16px">Section heading</b><small>16 px · 700</small></div>
+      <div class="type-row"><span>Body text</span><small>15 px · 400</small></div>
+      <div class="type-row"><span style="font-size:13px;color:var(--muted)">Small print and labels</span><small>13 px · 400</small></div>
+    </section>
+
+    <section class="wide">
+      <h2>Voice</h2>
+      <p>A friendly coach who gets to the point. Plain words first, golf terms second.</p>
+      <ul>
+        <li><b>One thing first.</b> Lead with the biggest issue and how to fix it.</li>
+        <li><b>Sentence case</b> everywhere: "Club on plane", not "Club On Plane".</li>
+        <li><b>Centimeters only</b> for distances. Each check shows a <span class="do">Good</span> range and a <span class="dont">Fix</span> range.</li>
+        <li><b>Free, no hype.</b> Ask for support gently, never block anything behind it.</li>
+      </ul>
+      <h3>Example</h3>
+      <p><span class="do">Do</span> "Slightly standing up (11° more upright). Keep your hips back through impact."<br>
+        <span class="dont">Don't</span> "Suboptimal pelvic kinematics detected!"</p>
+    </section>
+  </div>
+
+  <footer>Files: <code>logo.svg</code>, <code>logo-on-dark.svg</code> and <code>ko-fi-cover.jpg</code> sit next to this page.
+    The full-size cover and its source are in the project's <code>branding/</code> folder.</footer>
+</div>
+</body>
+</html>

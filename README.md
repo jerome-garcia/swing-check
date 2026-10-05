@@ -25,6 +25,13 @@ In the Philippines? Support with InstaPay: scan this with GCash, Maya or your ba
 
 <img src="swingcheck/app/static/support/instapay-qr.png" alt="InstaPay QR code" width="200">
 
+### Brand
+
+The one-page brand guidelines (name, logo, colors, type, voice) ship with the
+app: open `/brand/` on the running app, or
+[swingcheck/app/static/brand/index.html](swingcheck/app/static/brand/index.html).
+The full-size Ko-fi cover and its source are in [branding/](branding/).
+
 ---
 
 ## Roadmap
