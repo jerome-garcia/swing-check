@@ -9,7 +9,15 @@ import { renderSwing } from "./swing.js";
 import { renderUpload } from "./upload.js";
 import { el } from "./util.js";
 
+// Ko-fi page for the footer's support link, e.g. "https://ko-fi.com/yourname".
+// Empty hides the footer.
+const KOFI_URL = "";
+
 const view = document.getElementById("view");
+if (KOFI_URL) {
+  document.getElementById("support-link").href = KOFI_URL;
+  document.getElementById("support").hidden = false;
+}
 let navigation = 0;
 
 async function route() {
