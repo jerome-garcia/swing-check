@@ -103,7 +103,6 @@ def summary(events: list[dict[str, Any]], live: dict[str, Any], now: float | Non
     analyses = [e for e in jobs if e["event"] == "analyze" and e.get("ok")]
     waits = [e["wait_s"] for e in jobs if e.get("wait_s") is not None]
     month_ago = now - 30 * 86400
-    uploads = [e for e in events if e["event"] == "upload" and e["t"] >= month_ago]
     camera = Counter(title for e in events if e["event"] == "convert" and e["t"] >= month_ago
                      for title in e.get("camera", []))
     return {
@@ -118,7 +117,6 @@ def summary(events: list[dict[str, Any]], live: dict[str, Any], now: float | Non
         "problems": [{"t": e["t"], "event": e["event"], "error": e.get("error", "")}
                      for e in sorted(events, key=lambda e: e["t"], reverse=True)
                      if e["event"] in ("convert", "analyze") and not e.get("ok")][:15],
-        "handedness": dict(Counter(e.get("handedness", "right") for e in uploads)),
         "camera": camera.most_common(5),
     }
 
@@ -171,7 +169,8 @@ def page(data: dict[str, Any]) -> str:
     """The admin page: plain HTML on the app's stylesheet, refreshing itself every 30 s."""
     esc = html.escape
     live = data["live"]
-    running = ", ".join(f"{r['kind']} ({_duration(r['for_s'])})" for r in live["running"]) or "nothing"
+    doing = {"convert": "Converting a video", "analyze": "Analyzing a swing"}
+    running = ", ".join(f"{doing.get(r['kind'], r['kind'])} · {_duration(r['for_s'])}" for r in live["running"]) or "Idle"
     rows = "".join(
         f"<tr><td>{esc(datetime.fromisoformat(d['date']).strftime('%a %b %d'))}</td><td>{d['uploaders']}</td><td>{d['upload']}</td>"
         f"<td>{_count(d['convert_ok'], d['convert_failed'])}</td><td>{_count(d['analyze_ok'], d['analyze_failed'])}</td></tr>"
@@ -180,7 +179,6 @@ def page(data: dict[str, Any]) -> str:
         f"<li><span class=muted>{esc(datetime.fromtimestamp(p['t'], LOCAL_TZ).strftime('%b %d %H:%M'))} · "
         f"{esc(p['event'])}</span><br>{esc(p['error'][:300])}</li>" for p in data["problems"]) \
         or "<li class=muted>None in the last 90 days.</li>"
-    hands = data["handedness"]
     camera = "".join(f"<li>{esc(title)} <span class=muted>× {n}</span></li>" for title, n in data["camera"]) \
         or "<li class=muted>None.</li>"
     speed = data["speed"]
@@ -200,8 +198,12 @@ def page(data: dict[str, Any]) -> str:
 <h1>SwingCheck admin</h1>
 <p class="muted">Numbers only: no swings, names, IP addresses, or keys. Refreshes every 30 s.</p>
 <section class="panel"><h2>Now</h2><div class="grid2">
-  <div><div class="muted">Running</div><div class="stat">{esc(running)}</div></div>
-  <div><div class="muted">Queued · uploading</div><div class="stat">{live['queued']} · {live['uploading']}</div></div>
+  <div><div class="muted">Working on now</div><div class="stat">{esc(running)}</div>
+    <div class="muted">one at a time: converting a new upload takes ~20 s, an analysis ~1.5 min</div></div>
+  <div><div class="muted">Waiting in line</div><div class="stat">{live['queued']}</div>
+    <div class="muted">swings waiting their turn to be converted or analyzed</div></div>
+  <div><div class="muted">Uploading now</div><div class="stat">{live['uploading']}</div>
+    <div class="muted">videos still being sent from someone's phone or computer</div></div>
   <div><div class="muted">Swings stored · from browsers</div><div class="stat">{live['swings_stored']} · {live['browsers_stored']}</div>
     <div class="muted">{f"browsers with swings from the last {live['keep_days']} days" if live.get('keep_days') else "browsers with swings stored"}</div></div>
   <div><div class="muted">Disk</div><div class="stat">{live['disk_used_pct']}% used</div><div class="muted">{live['disk_free_gb']} GB free</div></div>
@@ -213,8 +215,5 @@ def page(data: dict[str, Any]) -> str:
 <p class="muted">Typical wait in line {_duration(speed['median_wait_s'])} (longest {_duration(speed['longest_wait_s'])}) ·
 typical analysis {_duration(speed['median_analysis_s'])}</p></section>
 <section class="panel"><h2>Recent problems</h2><ul>{problems}</ul></section>
-<div class="grid2">
-<section class="panel"><h2>Swings by handedness (30 days)</h2><p>Right-handed {hands.get('right', 0)} · left-handed {hands.get('left', 0)}</p></section>
-<section class="panel"><h2>Camera check (30 days)</h2><ul>{camera}</ul></section>
-</div>
+<section class="panel"><h2>Camera check problems (30 days)</h2><ul>{camera}</ul></section>
 </main></body></html>"""

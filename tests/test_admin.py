@@ -38,11 +38,13 @@ def test_summary_counts_days_speed_and_problems():
     assert s["days"][0] == {"date": s["days"][0]["date"], "uploaders": 2, "upload": 3, "convert_ok": 1,
                             "convert_failed": 0, "analyze_ok": 1, "analyze_failed": 1}
     assert s["speed"] == {"median_wait_s": 4, "longest_wait_s": 60, "median_analysis_s": 80}
-    assert s["problems"][0]["error"] == "Boom" and s["handedness"] == {"left": 1, "right": 2}
+    assert s["problems"][0]["error"] == "Boom"
     assert s["camera"] == [("You're small in the frame", 1)]
     page = admin.page(s)
     assert "SwingCheck admin" in page and "+1 failed" in page and "Boom" in page
-    assert "Swings by handedness" in page and "from the last 3 days" in page
+    assert "from the last 3 days" in page and "Idle" in page and "Waiting in line" in page
+    live["running"] = [{"kind": "analyze", "for_s": 45}]
+    assert "Analyzing a swing · 45 s" in admin.page(admin.summary(events, live, now))
 
 
 def test_admin_is_open_on_your_own_computer(tmp_path):
