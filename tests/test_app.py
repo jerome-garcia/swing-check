@@ -38,6 +38,10 @@ def client(runs):
     return TestClient(create_app(runs))
 
 
+def test_health_reports_jobs(client):
+    assert client.get("/api/health").json() == {"ok": True, "jobs": 0}
+
+
 def test_lists_existing_runs(client):
     swings = client.get("/api/swings").json()
     assert len(swings) == 1

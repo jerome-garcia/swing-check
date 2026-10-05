@@ -156,6 +156,12 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         if view == "fo" and not FACE_ON_ENABLED:
             raise HTTPException(400, FACE_ON_DISABLED_MESSAGE)
 
+    @app.get("/api/health")
+    def health() -> dict[str, Any]:
+        """For the deploy script: up, and how many jobs are queued or running (it waits
+        for 0 before restarting, since a restart loses running jobs)."""
+        return {"ok": True, "jobs": jobs.pending()}
+
     @app.get("/api/features")
     def features() -> dict[str, Any]:
         discover()

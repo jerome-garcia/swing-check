@@ -403,8 +403,8 @@ through (23 s from a Manila home line), 96 MB is refused at once.
 A bare server also needs `libegl1 libgles2 libgl1`: MediaPipe's pose model fails
 to load without them (the tests pass anyway, since they don't run the model).
 Full analysis takes about 1.3–1.4× a Ryzen 7 5800H laptop: 73 s for McIlroy
-(657 frames), 98 s for a 240 fps clip (774 frames). To update:
-`sudo -u swingcheck git -C /opt/swingcheck/app pull && systemctl restart swingcheck`.
+(657 frames), 98 s for a 240 fps clip (774 frames). Releases go out with
+`deploy/deploy.sh` (see Development: Releasing).
 
 **Scaling notes.** One app process only: jobs live in memory, so never run
 several workers. Jobs run one at a time (pose uses the whole CPU), so grow with a
@@ -912,6 +912,25 @@ Run the tests with `pytest` and the linter with `ruff check swingcheck tests`
 (both come with `pip install -e ".[dev]"`). Some tests need `ffmpeg` on the PATH
 and are skipped without it. GitHub runs both on every push
 (`.github/workflows/tests.yml`), with ffmpeg installed.
+
+**Branches and releases.** `main` is always releasable. Each change is made on its
+own short branch (`git switch -c upload-feedback`), tested locally, then merged into
+`main`. A release is a tag on `main` (`v0.2.0-alpha`), and only releases reach the
+server; several merged changes can go out as one release.
+
+**Releasing.** From the repo, in Git Bash:
+
+```bash
+deploy/deploy.sh                 # what's live, and the latest releases
+deploy/deploy.sh v0.2.0-alpha    # tag main (clean and pushed) and deploy it
+deploy/deploy.sh v0.1.0-alpha    # an existing tag deploys as is: this is a rollback
+```
+
+It waits until no analysis is running (a restart loses running jobs; it asks
+`/api/health`), checks the tag out on the server, reinstalls if `pyproject.toml`
+changed, restarts the service and checks the site through Cloudflare. Never edit
+code on the server: it only ever runs a tag from GitHub. New system packages
+(`apt install …`) are the one thing to do by hand, and to note in the README.
 
 The app's footer Ko-fi link comes from `KOFI_URL` at the top of
 `swingcheck/app/static/app.js` (empty hides it).
