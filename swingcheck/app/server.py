@@ -75,6 +75,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     app.state.store = store
     app.state.jobs = jobs
     app.state.config = config
+    uploads = hosting.UploadCounter()
     if limits:
         hosting.start_sweeper(store, jobs, limits["keep_days"],
                               before_delete=lambda swing_id: frames.forget(store.root / swing_id / "normalized.mp4"))
@@ -108,6 +109,9 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         n = limits["max_swings"]
         return (f"You can keep {n} swing{'s' if n != 1 else ''} at a time. "
                 "Delete one from Your swings to add a new one.")
+
+    def client_ip(request: Request) -> str:
+        return request.client.host if request.client else "unknown"
 
     def check_not_busy() -> None:
         if limits and jobs.pending() >= limits["max_queued_jobs"]:
@@ -181,6 +185,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         meta.source_file = f"source{ext}"
         if limits:  # which terms this upload was agreed under, and when
             meta.notes["agreed_terms"] = {"version": agreed_terms[:40], "at": meta.created}
+            uploads.record(client_ip(request))
         with open(store.path(meta.id) / meta.source_file, "wb") as out:
             shutil.copyfileobj(file.file, out, length=1024 * 1024)
         store.save_meta(meta)
@@ -386,6 +391,9 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
                                      "the swing on your phone, then upload it again."}, 413)
             if len(owned(request)) >= limits["max_swings"]:
                 return JSONResponse({"detail": full_message()}, 409)
+            if uploads.count(client_ip(request)) >= limits["max_uploads_per_ip_per_day"]:
+                return JSONResponse({"detail": "That's the most uploads from your network for today. "
+                                     "Try again tomorrow."}, 429)
             if jobs.pending() >= limits["max_queued_jobs"]:
                 return JSONResponse({"detail": "SwingCheck is busy with other swings right now. "
                                      "Try again in a few minutes."}, 503)

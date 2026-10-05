@@ -75,7 +75,8 @@ function privacy(hosted) {
       list(
         "Your video, and what's made from it: frames, the annotated video, your marks and the results.",
         "The video's file name and the time you uploaded it.",
-        "A random key in a cookie, which is how SwingCheck knows which swings are yours. The server keeps only a scrambled fingerprint of it, next to your swings.")),
+        "A random key in a cookie, which is how SwingCheck knows which swings are yours. The server keeps only a scrambled fingerprint of it, next to your swings.",
+        "Your IP address, counted in memory for a day to limit uploads. It isn't saved with your swings.")),
     section("Why",
       p("Only to analyze your swing and show the results to you. Your videos aren't sold, shared, used for ",
         "advertising or used to train anything.")),

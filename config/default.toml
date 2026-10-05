@@ -305,3 +305,6 @@ keep_days = 3                 # swings are deleted this long after upload
 max_upload_mb = 200           # largest video file accepted
 max_clip_seconds = 20         # longest clip accepted (real time, as the phone recorded it)
 max_queued_jobs = 10          # conversions/analyses waiting; past this, "busy, try again"
+# Uploads per IP address in 24 hours, so clearing cookies (a fresh owner key, so a fresh
+# swing limit) can't be used to upload without end. Counted in memory only.
+max_uploads_per_ip_per_day = 12

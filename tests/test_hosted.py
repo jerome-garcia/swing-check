@@ -126,6 +126,27 @@ def test_upload_limits(alice, app):
     assert alice.get("/api/swings").json() == []
 
 
+def test_uploads_per_ip_per_day(alice, bob, app):
+    app.state.config["hosted"]["max_uploads_per_ip_per_day"] = 2
+    swing_id = upload(alice).json()["id"]
+    assert upload(bob).status_code == 200
+    r = upload(alice)  # same address (the test client), under alice's swing limit
+    assert r.status_code == 429 and "tomorrow" in r.json()["detail"]
+    alice.delete(f"/api/swings/{swing_id}")
+    assert upload(alice).status_code == 429  # deleting doesn't give uploads back
+
+
+def test_upload_counter_forgets_after_a_day():
+    from swingcheck.app.hosted import UploadCounter
+    c = UploadCounter()
+    c.record("1.2.3.4", now=1000.0)
+    c.record("1.2.3.4", now=2000.0)
+    assert c.count("1.2.3.4", now=3000.0) == 2
+    assert c.count("1.2.3.4", now=1000.0 + UploadCounter.WINDOW_S + 1) == 1
+    assert c.count("1.2.3.4", now=2000.0 + UploadCounter.WINDOW_S + 1) == 0
+    assert c.count("5.6.7.8") == 0
+
+
 @pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg not on PATH")
 def test_long_clips_are_refused(alice, app, tmp_path):
     app.state.config["hosted"]["max_clip_seconds"] = 0.5

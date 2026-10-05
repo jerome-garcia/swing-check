@@ -361,8 +361,9 @@ and the limits in `[hosted]` in `config/default.toml`.
   The key sits after the `#`, so it never reaches the server's or Caddy's logs,
   and the app removes it from the address bar once used. Losing both the cookie
   and the link loses the swings, which is fine since they expire anyway.
-- **Limits.** Too big, too many swings or too busy is refused before the upload
-  is received. A clip over the length limit is deleted right after upload. The
+- **Limits.** Too big, too many swings, too many uploads from one IP address in a
+  day (`max_uploads_per_ip_per_day`, so clearing cookies doesn't mean unlimited
+  uploads) or too busy is refused before the upload is received. A clip over the length limit is deleted right after upload. The
   upload page shows the limits, and says so when you already have 4 swings.
 - **Expiry.** A background sweep deletes swings 3 days after upload, at startup
   and every 30 minutes. Each card and swing page says when ("Deleted Oct 8").
@@ -371,8 +372,10 @@ and the limits in `[hosted]` in `config/default.toml`.
 
 **Running it.** Docker, run as a service, Caddy in front for automatic HTTPS.
 Start it with `swingcheck --hosted --runs-dir <folder>`: it listens on
-127.0.0.1:8765 for Caddy, which forwards to it (also set a request body limit in
-Caddy, a little over `max_upload_mb`).
+127.0.0.1:8765 for Caddy, which forwards to it. In Caddy, also set a request body
+limit a little over `max_upload_mb`, and with Cloudflare in front, set
+`trusted_proxies` to Cloudflare's IP ranges so the per-IP upload limit sees
+visitors' addresses rather than Cloudflare's.
 Back up the swings folder, or treat swings as disposable. Time one swing on a PC
 first to know how many swings a 2-CPU server handles per hour.
 

@@ -9,7 +9,12 @@ Run locally the app has one user and none of this applies. Hosted (`swingcheck
 - The key doubles as a private link (`/#/claim/<key>`, a URL fragment, so it never
   reaches the server's or a proxy's logs) to open the same swings on another device.
 - Each owner keeps at most `max_swings`, and swings are deleted `keep_days` after
-  they were uploaded. Uploads are capped in size and clip length.
+  they were uploaded. Uploads are capped in size and clip length, and per IP
+  address per day (a new owner key is only a cleared cookie away).
+
+Behind a proxy, the visitor's IP comes from X-Forwarded-For, which uvicorn only
+trusts from 127.0.0.1. Behind Cloudflare too, set Caddy's `trusted_proxies` to
+Cloudflare's ranges so the header carries the visitor's address, not Cloudflare's.
 """
 
 from __future__ import annotations
@@ -20,6 +25,7 @@ import re
 import secrets
 import threading
 import time
+from collections import deque
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
@@ -47,6 +53,36 @@ def valid_key(key: str | None) -> bool:
 def owner_of(key: str) -> str:
     """What a swing stores: a hash, so the swing folders never hold anyone's key."""
     return hashlib.sha256(key.encode()).hexdigest()
+
+
+class UploadCounter:
+    """Uploads per IP address over the last 24 hours, kept in memory (a restart forgets)."""
+
+    WINDOW_S = 24 * 60 * 60
+
+    def __init__(self) -> None:
+        self._seen: dict[str, deque[float]] = {}
+        self._lock = threading.Lock()
+
+    def count(self, ip: str, now: float | None = None) -> int:
+        with self._lock:
+            return len(self._prune(ip, now or time.time()))
+
+    def record(self, ip: str, now: float | None = None) -> None:
+        now = now or time.time()
+        with self._lock:
+            for seen in list(self._seen):  # uploads are rare, so tidying every address is cheap
+                self._prune(seen, now)
+            self._seen.setdefault(ip, deque()).append(now)
+
+    def _prune(self, ip: str, now: float) -> deque[float]:
+        """Drop uploads older than a day; an address with none left is forgotten."""
+        times = self._seen.get(ip, deque())
+        while times and times[0] <= now - self.WINDOW_S:
+            times.popleft()
+        if not times:
+            self._seen.pop(ip, None)
+        return times
 
 
 def expires_at(created: str, keep_days: float) -> datetime | None:
