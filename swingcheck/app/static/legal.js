@@ -86,7 +86,7 @@ function privacy(hosted) {
     section("Who can see your swings",
       p("Only browsers with your key: this one, and any device where you open your private link. Anyone you give ",
         "that link to can see and delete your swings, so keep it private."),
-      p("If you choose Share summary on a swing, anyone with that link can see its summary: the PDF, a picture of ",
+      p("If you choose Share PDF on a swing, anyone with that link can see its summary: the PDF, a picture of ",
         "the address, top, and impact frames, and the checkpoint results. Not the video, its name, or your other ",
         "swings. Stop sharing ends it at once, and it ends anyway when the swing is deleted.")),
     section("How long it's kept",

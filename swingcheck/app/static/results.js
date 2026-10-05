@@ -2,7 +2,7 @@ import {
   api, checkpointStates, el, features, fileUrl, imageUrl, listText, pollJob, postJSON, progressBlock, scorecard, STATUS_WORD, swingUrl,
 } from "./util.js";
 
-// The link just made by Share summary, so the page can say it was copied after it re-renders.
+// The link just made by Share PDF, so the page can say it was copied after it re-renders.
 let justShared = null;
 
 // Phone: the share sheet (Messenger, Viber, ...). Computer: copy the link.
@@ -333,9 +333,11 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
   const warnings = (a && a.warnings) || [];
   const checkpoints = ((await features()).checkpoints || {})[s.view] || [];
   if (!isCurrent()) return;
-  const reanalyze = el("button", { class: "btn primary", type: "button", onclick: () => startAnalysis() }, "Re-analyze");
+  // Saving or sharing the PDF is what comes next on finished results; Re-analyze is rarely
+  // needed (Edit marks ends in Save and analyze), so it sits in the ⋯ menu.
+  const reanalyze = { label: "Re-analyze", onclick: () => startAnalysis() };
   const pdf = el("a", { class: "btn", href: `/api/swings/${encodeURIComponent(s.id)}/summary.pdf`, download: "" },
-    "Download summary");
+    "Download PDF");
   const report = { label: "Text report", href: fileUrl(s.id, "report.txt"), newTab: true };
   // Sharing: a link anyone can open to the summary PDF (swingcheck/app/share.py), until the
   // swing is deleted. It follows re-analysis by itself; the button only sends the link.
@@ -343,8 +345,8 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
   const shareUrl = shared ? `${location.origin}/s/${shared.code}` : null;
   const shareError = el("span", { class: "subtle small", hidden: true });
   const shareBtn = el("button", {
-    class: "btn", type: "button",
-    title: "A link anyone can open to this summary, until the swing is deleted",
+    class: "btn primary", type: "button",
+    title: "A link anyone can open to this PDF, until the swing is deleted",
     onclick: async () => {
       shareBtn.disabled = true;
       try {
@@ -357,21 +359,22 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
         shareError.hidden = false;
       }
     },
-  }, "Share summary");
+  }, "Share PDF");
   const copied = justShared && shareUrl && justShared.url.endsWith(`/s/${shared.code}`) ? justShared.how : null;
   justShared = null;
-  const shareNote = shared ? el("div", { class: "notice share-note" },
-    "Your summary is shared: anyone with ", el("a", { href: shareUrl, target: "_blank", rel: "noopener" }, "this link"),
-    " can see it, always with your latest results, until the swing is deleted. ",
+  const shareNote = shared ? el("div", { class: "notice ok share-note" },
+    "Shared: anyone with ", el("a", { href: shareUrl, target: "_blank", rel: "noopener" }, "the link"),
+    " sees your latest results until the swing is deleted. ",
     copied === "copied" ? el("strong", {}, "Link copied. ") : null,
     el("button", { class: "linkish", type: "button", onclick: async e => {
       e.target.textContent = (await sendLink(shareUrl)) === "copied" ? "Copied" : "Copy link";
-    } }, "Copy link"),
-    " · ",
-    el("button", { class: "linkish", type: "button", onclick: async () => {
+    } }, "Copy link")) : null;
+  const stopSharing = shared ? {
+    label: "Stop sharing", onclick: async () => {
       await api(`/api/swings/${encodeURIComponent(s.id)}/share`, { method: "DELETE" });
       rerender();
-    } }, "Stop sharing")) : null;
+    },
+  } : null;
 
   let main;
   if (checkpoints.length) {
@@ -392,7 +395,7 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
     main = [el("section", { class: "stack-sm" }, (a.verdicts || []).map(verdictCard)), freezeFrames(s)];
   }
   view.replaceChildren(
-    header([pdf, shareBtn, reanalyze], [report]),
+    header([pdf, shareBtn], [reanalyze, report, stopSharing]),
     shareNote || "", shareError,
     clipNotes(warnings) || "",
     el("div", { class: "results-layout" },

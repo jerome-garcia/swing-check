@@ -81,7 +81,7 @@ export async function renderSwing(view, id, isCurrent) {
     navigate(swingUrl(id, "mark"), { replace: true });
     return;
   }
-  // Results pages add Re-analyze and Report; Edit marks is always offered.
+  // Results pages add Re-analyze, the text report, and Stop sharing; Edit marks is always offered.
   const header = (actions = [], menu = []) => swingHeader(s, actions, [{ label: "Edit marks", href: swingUrl(id, "mark") }, ...menu]);
   await renderResults(view, s, header, isCurrent, () => renderSwing(view, id, isCurrent));
 }

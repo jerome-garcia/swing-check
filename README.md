@@ -814,14 +814,14 @@ on the one to work on first: the checkpoint's key frame next to its card, which
 gives the result, what it means, **How to fix** when it's yellow or red, and
 each measurement with its limits (the biggest issue is highlighted). The
 annotated video and the impact frame setting sit beside it on a wide
-screen and below it on a phone. **Re-analyze** is the main button; **Download
-summary** saves a PDF to share outside the app (scorecard, the one thing to work
-on first, then each checkpoint's key frame, readings with their limits, and how
-to fix), built from the last analysis; **Edit marks**, the text report and
-**Delete** are in the ⋯ menu. In the annotated video, the
+screen and below it on a phone. The buttons are **Download PDF** and **Share
+PDF** (the main one): the PDF has the scorecard, the one thing to work on first,
+then each checkpoint's key frame, readings with their limits, and how to fix,
+built from the last analysis. **Edit marks**, **Re-analyze**, the text report,
+**Stop sharing** (once shared), and **Delete** are in the ⋯ menu. In the annotated video, the
 header names only the checkpoint whose lines are on screen.
 
-**Share summary** makes a link anyone can open (`/s/<code>`, opens the share
+**Share PDF** makes a link anyone can open (`/s/<code>`, opens the share
 sheet on a phone, copies the link on a computer) that goes straight to the summary
 PDF. Messenger and similar apps show a preview card for it (the address, top, and
 impact frames and the checkpoint counts), read from a tiny page that sends a
@@ -829,7 +829,8 @@ browser on to the PDF at once. It's a snapshot saved inside
 the swing's folder (`swingcheck/app/share.py`): never the video or its file name,
 and the code is random and separate from your key. It follows the latest
 results: each re-analysis updates what the link shows, at the same link.
-**Stop sharing** ends it at once, and it ends anyway when the swing is deleted.
+A short note under the header says it's shared, with **Copy link**. **Stop
+sharing** (⋯ menu) ends it at once, and it ends anyway when the swing is deleted.
 
 On the swing list, each analyzed swing shows the same 8 dots under its
 thumbnail; swings still to mark or analyze say what's next.
