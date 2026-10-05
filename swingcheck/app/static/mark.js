@@ -175,16 +175,31 @@ export async function renderMark(view, id, isCurrent) {
   }
 
   // --- Layout ---------------------------------------------------------------
+  // Page offset that the sticky top bar covers, plus a little air.
+  const stickyTop = () => (document.querySelector(".topbar")?.offsetHeight || 0) + 12;
+
+  // Once, on opening: scroll so the instruction bar sits under the top bar, if the frame and
+  // slider don't fit as is. Not when the camera check found problems: those stay in view.
+  function scrollToMarking() {
+    if (window.matchMedia("(max-width: 820px)").matches) return;
+    if (Array.isArray(s.camera_check) && s.camera_check.length) return;
+    const caption = view.querySelector(".frame-caption");
+    if (!caption || caption.getBoundingClientRect().bottom <= window.innerHeight) return;
+    window.scrollTo({ top: hud.getBoundingClientRect().top + window.scrollY - stickyTop() });
+  }
+
   function fitCanvas() {
     const stage = canvas.parentElement;
     if (!stage) return;
     const maxW = stage.clientWidth;
-    // Leave room below the frame for the scrubber and its caption.
-    const top = stage.getBoundingClientRect().top + window.scrollY;
-    // Desktop: fit below the header so the scrubber stays in view. Phones (one column, the
-    // page scrolls anyway): use most of the screen height so points are easier to hit.
+    // Desktop: fit the instruction bar, the frame and the slider (with its caption, ~100 px)
+    // in one screen with the page scrolled to the bar (scrollToMarking), so a tall phone
+    // video isn't squeezed by the swing header above. Phones (one column, the page scrolls
+    // anyway): use most of the screen height so points are easier to hit.
     const narrow = window.matchMedia("(max-width: 820px)").matches;
-    const maxH = narrow ? Math.max(320, window.innerHeight * 0.68) : Math.max(260, window.innerHeight - top - 100);
+    const hudToStage = stage.getBoundingClientRect().top - hud.getBoundingClientRect().top;
+    const maxH = narrow ? Math.max(320, window.innerHeight * 0.68)
+      : Math.max(260, window.innerHeight - stickyTop() - hudToStage - 100);
     const scale = Math.min(maxW / v.width, maxH / v.height);
     const cssW = Math.floor(v.width * scale);
     const cssH = Math.floor(v.height * scale);
@@ -680,7 +695,7 @@ export async function renderMark(view, id, isCurrent) {
           viewError))));
   setFrame(cur().frame);
   refresh();
-  requestAnimationFrame(fitCanvas);
+  requestAnimationFrame(() => { fitCanvas(); scrollToMarking(); });
 }
 
 function pick(points, names) {
