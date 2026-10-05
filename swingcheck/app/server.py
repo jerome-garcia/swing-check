@@ -22,7 +22,8 @@ from swingcheck.app.store import Store, SwingNotFound
 from swingcheck.config import PROJECT_ROOT, load_config
 from swingcheck.ingest import IngestError, VideoInfo, probe
 from swingcheck.output.summary_pdf import summary_pdf
-from swingcheck.pipeline import PipelineError, analyze, ingest, load_suggested, save_marks, suggest_frames
+from swingcheck.pipeline import (PipelineError, analyze, ingest, load_camera_check, load_suggested, save_marks,
+                                 suggest_frames)
 
 log = logging.getLogger(__name__)
 STATIC = Path(__file__).parent / "static"
@@ -314,8 +315,9 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
                           ("phases", "phases.json")):
             path = folder / name
             detail[key] = json.loads(path.read_text()) if path.exists() else None
-        detail["suggested"] = (load_suggested(folder, VideoInfo.load(folder / "video.json"))
-                               if (folder / "video.json").exists() else None)
+        info = VideoInfo.load(folder / "video.json") if (folder / "video.json").exists() else None
+        detail["suggested"] = load_suggested(folder, info) if info else None
+        detail["camera_check"] = load_camera_check(folder, info) if info else None
         detail["files"] = sorted(p.name for p in folder.iterdir()
                                  if p.suffix in (".mp4", ".png", ".txt") and p.name != "pose_debug.mp4")
         job = jobs.active_for(swing_id) or jobs.latest_for(swing_id)

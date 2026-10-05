@@ -19,6 +19,7 @@ from typing import Any
 
 from swingcheck.analyzers import SwingContext, Verdict, run_analyzers
 from swingcheck.body import body_scale, clip_torso_length, hands
+from swingcheck.camera_check import camera_check
 from swingcheck.ingest import VideoInfo, normalize
 from swingcheck.checkpoints import DTL_CHECKPOINTS
 from swingcheck.priority import pick_focus
@@ -78,11 +79,12 @@ def ingest(source: Path, run_dir: Path, config: dict[str, Any], start: float | N
 def suggest_frames(run_dir: Path, info: VideoInfo, config: dict[str, Any],
                    progress: ProgressFn | None = None) -> dict[str, int] | None:
     """Rough phase frames (address, takeaway, top, early downswing, impact) so the
-    marking screen can open each step near the right frame before any analysis.
+    marking screen can open each step near the right frame before any analysis, plus a
+    camera check at address (swingcheck/camera_check.py).
 
     A quick pose pass at ~`trim.coarse_fps` over the whole clip, then the usual phase
     detection with the clip's median torso as the scale. Saved to suggest.json with the
-    video signature; returns None (and saves nothing) if the swing can't be found.
+    video signature; returns None (phases saved as null) if the swing can't be found.
     """
     progress = progress or _noop
     path = run_dir / SUGGEST_FILE
@@ -97,21 +99,39 @@ def suggest_frames(run_dir: Path, info: VideoInfo, config: dict[str, Any],
         data = extract_pose(run_dir / "normalized.mp4", info, config, select=lambda i: i % stride == 0,
                             label="Finding your swing", progress=pose_progress)
         pose = PoseSeq(info.fps, info.width, info.height, data)
-        phases = detect_phases(hands(pose, config), info.fps, clip_torso_length(pose, config), config["phases"])
-    except (PhaseError, ValueError):
+    except ValueError:
         return None
-    frames = phases.as_dict()
-    path.write_text(json.dumps({"video_signature": video_signature(info), "phases": frames}, indent=2))
+    try:
+        frames = detect_phases(hands(pose, config), info.fps, clip_torso_length(pose, config),
+                               config["phases"]).as_dict()
+    except (PhaseError, ValueError):
+        frames = None
+    camera = camera_check(pose, frames["address"] if frames else None, config)
+    if frames is None and pose.detected().any():
+        camera.append({"level": "warn", "title": "Couldn't find the swing automatically",
+                       "tip": "You can still mark it: scrub to each position yourself. If the clip holds more "
+                              "than one swing, trim it to one."})
+    path.write_text(json.dumps({"video_signature": video_signature(info), "phases": frames, "camera": camera},
+                               indent=2))
     return frames
 
 
 def load_suggested(run_dir: Path, info: VideoInfo) -> dict[str, int] | None:
     """The suggested phase frames, if they were found on this exact conversion."""
+    return _suggest_data(run_dir, info).get("phases")
+
+
+def load_camera_check(run_dir: Path, info: VideoInfo) -> list[dict[str, str]] | None:
+    """The camera check for this exact conversion: [] if it looks right, None if not run."""
+    return _suggest_data(run_dir, info).get("camera")
+
+
+def _suggest_data(run_dir: Path, info: VideoInfo) -> dict[str, Any]:
     try:
         data = json.loads((run_dir / SUGGEST_FILE).read_text())
     except (OSError, ValueError):
-        return None
-    return data.get("phases") if data.get("video_signature") == video_signature(info) else None
+        return {}
+    return data if isinstance(data, dict) and data.get("video_signature") == video_signature(info) else {}
 
 
 def save_marks(run_dir: Path, view: str, address_frame: int, points: dict[str, Point], info: VideoInfo,

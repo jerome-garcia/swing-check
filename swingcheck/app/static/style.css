@@ -509,6 +509,12 @@ button.score-item:hover { background: var(--surface-2); }
   border-radius: var(--radius-sm);
 }
 /* The instruction: big and high-contrast, with what exactly to click under it. */
+.camera-ok { margin: 0; font-size: 14px; font-weight: 600; color: var(--ok); }
+.camera-check { margin: 0; }
+.camera-check summary { cursor: pointer; font-weight: 700; }
+.camera-check ul { margin: 8px 0; padding-left: 18px; font-size: 14px; }
+.camera-check li + li { margin-top: 4px; }
+.camera-check p { margin: 0; }
 .hud-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .hud-step { font-size: 12px; font-weight: 700; color: var(--bright); text-transform: uppercase; letter-spacing: 0.08em; }
 .hud-next { display: inline-flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 750; letter-spacing: -0.02em; line-height: 1.25; }

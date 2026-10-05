@@ -84,6 +84,7 @@ def test_suggest_frames_saves_detected_phases_for_this_video(tmp_path, monkeypat
     assert calls["sampled"] == [0, 8]  # 240 fps clip, quick pass at 30 fps
     assert pipeline.load_suggested(tmp_path, info) == frames
     assert pipeline.load_suggested(tmp_path, make_info(frame_count=200)) is None  # re-trimmed: stale
+    assert pipeline.load_camera_check(tmp_path, info)[0]["title"] == "No golfer found"  # the fake pose is empty
 
 
 def test_suggest_frames_gives_up_quietly_when_no_swing_found(tmp_path, monkeypatch):
@@ -92,7 +93,9 @@ def test_suggest_frames_gives_up_quietly_when_no_swing_found(tmp_path, monkeypat
     from swingcheck import pipeline
 
     info = make_info()
-    (tmp_path / pipeline.SUGGEST_FILE).write_text("{}")  # left over from an earlier conversion
+    (tmp_path / pipeline.SUGGEST_FILE).write_text('{"phases": {"top": 1}}')  # left over from an earlier conversion
     monkeypatch.setattr(pipeline, "extract_pose", lambda video, i, c, **kw: np.full((i.frame_count, 33, 4), np.nan))
     assert pipeline.suggest_frames(tmp_path, info, load_config()) is None
-    assert not (tmp_path / pipeline.SUGGEST_FILE).exists()
+    assert pipeline.load_suggested(tmp_path, info) is None
+    # The camera check still says what went wrong.
+    assert [f["title"] for f in pipeline.load_camera_check(tmp_path, info)] == ["No golfer found"]

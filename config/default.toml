@@ -34,6 +34,17 @@ coarse_fps = 30
 pad_before_s = 0.75
 pad_after_s = 0.75
 
+[camera_check]
+# A quick check of the camera after upload (swingcheck/camera_check.py), shown on the
+# marking screen. Spreads are left-right distances as a share of torso length.
+# Down-the-line clips measure 0.03-0.21 (shoulders and hips overlap from behind);
+# straight face-on is roughly 0.7.
+side_on_warn = 0.35           # above this: "the camera may be off to one side"
+side_on_flag = 0.55           # above this: "doesn't look like a down-the-line view"
+min_height = 0.20             # golfer (head to ankles) under this share of the frame: "small"
+edge_margin = 0.02            # head or feet this close to the frame edge: cut off
+min_visibility = 0.5          # tracker confidence below this: hidden / hard to see
+
 [pose]
 model = "heavy"               # "lite" | "full" | "heavy"
 min_detection_confidence = 0.5

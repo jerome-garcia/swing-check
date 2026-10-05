@@ -65,6 +65,21 @@ const FRAME_GUESS = {
   // Trail arm parallel after impact: about as long after impact as the downswing took from the top.
   follow_through: p => (p.top !== undefined && p.impact !== undefined ? p.impact + 0.6 * (p.impact - p.top) : undefined),
 };
+// The camera check made after upload (swingcheck/camera_check.py): what to film
+// differently, or a short all-clear. Nothing for older swings or face-on.
+function cameraCheck(s) {
+  const found = s.camera_check;
+  if (s.view !== "dtl" || !Array.isArray(found)) return null;
+  if (!found.length) return el("p", { class: "camera-ok" }, "✓ Camera check: a good down-the-line view.");
+  const serious = found.some(f => f.level === "flag");
+  return el("details", { class: `notice camera-check ${serious ? "error" : ""}`, open: true },
+    el("summary", {}, `Camera check: ${found.length === 1 ? "1 thing" : `${found.length} things`} to film differently`),
+    el("ul", {}, found.map(f => el("li", {}, el("strong", {}, `${f.title}. `), f.tip))),
+    el("p", { class: "small" }, serious
+      ? "Results from this video will likely be wrong. Film again and upload the new video for a real check."
+      : "You can still mark this video, but some results may be off."));
+}
+
 const pointInfo = (step, name) => ({ ...POINT_INFO[name], ...((STEP_POINT_INFO[step] || {})[name] || {}) });
 const LOUPE_SIZE = 150;
 const LOUPE_ZOOM = 4;
@@ -605,6 +620,7 @@ export async function renderMark(view, id, isCurrent) {
     swingHeader(s, s.status === "analyzed" ? [el("a", { class: "btn", href: swingUrl(id) }, "Back to results")] : []),
     el("div", { class: "mark-layout" },
       el("div", { class: "mark-main" },
+        cameraCheck(s),
         hud,
         el("div", { class: "stage" }, canvas),
         el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),

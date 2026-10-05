@@ -863,6 +863,7 @@ swingcheck/
     make_reference.py builds the McIlroy example frames in static/reference/
     hosted.py         hosted mode (--hosted): owner-key privacy, swing limits, expiry
   pipeline.py         convert -> mark -> pose -> phases -> checks -> outputs
+  camera_check.py     after upload: is it a usable down-the-line view?
   config.py           loads config/default.toml + config/local.toml
   ingest.py           ffmpeg conversion
   pose.py             MediaPipe pose tracking + cache, body silhouette
