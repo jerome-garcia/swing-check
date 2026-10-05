@@ -1,0 +1,18 @@
+[Unit]
+Description=SwingCheck (hosted)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=swingcheck
+Group=swingcheck
+WorkingDirectory=/opt/swingcheck/app
+ExecStart=/opt/swingcheck/venv/bin/swingcheck --hosted --runs-dir /opt/swingcheck/runs
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

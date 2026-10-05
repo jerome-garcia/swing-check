@@ -388,10 +388,18 @@ visitors' addresses rather than Cloudflare's.
 Back up the swings folder, or treat swings as disposable. Time one swing on a PC
 first to know how many swings a 2-CPU server handles per hour.
 
-**Current server (test).** Hetzner CX23 (2 vCPU, 4 GB, Nuremberg), Ubuntu 24.04:
-ufw (SSH, 80, 443), 2 GB swap, ffmpeg, Python 3.11 via uv, the app in
-`/opt/swingcheck/app` (cloned with a read-only GitHub deploy key) as the
-`swingcheck` user, a systemd service `swingcheck`, and Caddy on port 80 for now.
+**Current server: https://swingcheck.org.** Hetzner CX23 (2 vCPU, 4 GB,
+Nuremberg), Ubuntu 24.04, domain at Cloudflare (proxied, SSL mode Full (strict)).
+2 GB swap, ffmpeg, Python 3.11 via uv, the app in `/opt/swingcheck/app` (cloned
+with a read-only GitHub deploy key) as the `swingcheck` user, run by the systemd
+service in [deploy/swingcheck.service](deploy/swingcheck.service). Caddy
+([deploy/Caddyfile](deploy/Caddyfile)) gets Let's Encrypt certificates, trusts
+`CF-Connecting-IP` only from Cloudflare's ranges and hands the app the visitor's
+address (checked: the app sees the visitor, not Cloudflare). ufw allows SSH from
+anywhere and 80/443 only from Cloudflare's ranges, so the server can't be reached
+around Cloudflare. If Cloudflare's ranges change (cloudflare.com/ips), update both
+the Caddyfile and the ufw rules. Checked through Cloudflare: a 94 MB upload goes
+through (23 s from a Manila home line), 96 MB is refused at once.
 A bare server also needs `libegl1 libgles2 libgl1`: MediaPipe's pose model fails
 to load without them (the tests pass anyway, since they don't run the model).
 Full analysis takes about 1.3–1.4× a Ryzen 7 5800H laptop: 73 s for McIlroy
