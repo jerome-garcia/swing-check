@@ -21,12 +21,13 @@ if (KOFI_URL) {
   document.getElementById("support-link").href = KOFI_URL;
   document.getElementById("support").hidden = false;
 }
-// The running version in the footer, e.g. "v0.1.0-alpha".
+// The running version under the name, e.g. "v0.1.0" for v0.1.0-alpha (the badge already says Alpha).
 features().then(f => {
   const version = document.getElementById("app-version");
-  version.textContent = f.version;
+  version.textContent = (f.version || "").replace("-alpha", "");
+  version.title = `SwingCheck ${f.version}`;
   version.hidden = !f.version;
-}).catch(() => { /* the footer just goes without it */ });
+}).catch(() => { /* the header just goes without it */ });
 let navigation = 0;
 
 async function route() {
