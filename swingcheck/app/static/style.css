@@ -19,6 +19,7 @@
   --radius: 12px;
   --radius-sm: 8px;
   /* Brand (branding/swingcheck-brand-guide.pdf), the same in light and dark */
+  --fairway: #2b7a47;
   --deep: #123824;
   --deep-2: #1d5a37;
   --bright: #4fb06d;
@@ -77,13 +78,13 @@ a:focus-visible, button:focus-visible, summary:focus-visible, input:focus-visibl
   justify-content: space-between;
   gap: 12px;
   padding: 10px 20px;
-  background: var(--deep);
+  background: var(--fairway);
   color: var(--on-deep);
 }
 .brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 750; font-size: 19px; text-decoration: none; letter-spacing: -0.035em; }
 .brand-mark { width: 28px; height: 28px; flex: none; }
-.topbar .btn.primary { background: var(--bright); border-color: var(--bright); color: var(--deep); }
-.topbar a:focus-visible { box-shadow: 0 0 0 3px rgba(79, 176, 109, 0.6); }
+.topbar .btn.primary { background: #fff; border-color: #fff; color: var(--fairway); }
+.topbar a:focus-visible { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6); }
 
 main { max-width: 1160px; margin: 0 auto; padding: 24px 20px 72px; }
 
