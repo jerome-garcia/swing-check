@@ -439,6 +439,11 @@ export async function renderMark(view, id, isCurrent) {
   // Rory McIlroy in the same position, with his marks, next to the step's instructions
   // (frames built by swingcheck/app/make_reference.py).
   const refBox = el("figure", { class: "ref-frame" });
+  // On a phone the example sits far below the frame: "See example" in the instruction bar
+  // scrolls down to it, and "Back to marking" under it scrolls back up.
+  const hasExample = () => Boolean(s.view === "dtl" && reference && reference.steps[state.active]);
+  const scrollToEl = node => window.scrollTo({
+    top: node.getBoundingClientRect().top + window.scrollY - stickyTop(), behavior: "smooth" });
   let refShown = null; // the step it's showing; redraw only on a step change
   function renderRef() {
     if (refShown === state.active) return;
@@ -468,6 +473,7 @@ export async function renderMark(view, id, isCurrent) {
     link.append(el("span", { class: "ref-tag" }, "Example"));
     refBox.replaceChildren(
       el("div", { class: "ref-head" }, el("strong", {}, "Example to follow"),
+        el("button", { class: "btn small ref-back", type: "button", onclick: () => scrollToEl(hud) }, "↑ Back to marking"),
         el("div", { class: "subtle small" }, `${reference.name} at ${stepDef().title.toLowerCase()}`
           + (s.handedness === "left" ? " (mirrored to match a left-handed swing)" : "")
           + ", for comparison. Not your swing: mark yours on your own video.")),
@@ -551,6 +557,7 @@ export async function renderMark(view, id, isCurrent) {
         el("button", { class: "btn small hud-btn", type: "button", onclick: undo, disabled: !started(state.active) }, "Undo"),
         el("button", { class: "btn small hud-btn", type: "button", disabled: !started(state.active),
           onclick: () => { cur().points = {}; refresh(); } }, "Clear step"),
+        hasExample() ? el("button", { class: "btn small hud-btn", type: "button", onclick: () => scrollToEl(refBox) }, "See example") : null,
         !next && after ? el("button", { class: "btn small primary", type: "button", onclick: () => selectStep(after.key) }, `Next: ${after.title} ›`) : null,
         // Last step done: save once every step is marked, else go back to the first one left.
         !next && !after && !unfinished().length ? el("button", { class: "btn small primary", type: "button", onclick: save }, "Save and analyze") : null,
