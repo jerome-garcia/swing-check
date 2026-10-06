@@ -5,6 +5,7 @@
   "steps": {
     "address": {
       "image": "address.jpg",
+      "v": "1739a90813",
       "points": {
         "clubhead": [
           382.1,
@@ -22,6 +23,7 @@
     },
     "takeaway": {
       "image": "takeaway.jpg",
+      "v": "a1430ec0d5",
       "points": {
         "clubhead": [
           218.8,
@@ -31,6 +33,7 @@
     },
     "halfway_back": {
       "image": "halfway_back.jpg",
+      "v": "89799223af",
       "points": {
         "clubhead": [
           63.8,
@@ -44,6 +47,7 @@
     },
     "top": {
       "image": "top.jpg",
+      "v": "503f8e7338",
       "points": {
         "clubhead": [
           172.6,
@@ -57,6 +61,7 @@
     },
     "downswing": {
       "image": "downswing.jpg",
+      "v": "8222ddf00d",
       "points": {
         "clubhead": [
           182.3,
@@ -66,6 +71,7 @@
     },
     "follow_through": {
       "image": "follow_through.jpg",
+      "v": "338390524c",
       "points": {
         "clubhead": [
           112.5,

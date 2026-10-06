@@ -9,6 +9,7 @@ example to follow. Rebuild them from a fully marked down-the-line swing with:
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -31,8 +32,11 @@ def build(run_dir: Path, name: str, out: Path = OUT) -> dict:
     data = {"name": name, "width": round(info.width * scale), "height": round(info.height * scale), "steps": {}}
     for key, step in steps.items():
         image = f"{key}.jpg"
-        (out / image).write_bytes(reader.jpeg(run_dir / "normalized.mp4", step["frame"], width=data["width"]))
-        data["steps"][key] = {"image": image,
+        jpeg = reader.jpeg(run_dir / "normalized.mp4", step["frame"], width=data["width"])
+        (out / image).write_bytes(jpeg)
+        # "v" changes with the picture, so the marking screen asks for the new one (a page keeps
+        # reusing a picture it already has at the same address).
+        data["steps"][key] = {"image": image, "v": hashlib.sha1(jpeg).hexdigest()[:10],
                               "points": {k: [round(x * scale, 1), round(y * scale, 1)] for k, (x, y) in step["points"].items()}}
     (out / "reference.json").write_text(json.dumps(data, indent=2))
     return data

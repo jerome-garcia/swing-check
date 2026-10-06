@@ -525,7 +525,7 @@ export async function renderMark(view, id, isCurrent) {
     const st = s.view === "dtl" && reference ? reference.steps[state.active] : null;
     refBox.hidden = !st;
     if (!st) return;
-    const url = `${REFERENCE_DIR}/${st.image}`;
+    const url = `${REFERENCE_DIR}/${st.image}${st.v ? `?v=${st.v}` : ""}`; // v: the picture's fingerprint
     const { width: w, height: h } = reference;
     const r = Math.max(w, h) / 55;
     // Only what this step asks you to click; the ball (clicked on the takeaway) from his address.
