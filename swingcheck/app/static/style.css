@@ -652,11 +652,3 @@ button.score-item:hover { background: var(--surface-2); }
 .ref-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .ref-back { display: none; }
 @media (max-width: 820px) { .ref-back { display: inline-flex; } }
-
-/* What a down-the-line video looks like (home page when empty, upload page). */
-.dtl-example { display: flex; gap: 14px; align-items: center; margin: 14px auto 0; max-width: 520px; text-align: left; }
-.dtl-example img { width: 110px; height: auto; flex: none; border-radius: var(--radius-sm); }
-.dtl-example figcaption { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
-.dtl-example ul { margin: 0; padding-left: 18px; color: var(--muted); }
-.dtl-example li { margin: 2px 0; }
-.empty .dtl-example { margin-bottom: 16px; }
