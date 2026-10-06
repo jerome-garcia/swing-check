@@ -186,8 +186,8 @@ def normalize(
     if fps <= ingest_cfg["low_fps_warning"]:
         warnings.append(
             f"Filmed at {fps:g} fps. That works, but slo-mo (120-240 fps) pins down impact more "
-            "precisely. If you did film slo-mo, upload the original file rather than a shared copy "
-            "(see Filming in the README)."
+            "precisely. If you did film slo-mo, upload it straight from your phone's camera roll: a copy "
+            "sent through a chat app is usually re-saved at 30 fps."
         )
     if hdr:
         warnings.append("HDR clip: converted to SDR without tone mapping, colors may look flat (pose is unaffected).")
