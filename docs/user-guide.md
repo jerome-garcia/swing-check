@@ -17,17 +17,6 @@ picture, so a moving camera means wrong numbers.
 
 ### Where to put the camera
 
-```
-            target
-              ^
-              |
-     ball o   |   target line
-              |
-    golfer    |
-              |
-           [camera]   behind you, in line with your hands
-```
-
 - **Behind you**, looking toward the target (this is called "down the line").
 - **In line with your hands**, not with the ball: from the ball line, your body
   hides your hands.
