@@ -513,7 +513,9 @@ button.score-item:hover { background: var(--surface-2); }
 }
 
 /* --- Marking ------------------------------------------------------------- */
-.mark-layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 20px; align-items: start; }
+/* One column everywhere: the frame and the example get the full width; the step list, Save,
+   and the swing settings sit below. */
+.mark-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
 .mark-main { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .mark-hud {
   display: flex;
@@ -587,7 +589,7 @@ button.score-item:hover { background: var(--surface-2); }
 .linkish { background: none; border: 0; padding: 0; color: var(--accent, var(--ok)); text-decoration: underline; cursor: pointer; font: inherit; }
 .linkish[hidden] { display: none; }
 /* The example beside the frame (mark.js fitCanvas sets both widths). */
-.stage-row { display: flex; gap: 8px; align-items: flex-start; }
+.stage-row { display: flex; gap: 8px; align-items: flex-start; justify-content: center; }
 .stage-row .stage { flex: none; }
 .ref-frame { margin: 0; flex: none; }
 .ref-frame[hidden] { display: none; }

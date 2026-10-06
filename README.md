@@ -731,7 +731,7 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    (`swingcheck/app/static/reference/`); rebuild them from any fully marked
    swing with `python -m swingcheck.app.make_reference runs/<swing-folder> "Name"`.
 
-   **Mark checks.** Marks that look wrong get a yellow note under the points and
+   **Mark checks.** Marks that look wrong get a yellow note under the frame and
    a **!** on the step: hands below the club neck at address, the club neck far
    from the ball, the clubhead below your hands at halfway back or the
    follow-through, a step whose frame comes before the previous one, or a

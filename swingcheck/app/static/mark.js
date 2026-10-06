@@ -286,12 +286,12 @@ export async function renderMark(view, id, isCurrent) {
     }
     refBox.style.width = `${refW}px`;
     const maxW = row.clientWidth - (refW ? refW + gap : 0);
-    stage.style.width = `${maxW}px`;
     const scale = Math.min(maxW / v.width, maxH / v.height);
     const cssW = Math.floor(v.width * scale);
     const cssH = Math.floor(v.height * scale);
     const dpr = window.devicePixelRatio || 1;
     canvas.style.width = `${cssW}px`;
+    stage.style.width = `${cssW}px`; // no black bars beside a tall video; the row centers it
     canvas.style.height = `${cssH}px`;
     canvas.width = Math.round(cssW * dpr);
     canvas.height = Math.round(cssH * dpr);
@@ -798,7 +798,8 @@ export async function renderMark(view, id, isCurrent) {
         el("div", { class: "stage-row" }, el("div", { class: "stage" }, canvas), refBox),
         el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),
         el("div", { class: "subtle small center frame-caption" }, frameLabel, " ", suggestedTag, " ", backToSuggested,
-          el("span", { class: "keys-hint" }, " · ← → step, Shift = 10 frames"))),
+          el("span", { class: "keys-hint" }, " · ← → step, Shift = 10 frames")),
+        warningBox), // right under the frame, where the marks are
       el("aside", { class: "mark-side stack" },
         el("section", { class: "panel" },
           el("h2", {}, steps.length > 1 ? "Mark your swing" : "Mark your address"),
@@ -806,7 +807,6 @@ export async function renderMark(view, id, isCurrent) {
           steps.length > 1 ? stepTabs : null,
           stepIntro,
           pointList,
-          warningBox,
           saveError, saveBtn, saveHint),
         el("details", { class: "panel" },
           el("summary", {}, el("strong", {}, "Trim the clip")),
