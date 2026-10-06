@@ -199,14 +199,9 @@ def validate(phases: Phases, frame_count: int) -> None:
 
 
 def apply_overrides(
-    auto: Phases | None, overrides: dict[str, int], hands: np.ndarray, fps: float, cfg: dict[str, Any], frame_count: int,
-    marked_top: int | None = None,
+    auto: Phases | None, overrides: dict[str, int], hands: np.ndarray, fps: float, cfg: dict[str, Any], frame_count: int
 ) -> Phases:
-    """Replace detected key phases with manual ones and recompute the checkpoints between them.
-
-    An impact set before the detected top means detection took the wrong top (say, a second
-    movement after the swing): the top is then the frame the golfer marked as the top, if
-    it lies between address and impact, else where the hands are highest in between."""
+    """Replace detected key phases with manual ones and recompute the checkpoints between them."""
     if auto is None and not all(k in overrides for k in KEY_PHASES):
         missing = [k for k in KEY_PHASES if k not in overrides]
         raise PhaseError(f"Automatic detection failed; set the rest manually: --{' --'.join(missing)}")
@@ -215,11 +210,6 @@ def apply_overrides(
         assert auto is not None
         return auto
     xy = clean_track(hands, fps, max_gap_ms=0, smoothing_ms=cfg["smoothing_ms"])
-    if "top" not in overrides and key["address"] + 1 < key["impact"] <= key["top"]:
-        if marked_top is not None and key["address"] < marked_top < key["impact"]:
-            key["top"] = marked_top
-        elif np.isfinite(xy[key["address"] + 1 : key["impact"], 1]).any():
-            key["top"] = key["address"] + 1 + int(np.nanargmin(xy[key["address"] + 1 : key["impact"], 1]))
     takeaway, early = checkpoints(xy, key["address"], key["top"], key["impact"],
                                   cfg["takeaway_fraction"], cfg["downswing_fraction"])
     phases = Phases(
@@ -266,7 +256,6 @@ def get_phases(
     marked_address: int | None = None,
     search: tuple[int, int] | None = None,
     marked_takeaway: int | None = None,
-    marked_top: int | None = None,
 ) -> tuple[Phases, str | None]:
     """Detect phases, merge saved + new manual overrides, save phases.json.
 
@@ -274,8 +263,6 @@ def get_phases(
     an explicit address override exists; it isn't saved as an override.
     `marked_takeaway` (the frame the user marked the takeaway on) replaces the
     detected takeaway checkpoint when it falls between address and top.
-    `marked_top` (the frame the user marked the top on) is the top when a set impact
-    comes before the detected one (see apply_overrides).
     Returns (phases, detection_error) where detection_error explains a failed
     automatic detection that overrides papered over.
     """
@@ -291,7 +278,7 @@ def get_phases(
     effective = dict(overrides)
     if marked_address is not None and "address" not in effective:
         effective["address"] = marked_address
-    phases = apply_overrides(auto, effective, hands, fps, cfg, len(hands), marked_top)
+    phases = apply_overrides(auto, effective, hands, fps, cfg, len(hands))
     if marked_takeaway is not None and phases.address < marked_takeaway <= phases.top:
         phases.takeaway = marked_takeaway
         phases.manual = [*phases.manual, "takeaway"]
