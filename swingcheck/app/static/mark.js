@@ -276,22 +276,13 @@ export async function renderMark(view, id, isCurrent) {
     const hudToStage = stage.getBoundingClientRect().top - markTop().getBoundingClientRect().top;
     const maxH = narrow ? Math.max(320, window.innerHeight * 0.68)
       : Math.max(260, window.innerHeight - stickyTop() - hudToStage - 100);
-    // The example beside the frame: about 40% of the width on a phone; on a wide screen, as
-    // tall as about three quarters of the frame.
-    const gap = 8;
-    let refW = 0;
-    if (hasExample()) {
-      const aspect = reference.width / reference.height;
-      refW = Math.floor(narrow ? row.clientWidth * 0.4 : Math.min(row.clientWidth * 0.4, maxH * 0.75 * aspect));
-    }
-    refBox.style.width = `${refW}px`;
-    const maxW = row.clientWidth - (refW ? refW + gap : 0);
-    const scale = Math.min(maxW / v.width, maxH / v.height);
+    const scale = Math.min(row.clientWidth / v.width, maxH / v.height);
     const cssW = Math.floor(v.width * scale);
     const cssH = Math.floor(v.height * scale);
     const dpr = window.devicePixelRatio || 1;
     canvas.style.width = `${cssW}px`;
-    stage.style.width = `${cssW}px`; // no black bars beside a tall video; the row centers it
+    stage.style.width = `${cssW}px`; // no black bars beside a tall video
+    sizeRef();
     canvas.style.height = `${cssH}px`;
     canvas.width = Math.round(cssW * dpr);
     canvas.height = Math.round(cssH * dpr);
@@ -465,6 +456,16 @@ export async function renderMark(view, id, isCurrent) {
   // two can be compared while finding the frame (frames built by swingcheck/app/make_reference.py).
   const refBox = el("figure", { class: "ref-frame" });
   const hasExample = () => Boolean(s.view === "dtl" && reference && reference.steps[state.active]);
+  // A small picture in the frame's upper right (taps on it never place a point); a tap
+  // enlarges it for a closer look, another shrinks it back.
+  let refBig = false;
+  function sizeRef() {
+    const w = parseFloat(canvas.style.width) || 0;
+    const h = parseFloat(canvas.style.height) || 0;
+    const aspect = reference ? reference.width / reference.height : 0.5625;
+    // About 30% of the frame's width (60% enlarged), and never taller than the frame.
+    refBox.style.width = `${Math.floor(Math.min(w * (refBig ? 0.6 : 0.3), (h - 16) * aspect))}px`;
+  }
   let refShown = null; // the step it's showing; redraw only on a step change
   function renderRef() {
     if (refShown === state.active) return;
@@ -484,7 +485,9 @@ export async function renderMark(view, id, isCurrent) {
       return `<g fill="none"><g stroke="rgba(0,0,0,.8)" stroke-width="${r / 1.8}">${outline}</g>`
         + `<g stroke="#fff" stroke-width="${r / 3.5}">${outline}</g></g>`;
     };
-    const link = el("a", { href: url, target: "_blank", rel: "noopener", title: "Open full size" });
+    const link = el("button", { type: "button", class: "ref-toggle",
+      title: `${reference.name}: tap to ${refBig ? "shrink" : "enlarge"}`,
+      onclick: () => { refBig = !refBig; sizeRef(); link.title = `${reference.name}: tap to ${refBig ? "shrink" : "enlarge"}`; } });
     // A right-handed example, mirrored for a left-handed golfer so it matches their view.
     const mirror = s.handedness === "left" ? ` transform="translate(${w} 0) scale(-1 1)"` : "";
     link.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Reference frame"><g${mirror}>`
@@ -492,8 +495,7 @@ export async function renderMark(view, id, isCurrent) {
       + Object.entries(p).filter(([n]) => POINT_INFO[n]).map(([n, pt]) => mark(n, pt)).join("") + "</g></svg>";
     // Labelled as an example on the picture itself too, so it's never mistaken for your swing.
     link.append(el("span", { class: "ref-tag" }, "Example"));
-    refBox.replaceChildren(link,
-      el("figcaption", { class: "subtle small" }, reference.name + (s.handedness === "left" ? " (mirrored)" : "")));
+    refBox.replaceChildren(link);
   }
 
   // --- Mark checks ----------------------------------------------------------
@@ -798,7 +800,7 @@ export async function renderMark(view, id, isCurrent) {
       el("div", { class: "mark-main" },
         cameraCheck(s),
         hud,
-        el("div", { class: "stage-row" }, el("div", { class: "stage" }, canvas), refBox),
+        el("div", { class: "stage-row" }, el("div", { class: "stage" }, canvas, refBox)),
         el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),
         el("div", { class: "subtle small center frame-caption" }, frameLabel, " ", suggestedTag, " ", backToSuggested,
           el("span", { class: "keys-hint" }, " · ← → step, Shift = 10 frames")),
