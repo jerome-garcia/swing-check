@@ -11,7 +11,8 @@ marked as a driver or wood.
 
 One point in the shipped reference.json is set by hand after the rebuild: the halfway-back
 hands, moved 28 video px down the shaft line (to 271.8, 468.1 on the 720-wide clip) to the
-middle of the grip. Re-mark it there, or set it again, after rebuilding.
+middle of the grip. Re-mark it there, or set it again, after rebuilding. Likewise the
+driver's takeaway clubhead, 10 px right (346.5, 754.8), just inside the head.
 """
 
 from __future__ import annotations
