@@ -822,7 +822,7 @@ red in swing order) until re-analyzed.
 
 Below it, the checkpoints go one at a time (‹ › or the arrow keys), opening
 on the one to work on first: the checkpoint's key frame next to its card, which
-gives the result, what it means, **How to fix** when it's yellow or red, and
+gives the result, what it means, **What to try** when it's yellow (**How to fix** when red), and
 each measurement with its limits (the biggest issue is highlighted). The
 annotated video and the impact frame setting sit beside it on a wide
 screen and below it on a phone. The buttons are **Download PDF** and **Share

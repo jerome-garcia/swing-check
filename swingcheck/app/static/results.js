@@ -40,6 +40,9 @@ function measurementRows(v) {
     .map(([k, val]) => ({ label: prettyKey(k), value: prettyValue(val), note: "", status: null }));
 }
 
+// The tip's lead-in: only red is something to fix; yellow is something to try.
+const tipWord = status => (status === "flag" ? "How to fix" : "What to try");
+
 // focusLabel: the row picked as the biggest issue, highlighted in its card.
 function verdictCard(v, focusLabel = null) {
   const rows = measurementRows(v);
@@ -50,7 +53,7 @@ function verdictCard(v, focusLabel = null) {
       el("span", { class: `status-pill ${v.status}` }, STATUS_WORD[v.status] || v.status)),
     el("div", { class: "verdict-label" }, v.status === "error" ? "Not measured" : v.label),
     el("p", { class: "verdict-summary" }, v.summary),
-    showTip ? el("div", { class: "tip" }, el("strong", {}, "How to fix "), v.tip) : null,
+    showTip ? el("div", { class: "tip" }, el("strong", {}, `${tipWord(v.status)} `), v.tip) : null,
     rows.length ? el("ul", { class: "rows" }, rows.map(r => el("li", { class: focusLabel && r.label === focusLabel ? "focus-row" : null },
       r.status ? el("span", { class: `dot ${r.status}`, title: STATUS_WORD[r.status] }) : el("span", {}),
       el("span", { class: "row-label" }, r.label),
@@ -95,7 +98,7 @@ function summaryPanel(s, states, focusPick, onSelect) {
       el("div", { class: "focus-title" }, `${focus.cp.number}. ${focus.cp.title}: ${v.label}`),
       // Same size for both lines, each led by a bold label, like the checkpoint cards.
       focusRow ? el("p", { class: "focus-line" }, el("strong", {}, "Biggest issue "), `${focusRow.label}: ${focusRow.value}`) : null,
-      v.tip ? el("p", { class: "focus-line" }, el("strong", {}, "How to fix "), v.tip) : null,
+      v.tip ? el("p", { class: "focus-line" }, el("strong", {}, `${tipWord(focusPick.status)} `), v.tip) : null,
       el("button", { class: "btn small", type: "button", onclick: () => onSelect(focusIndex) }, "See this checkpoint →"));
   } else if (counts.ok) {
     focusBox = el("div", { class: "focus ok" },

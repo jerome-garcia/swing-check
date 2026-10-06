@@ -282,7 +282,7 @@ def summary_pdf(folder: Path, swing_name: str, created: str, analysis: dict[str,
             ty = doc.get_y()
             doc.set_x(text_x + 4)
             doc.font(7.5, True, STATUS_RGB[st])
-            doc.cell(0, 4.5, "HOW TO FIX", new_x="LEFT", new_y="NEXT")
+            doc.cell(0, 4.5, "HOW TO FIX" if st == "flag" else "WHAT TO TRY", new_x="LEFT", new_y="NEXT")
             doc.set_x(text_x + 4)
             doc.font(9.5)
             doc.para(text_w - 4, 4.6, tip)

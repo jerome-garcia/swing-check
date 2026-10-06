@@ -48,7 +48,7 @@ def build_report(video: Path, view: str, info: VideoInfo, phases: Phases, verdic
             if ranges:
                 out.append(f"          {ranges}")
         if v.tip:
-            out.append(f"      How to fix: {v.tip}")
+            out.append(f"      {'How to fix' if v.status == 'flag' else 'What to try'}: {v.tip}")
         out.append("")
 
     out.append("SUMMARY")
