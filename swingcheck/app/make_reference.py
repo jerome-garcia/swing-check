@@ -5,6 +5,9 @@ example to follow. Rebuild them from a fully marked down-the-line swing with:
 
     python -m swingcheck.app.make_reference runs/<swing-folder> "Rory McIlroy"
 
+One point in the shipped reference.json is set by hand after the rebuild: the halfway-back
+hands, moved 28 video px down the shaft line (to 271.8, 468.1 on the 720-wide clip) to the
+middle of the grip. Re-mark it there, or set it again, after rebuilding.
 """
 
 from __future__ import annotations
