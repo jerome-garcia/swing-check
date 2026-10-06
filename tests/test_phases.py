@@ -169,6 +169,23 @@ def test_bad_override_order_rejected():
         apply_overrides(auto, {"top": auto.impact + 5}, track, fps, CFG, len(track))
 
 
+def test_impact_set_before_detected_top_finds_the_top_again():
+    # Detection took a later movement as the swing; the golfer set impact before its top.
+    fps = 240.0
+    track, _ = synthetic_swing(fps)
+    auto = detect_phases(track, fps, SCALE, CFG)
+    wrong = Phases(address=auto.address, takeaway=auto.takeaway, top=auto.impact + 10,
+                   early_downswing=auto.impact + 12, impact=auto.impact + 15)
+    phases = apply_overrides(wrong, {"impact": auto.impact}, track, fps, CFG, len(track))
+    assert abs(phases.top - auto.top) <= 2  # the highest hands between address and impact
+    assert phases.manual == ["impact"]
+    assert phases.address <= phases.takeaway <= phases.top <= phases.early_downswing <= phases.impact
+    # The golfer's marked top wins when it lies between address and impact.
+    marked = auto.top - 5
+    phases = apply_overrides(wrong, {"impact": auto.impact}, track, fps, CFG, len(track), marked_top=marked)
+    assert phases.top == marked
+
+
 def test_marked_takeaway_replaces_detected_one(tmp_path):
     from swingcheck.phases import get_phases
 
