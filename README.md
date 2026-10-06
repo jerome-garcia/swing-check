@@ -874,7 +874,7 @@ browser on to the PDF at once. It's a snapshot saved inside
 the swing's folder (`swingcheck/app/share.py`): never the video or its file name,
 and the code is random and separate from your key. It follows the latest
 results: each re-analysis updates what the link shows, at the same link.
-A short note under the header says it's shared, with **Copy link**. **Stop
+A short note under the header says it's shared, with **Copy link** and **Open link** (the shared PDF in a new tab, as others see it). **Stop
 sharing** (⋯ menu) ends it at once, and it ends anyway when the swing is deleted.
 
 On the swing list, each analyzed swing shows the same 8 dots under its

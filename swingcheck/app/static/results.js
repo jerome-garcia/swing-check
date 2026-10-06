@@ -406,8 +406,9 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
   }, "Share PDF");
   const copied = justShared && shareUrl && justShared.url.endsWith(`/s/${shared.code}`) ? justShared.how : null;
   justShared = null;
-  // One sentence and one button: "Copy link" reads "✓ Copied" for a moment after a copy
-  // (also right after Share PDF copied it), then goes back.
+  // One sentence and two buttons: "Copy link" reads "✓ Copied" for a moment after a copy
+  // (also right after Share PDF copied it), then goes back; "Open link" shows the shared
+  // PDF in a new tab, as the people you send it to see it.
   let copyTimer = null;
   const copyBtn = el("button", { class: "btn small", type: "button" }, "Copy link");
   const showCopied = () => {
@@ -422,7 +423,8 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
     ? `until ${until.toLocaleDateString(undefined, { month: "short", day: "numeric" })}` : "until the swing is deleted";
   const shareNote = shared ? el("div", { class: "notice ok share-note" },
     el("span", {}, el("strong", {}, "✓ Shared. "), `Anyone with the link sees your latest results ${untilText}.`),
-    copyBtn) : null;
+    el("div", { class: "actions" }, copyBtn,
+      el("a", { class: "btn small", href: shareUrl, target: "_blank", rel: "noopener" }, "Open link"))) : null;
   const stopSharing = shared ? {
     label: "Stop sharing", onclick: async () => {
       await api(`/api/swings/${encodeURIComponent(s.id)}/share`, { method: "DELETE" });
