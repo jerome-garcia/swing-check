@@ -653,10 +653,10 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    have risen 45% of the way to their top height), and checks
    the camera at address. (Face-on is
    shown but disabled until a future release.) Under the camera choice, **ⓘ How to set
-   up the camera** opens a guide for each view: two diagrams (what the camera sees,
-   with the phone at hip height, and where the phone goes, from above), four tips,
-   and for down-the-line a photo of what the video should look like (McIlroy at
-   address). The home page shows the down-the-line guide before your first swing.
+   up the camera** opens a guide for each view: two diagrams (the camera height: the
+   golfer with the phone in front at hip height; and a side view of the setup: the
+   phone on its stand at hip height, its view taking in the whole golfer) and four
+   tips. The home page shows the down-the-line guide before your first swing.
    The diagrams are drawn in `static/setup.js`, in the app's colours. Choose **Right-handed** or
    **Left-handed** under *Golfer*; the choice is remembered for next time, and a
    swing's handedness can be switched later on the marking screen (*Golfer*):
