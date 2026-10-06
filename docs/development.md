@@ -341,6 +341,64 @@ pytest -q -k follow_through
 
 When you change a check, add or update a test in its `tests/test_<check>.py`.
 
+### What the tests cover
+
+There are three kinds of tests:
+
+- **Check tests:** each check runs on a made-up swing (body points and marks
+  built in the test), moved step by step through its green, yellow, and red
+  ranges. No video needed.
+- **App tests:** the web app is called the way a browser would (FastAPI's test
+  client), with a temporary swings folder.
+- **Video tests:** small videos made with ffmpeg during the test. Skipped
+  without ffmpeg.
+
+**Checks** (one file per checkpoint):
+
+| File | What it tests |
+|---|---|
+| `test_address.py` | Arms, spine tilt, knee bend, and back rounding: each range, how much to adjust, and the aim lines |
+| `test_swing_plane.py` | Belt-buckle bands, shaft angle, driver ranges, and the plane line across the frame and video |
+| `test_takeaway.py` | Clubhead toward you or the ball, spine and back knee kept, and only the clubhead clicked |
+| `test_halfway_back.py` | Where the shaft points, body rows, and clubhead below hands as a marking error |
+| `test_top.py` | Front arm vs spine (through the head), hands over the back heel, spine bend kept |
+| `test_downswing.py` | On plane, shallowing vs the takeaway, spine bend, and the dashed takeaway line |
+| `test_impact.py` | Hips vs the tush line, posture bands, and finding the rear of the body |
+| `test_follow_through.py` | Shaft exit bands, same line as halfway back, and watch-only |
+| `test_analyzers.py` | The plug-in system: registering, config, disabling, missing body points; face-on checks |
+| `test_priority.py` | Work on first: depth, tiers, red beats yellow, ties, follow-through ranks low |
+
+Most check files also test: ranges read from the config, rows with units and
+Good and Fix ranges, a left-handed (mirrored) swing giving the same result, and
+"not marked" explaining what to do.
+
+**Analysis**:
+
+| File | What it tests |
+|---|---|
+| `test_phases.py` | Finding address, top, and impact across frame rates, waggles, slow starts, tracking gaps, and order errors |
+| `test_pipeline.py` | Saving marks (all points, in the clip, in order), what analysis needs, suggested frames, where the golfer is |
+| `test_pose.py` | Filling tracking gaps, smoothing, the pose cache, and mirrored tracking for left-handers |
+| `test_body.py` | Body scale, the hands from the two wrists, glitches, and Oxford-comma lists |
+| `test_geometry.py` | Line, angle, and distance math, and the on-plane band |
+| `test_camera_check.py` | A good down-the-line view passes; each filming mistake is named |
+| `test_ingest.py` | Frame rates, rotation, and black bars cropped off |
+| `test_config.py` | Defaults load, `local.toml` overrides, and misspelled keys are refused |
+
+**App and output**:
+
+| File | What it tests |
+|---|---|
+| `test_app.py` | The web routes: health, swing list and detail, uploads, marking, analysis, PDF, delete, and file fingerprints |
+| `test_hosted.py` | Owner keys, private links, the terms tick, swing and upload limits, and expiry |
+| `test_share.py` | Share links: open to anyone, only the summary, following re-analysis, renames, Stop sharing |
+| `test_admin.py` | The admin page: counts only, admin-only when hosted, nothing personal in the log |
+| `test_jobs.py` | The job queue: place in line, and forgetting finished jobs |
+| `test_frames.py` | Serving frames from several videos at once |
+| `test_output.py` | Annotated video, key frames, drawings, the header, and the text report, end to end |
+
+`helpers.py` holds shared helpers for building test data.
+
 ### Trying it in the browser
 
 Don't test on your own swings: use a scratch copy, so nothing you care about
