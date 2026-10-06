@@ -652,12 +652,9 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    about a frame of the shaft being parallel; halfway back is where the hands
    have risen 45% of the way to their top height), and checks
    the camera at address. (Face-on is
-   shown but disabled until a future release.) Under the camera choice, **ⓘ How to set
-   up the camera** opens a guide for each view: two diagrams (what the camera sees,
-   with the phone at hip height, and where the phone goes, from above), four tips,
-   and for down-the-line a photo of what the video should look like (McIlroy at
-   address). The home page shows the down-the-line guide before your first swing.
-   The diagrams are drawn in `static/setup.js`, in the app's colours. Choose **Right-handed** or
+   shown but disabled until a future release.) Under the camera choice, and on the
+   home page before your first swing, an example shows what a down-the-line video
+   looks like (McIlroy at address) with four filming tips. Choose **Right-handed** or
    **Left-handed** under *Golfer*; the choice is remembered for next time, and a
    swing's handedness can be switched later on the marking screen (*Golfer*):
    the marks stay, and it's analyzed again. The same goes for **Club**: *Iron or

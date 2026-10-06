@@ -660,23 +660,3 @@ button.score-item:hover { background: var(--surface-2); }
 .dtl-example ul { margin: 0; padding-left: 18px; color: var(--muted); }
 .dtl-example li { margin: 2px 0; }
 .empty .dtl-example { margin-bottom: 16px; }
-
-/* How to set up the camera (setup.js): two diagrams, tips, and the example photo. */
-.setup-guide { display: flex; flex-direction: column; gap: 14px; text-align: left; }
-.dg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.dg { margin: 0; color: var(--text); background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 8px; }
-.dg svg { width: 100%; height: auto; display: block; }
-.dg figcaption { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
-.dg-label { fill: var(--muted); font: 700 15px system-ui, sans-serif; }
-.setup-tips { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; }
-.setup-tips li { margin: 3px 0; }
-.setup-guide .dtl-example { margin: 0; max-width: none; }
-.setup-dialog { width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 16px; border: 1px solid var(--border);
-  border-radius: var(--radius); background: var(--bg); color: var(--text); }
-.setup-dialog::backdrop { background: rgba(0, 0, 0, 0.6); }
-.setup-dialog-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
-.setup-dialog-head h2 { margin: 0; font-size: 18px; }
-.setup-link { font-size: 14px; }
-.setup-links { margin: 10px 0 0; }
-.empty .setup-guide { max-width: 560px; margin: 14px auto 16px; }
