@@ -276,16 +276,20 @@ export async function renderMark(view, id, isCurrent) {
     const hudToStage = stage.getBoundingClientRect().top - markTop().getBoundingClientRect().top;
     const maxH = narrow ? Math.max(320, window.innerHeight * 0.68)
       : Math.max(260, window.innerHeight - stickyTop() - hudToStage - 100);
-    const scale = Math.min(row.clientWidth / v.width, maxH / v.height);
+    // A portrait video on a wide screen has room beside it: the example goes there, at
+    // the same size as the frame. Otherwise it's a small picture in a corner of the frame.
+    refSide = hasExample() && !narrow && v.height > v.width;
+    const width = refSide ? (row.clientWidth - REF_GAP) / 2 : row.clientWidth;
+    const scale = Math.min(width / v.width, maxH / v.height);
     const cssW = Math.floor(v.width * scale);
     const cssH = Math.floor(v.height * scale);
     const dpr = window.devicePixelRatio || 1;
     canvas.style.width = `${cssW}px`;
-    stage.style.width = `${cssW}px`; // no black bars beside a tall video
-    sizeRef();
     canvas.style.height = `${cssH}px`;
+    stage.style.width = `${cssW}px`; // no black bars beside a tall video
     canvas.width = Math.round(cssW * dpr);
     canvas.height = Math.round(cssH * dpr);
+    placeRef(cssW, cssH);
     draw();
   }
 
@@ -452,20 +456,47 @@ export async function renderMark(view, id, isCurrent) {
   n === -10 ? "«" : n === -1 ? "‹" : n === 1 ? "›" : "»");
 
   // --- Reference swing ------------------------------------------------------
-  // Rory McIlroy in the same position, with his marks, right beside your frame, so the
-  // two can be compared while finding the frame (frames built by swingcheck/app/make_reference.py).
+  // Rory McIlroy in the same position, with his marks, so the two can be compared while
+  // finding the frame (frames built by swingcheck/app/make_reference.py). Beside your frame
+  // at the same size when there's room (fitCanvas), else a small picture in a top corner of
+  // it, kept clear of you: taps on it never place a point, and a tap enlarges it for a
+  // closer look, another shrinks it back.
   const refBox = el("figure", { class: "ref-frame" });
   const hasExample = () => Boolean(s.view === "dtl" && reference && reference.steps[state.active]);
-  // A small picture in the frame's upper right (taps on it never place a point); a tap
-  // enlarges it for a closer look, another shrinks it back.
+  const REF_GAP = 8;
+  let refSide = false;
   let refBig = false;
-  function sizeRef() {
-    const w = parseFloat(canvas.style.width) || 0;
-    const h = parseFloat(canvas.style.height) || 0;
+  function placeRef(cssW, cssH) {
+    const stage = canvas.parentElement;
+    refBox.classList.toggle("side", refSide);
+    if (refSide) {
+      if (refBox.parentElement !== stage.parentElement) stage.after(refBox);
+      Object.assign(refBox.style, { width: `${cssW}px`, height: `${cssH}px`, left: "", right: "" });
+      return;
+    }
+    if (refBox.parentElement !== stage) stage.append(refBox);
     const aspect = reference ? reference.width / reference.height : 0.5625;
-    // About 30% of the frame's width (60% enlarged), and never taller than the frame.
-    refBox.style.width = `${Math.floor(Math.min(w * (refBig ? 0.6 : 0.3), (h - 16) * aspect))}px`;
+    const m = 8;
+    // The top corner on the side you face (from behind your hands: right for a right-handed
+    // golfer): the club swings up behind you, on the other side.
+    const right = s.handedness !== "left";
+    // The biggest picture that fits above your head, or beside you on that side, from where
+    // you are over the clip (golfer_box, found after upload); at least 15% of the frame's
+    // width, at most 35%. Older swings without it: 25%.
+    let w = 0.25 * cssW;
+    const box = s.golfer_box;
+    if (box) {
+      const fit = (aw, ah) => Math.max(0, Math.min(aw, ah * aspect));
+      const above = fit(cssW - 2 * m, box[1] * cssH - 2 * m);
+      const beside = fit((right ? cssW - box[2] * cssW : box[0] * cssW) - 2 * m, cssH - 2 * m);
+      w = Math.min(0.35 * cssW, Math.max(0.15 * cssW, above, beside));
+    }
+    if (refBig) w = Math.max(w, 0.6 * cssW);
+    w = Math.min(w, (cssH - 2 * m) * aspect);
+    Object.assign(refBox.style, { width: `${Math.floor(w)}px`, height: "",
+      left: right ? "" : `${m}px`, right: right ? `${m}px` : "" });
   }
+  const refitRef = () => placeRef(parseFloat(canvas.style.width) || 0, parseFloat(canvas.style.height) || 0);
   let refShown = null; // the step it's showing; redraw only on a step change
   function renderRef() {
     if (refShown === state.active) return;
@@ -485,9 +516,8 @@ export async function renderMark(view, id, isCurrent) {
       return `<g fill="none"><g stroke="rgba(0,0,0,.8)" stroke-width="${r / 1.8}">${outline}</g>`
         + `<g stroke="#fff" stroke-width="${r / 3.5}">${outline}</g></g>`;
     };
-    const link = el("button", { type: "button", class: "ref-toggle",
-      title: `${reference.name}: tap to ${refBig ? "shrink" : "enlarge"}`,
-      onclick: () => { refBig = !refBig; sizeRef(); link.title = `${reference.name}: tap to ${refBig ? "shrink" : "enlarge"}`; } });
+    const link = el("button", { type: "button", class: "ref-toggle", title: reference.name,
+      onclick: () => { if (!refSide) { refBig = !refBig; refitRef(); } } });
     // A right-handed example, mirrored for a left-handed golfer so it matches their view.
     const mirror = s.handedness === "left" ? ` transform="translate(${w} 0) scale(-1 1)"` : "";
     link.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Reference frame"><g${mirror}>`

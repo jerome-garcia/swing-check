@@ -17,6 +17,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from swingcheck.analyzers import SwingContext, Verdict, run_analyzers
 from swingcheck.body import body_scale, clip_torso_length, hands
 from swingcheck.camera_check import camera_check, facing, facing_finding
@@ -116,13 +118,34 @@ def suggest_frames(run_dir: Path, info: VideoInfo, config: dict[str, Any],
     # Which way the golfer faces is saved rather than judged here: whether it's right
     # depends on the swing's handedness, which can still be changed (load_camera_check).
     path.write_text(json.dumps({"video_signature": video_signature(info), "phases": frames, "camera": camera,
-                                "facing": facing(pose, address)}, indent=2))
+                                "facing": facing(pose, address), "golfer_box": golfer_box(pose)}, indent=2))
     return frames
+
+
+def golfer_box(pose: PoseSeq) -> list[float] | None:
+    """Where the golfer is in the frame over the clip, as fractions of the frame
+    [left, top, right, bottom]: every clearly seen body point (outliers dropped), with a
+    little room above the head for hair or a cap. The marking screen keeps its example
+    picture clear of it."""
+    seen = pose.data[..., 3] >= 0.5
+    pts = pose.data[..., :2][seen]
+    pts = pts[np.isfinite(pts).all(axis=1)]
+    if len(pts) < 10:
+        return None
+    (x0, y0), (x1, y1) = np.percentile(pts, 1, axis=0), np.percentile(pts, 99, axis=0)
+    y0 = max(0.0, y0 - 0.06 * pose.height)
+    return [round(float(x0) / pose.width, 3), round(float(y0) / pose.height, 3),
+            round(float(x1) / pose.width, 3), round(float(y1) / pose.height, 3)]
 
 
 def load_suggested(run_dir: Path, info: VideoInfo) -> dict[str, int] | None:
     """The suggested phase frames, if they were found on this exact conversion."""
     return _suggest_data(run_dir, info).get("phases")
+
+
+def load_golfer_box(run_dir: Path, info: VideoInfo) -> list[float] | None:
+    """Where the golfer is in the frame (golfer_box), if found on this exact conversion."""
+    return _suggest_data(run_dir, info).get("golfer_box")
 
 
 def load_camera_check(run_dir: Path, info: VideoInfo, handedness: str = "right") -> list[dict[str, str]] | None:

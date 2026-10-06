@@ -110,3 +110,21 @@ def test_suggest_frames_gives_up_quietly_when_no_swing_found(tmp_path, monkeypat
     assert pipeline.load_suggested(tmp_path, info) is None
     # The camera check still says what went wrong.
     assert [f["title"] for f in pipeline.load_camera_check(tmp_path, info)] == ["No golfer found"]
+
+
+def test_golfer_box_is_where_the_body_is():
+    import numpy as np
+
+    from swingcheck.models import PoseSeq
+    from swingcheck.pipeline import golfer_box
+
+    data = np.full((20, 33, 4), np.nan)
+    rng = np.random.default_rng(0)
+    data[:, :, 0] = rng.uniform(200, 400, (20, 33))   # x: 200-400 of 720
+    data[:, :, 1] = rng.uniform(500, 1100, (20, 33))  # y: 500-1100 of 1280
+    data[:, :, 3] = 0.9
+    box = golfer_box(PoseSeq(30.0, 720, 1280, data))
+    assert box[0] == pytest.approx(200 / 720, abs=0.01) and box[2] == pytest.approx(400 / 720, abs=0.01)
+    assert box[1] == pytest.approx((500 - 0.06 * 1280) / 1280, abs=0.01)  # room above the head
+    assert box[3] == pytest.approx(1100 / 1280, abs=0.01)
+    assert golfer_box(PoseSeq(30.0, 720, 1280, np.full((20, 33, 4), np.nan))) is None
