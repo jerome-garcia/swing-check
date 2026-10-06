@@ -350,7 +350,7 @@ export async function renderMark(view, id, isCurrent) {
       drawMark(ctx, info.shape, cx, cy, info.color, dpr);
       label(ctx, info.label, cx + info.dx * dpr, cy + info.dy * dpr, info.color, dpr);
     }
-    if (state.cursor && nextPoint()) drawLoupe(dpr);
+    if (state.cursor && nextPoint() && cur().frameOk) drawLoupe(dpr);
   }
 
   function drawLoupe(dpr) {
@@ -398,7 +398,6 @@ export async function renderMark(view, id, isCurrent) {
   function placePoint(p) {
     const name = nextPoint();
     if (!name) return;
-    cur().frameOk = true; // clicking means the frame is the one
     cur().points[name] = [Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10];
     refresh();
   }
@@ -410,6 +409,8 @@ export async function renderMark(view, id, isCurrent) {
   }
 
   canvas.addEventListener("pointerdown", e => {
+    // Points only once the frame is confirmed: until then a click points at the button.
+    if (!cur().frameOk) { nudgeConfirm(); return; }
     state.touch = e.pointerType !== "mouse";
     state.aiming = true;
     state.cursor = eventToVideo(e);
@@ -620,6 +621,7 @@ export async function renderMark(view, id, isCurrent) {
     const info = next ? pointInfo(state.active, next) : null;
     const doneHint = after ? `Next step: ${after.title}.`
       : unfinished().length ? `Still to mark: ${unfinished()[0].title.toLowerCase()}.` : "Every step is marked.";
+    hud.classList.remove("nudge"); // only for the button that was there when the frame was clicked
     const stepLine = el("span", { class: "hud-step" },
       steps.length > 1 ? `Step ${i + 1} of ${steps.length} · ${stepDef().title}` : stepDef().title);
     // First part of each step: find the frame. Its button (or a click on the frame) moves on.
@@ -653,6 +655,13 @@ export async function renderMark(view, id, isCurrent) {
         !next && !after && unfinished().length
           ? el("button", { class: "btn small primary", type: "button", onclick: () => selectStep(unfinished()[0].key) }, `Finish: ${unfinished()[0].title} ›`) : null));
     flashOnChange(`${state.active}:${next || "done"}`);
+  }
+
+  // A click on the frame before "Frame looks right": flash the bar and its button.
+  function nudgeConfirm() {
+    hud.classList.remove("flash", "nudge");
+    void hud.offsetWidth; // restart the animation
+    hud.classList.add("flash", "nudge");
   }
 
   // A new instruction flashes once, so it's noticed.
@@ -699,19 +708,23 @@ export async function renderMark(view, id, isCurrent) {
     draw();
   }
 
+  function showSaveError(text) {
+    saveError.textContent = text;
+    saveError.hidden = false;
+    saveError.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
   async function save() {
     saveError.hidden = true;
     const left = unfinished();
     if (left.length) {
-      saveError.textContent = `Mark every step first. Still to mark: ${listText(left.map(st => st.title.toLowerCase()))}.`;
-      saveError.hidden = false;
+      showSaveError(`Mark every step first. Still to mark: ${listText(left.map(st => st.title.toLowerCase()))}.`);
       return;
     }
     const blocking = markWarnings().filter(([, , blocks]) => blocks);
     if (blocking.length) {
       const titles = [...new Set(blocking.map(([key]) => steps.find(st => st.key === key).title))];
-      saveError.textContent = `Fix these marks first (${listText(titles)}): ${blocking.map(([, t]) => t).join(" ")}`;
-      saveError.hidden = false;
+      showSaveError(`Fix these marks first (${listText(titles)}): ${blocking.map(([, t]) => t).join(" ")}`);
       selectStep(blocking[0][0]);
       return;
     }
@@ -734,8 +747,7 @@ export async function renderMark(view, id, isCurrent) {
       try { await postJSON(`/api/swings/${encodeURIComponent(id)}/analyze`, {}); } catch { /* see above */ }
       navigate(swingUrl(id));
     } catch (err) {
-      saveError.textContent = err.message;
-      saveError.hidden = false;
+      showSaveError(err.message);
       saveBtn.disabled = false;
     }
   }
@@ -861,7 +873,9 @@ export async function renderMark(view, id, isCurrent) {
         el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),
         el("div", { class: "subtle small center frame-caption" }, frameLabel, " ", suggestedTag, " ", backToSuggested,
           el("span", { class: "keys-hint" }, " · ← → step, Shift = 10 frames")),
-        warningBox), // right under the frame, where the marks are
+        // Right under the frame, where you are when you press Save in the bar: why a mark looks
+        // off, and why saving didn't go through.
+        warningBox, saveError),
       el("aside", { class: "mark-side stack" },
         el("section", { class: "panel" },
           el("h2", {}, steps.length > 1 ? "Mark your swing" : "Mark your address"),
@@ -869,7 +883,7 @@ export async function renderMark(view, id, isCurrent) {
           steps.length > 1 ? stepTabs : null,
           stepIntro,
           pointList,
-          saveError, saveBtn, saveHint),
+          saveBtn, saveHint),
         el("details", { class: "panel" },
           el("summary", {}, el("strong", {}, "Trim the clip")),
           el("p", { class: "subtle small" }, "Cut out practice swings or idle time. Move the slider to a frame and set the start or end there."),

@@ -548,7 +548,9 @@ button.score-item:hover { background: var(--surface-2); }
 .mark-hud .btn.primary { background: var(--bright); border-color: var(--bright); color: var(--deep); }
 .mark-hud.flash { animation: hud-flash 0.7s ease-out; }
 @keyframes hud-flash { from { box-shadow: 0 0 0 4px var(--bright); } to { box-shadow: 0 0 0 0 transparent; } }
-@media (prefers-reduced-motion: reduce) { .mark-hud.flash { animation: none; } }
+.mark-hud.nudge .btn.primary { animation: nudge 0.5s ease-in-out 2; }
+@keyframes nudge { 50% { transform: scale(1.08); box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.35); } }
+@media (prefers-reduced-motion: reduce) { .mark-hud.flash, .mark-hud.nudge .btn.primary { animation: none; } }
 .stage { display: flex; justify-content: center; background: #000; border-radius: var(--radius); overflow: hidden; }
 .mark-canvas { display: block; cursor: crosshair; touch-action: none; max-width: 100%; }
 /* Phones: holding a finger down to aim mustn't select text, show the "Save image" menu,

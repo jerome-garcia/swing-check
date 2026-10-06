@@ -682,7 +682,7 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
       beside or in the corner of your frame, with a one-line description (*Set up and still, just
       before the club moves*). Move the slider, the ‹ › buttons or the arrow keys
       (Shift = 10 frames) until your frame matches, then press **Frame looks
-      right ›** (clicking on the frame does the same). Each step opens on a
+      right ›** (a click on the frame before that only points at the button). Each step opens on a
       suggested frame (the caption says *Suggested frame*); **Back to the
       suggested frame** returns to it.
    2. **Click the points,** one at a time, in large type with exactly where
