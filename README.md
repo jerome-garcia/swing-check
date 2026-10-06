@@ -13,13 +13,6 @@
 
 ---
 
-## Stop guessing what's wrong with your swing
-
-Fat shots? Slicing? Wedges ballooning instead of going forward? Most golfers
-know *something* is off, but not *what*. SwingCheck watches your swing frame by
-frame and tells you the **one thing to work on first**, in plain words, with
-what to try.
-
 ## How it works
 
 1. **📱 Film** one swing from behind, with your phone on a tripod.
