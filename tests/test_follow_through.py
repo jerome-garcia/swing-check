@@ -63,8 +63,9 @@ def test_reference_like_exit_is_green():
     (0.3, "ok", "Exits on the swing plane"),
     (0.9, "warn", "Exits slightly steep"),
     (1.3, "warn", "Exits steep"),  # past the red line, but Watch at most
-    (-0.35, "warn", "Exits slightly flat"),
-    (-0.6, "warn", "Exits flat"),
+    (-0.56, "ok", "Exits on the swing plane"),  # Tiger: 28 cm past the ball; pros often exit a little flat
+    (-0.85, "warn", "Exits slightly flat"),
+    (-1.2, "warn", "Exits flat"),
 ])
 def test_shaft_bands(inside_by, status, label):
     v = run(inside_by=inside_by, back=None)
@@ -76,7 +77,9 @@ def test_shaft_bands(inside_by, status, label):
     (0.1, "ok", "same line as going back"),
     (-0.45, "ok", "same line as going back"),  # a club golfer's ~50%: fine after impact
     (-0.8, "warn", "slightly steeper than going back"),
-    (0.8, "warn", "slightly flatter than going back"),
+    (0.68, "ok", "same line as going back"),  # Tiger: 34 cm flatter; flatter gets more room
+    (1.1, "warn", "slightly flatter than going back"),
+    (1.5, "warn", "flatter than going back"),
     (-1.17, "warn", "steeper than going back"),  # the amateur swing: laid off going back (Watch at most)
 ])
 def test_same_line_bands(back, status, label):
@@ -96,7 +99,7 @@ def test_without_halfway_back_shaft_only():
 def test_rows_have_units():
     v = run(inside_by=0.0, back=-1.0)
     assert v.rows[1].value == "50 cm steeper"
-    assert v.rows[1].good.startswith("within ") and v.rows[1].good.endswith(" cm at the ball")
+    assert v.rows[1].good == "up to 30 cm steeper or 45 cm flatter at the ball"
 
 
 def test_left_handed_mirror_matches():

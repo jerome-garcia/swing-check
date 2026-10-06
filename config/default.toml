@@ -300,16 +300,22 @@ posture_gain_watch = 12    # ...yellow to 12°; red beyond (dipping)
 #
 # Shaft points: the clubhead->hands line carried down to the ball's level.
 # + = lands inside the ball (between the ball and your feet), - = past it.
-inside_min = -0.25        # green: 25% past the ball to 75% inside
+# Good players often exit a little flat (Tiger about 28 cm past the ball), so green
+# reaches further past the ball than toward the feet.
+inside_min = -0.70        # green: 70% past the ball (about 35 cm) to 75% inside
 inside_max = 0.75
-inside_watch_min = -0.50  # yellow: to 50% past (a little flat) or 110% inside
+inside_watch_min = -1.00  # yellow: to 100% past (a little flat) or 110% inside
 inside_watch_max = 1.10   # (a little steep); red beyond
 # Same line as the backswing: this landing vs the halfway-back one, either way.
 # Good players differ by up to about 25% (McIlroy 21% steeper, the reference
 # photo 14-24% flatter); club golfers often by ~50% (Jolo 51%). Red is for a
 # clearly different line, like the 117% steeper exit after a laid-off backswing.
-same_line_max = 0.60      # green within ±60%
-same_line_watch = 1.00    # yellow to ±100%; red beyond
+# Pros lean flatter on the way through (Tiger 34 cm, Morikawa 26 cm, McIlroy 11 cm),
+# so a flatter exit gets more room than a steeper one.
+same_line_max = 0.60      # green up to 60% steeper...
+same_line_watch = 1.00    # ...yellow to 100%; red beyond
+same_line_flatter_max = 0.90    # green up to 90% flatter (about 45 cm)...
+same_line_flatter_watch = 1.30  # ...yellow to 130%; red beyond
 
 [analyzers.hands_at_impact]
 # Lead wrist x minus ball x along the target direction, body units.

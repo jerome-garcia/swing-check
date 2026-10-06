@@ -63,7 +63,9 @@ def follow_through(ctx: SwingContext) -> Verdict:
     if back is not None:
         back_landing, back_inside, _ = shaft_landing(ctx, back.points["clubhead"], back.points["grip"], "halfway back")
         diff = inside_by - back_inside  # + = exits more inside (steeper) than it went back
-        same_band = grade(abs(diff), 0.0, cfg["same_line_max"], 0.0, cfg["same_line_watch"])
+        # Flatter gets more room than steeper: good players often exit a little flat.
+        same_band = grade(diff, -cfg["same_line_flatter_max"], cfg["same_line_max"],
+                          -cfg["same_line_flatter_watch"], cfg["same_line_watch"])
         same_status = watch_at_most(same_band)
         steeper = diff > 0
         if same_status == "ok":
@@ -76,7 +78,8 @@ def follow_through(ctx: SwingContext) -> Verdict:
         same_value = ("Same line" if abs(ctx.cm(diff)) < 0.75 else
                       f"{ctx.distance_text(diff)} {'steeper' if steeper else 'flatter'}")
         same_row = Row("Vs halfway back", same_value, same_label, same_status,
-                       good=f"within {ctx.distance_text(cfg['same_line_max'])} at the ball", fix=WATCH_ONLY)
+                       good=f"up to {ctx.distance_text(cfg['same_line_max'])} steeper or "
+                            f"{ctx.distance_text(cfg['same_line_flatter_max'])} flatter at the ball", fix=WATCH_ONLY)
     else:
         same_row = Row("Vs halfway back", "Not measured", "Mark halfway back to compare the way through with the way back",
                        "error")

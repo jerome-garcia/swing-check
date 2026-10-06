@@ -291,8 +291,8 @@ where the shaft looks about as steep as at halfway back. Settings live in
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Shaft points at** | the shaft line carried down to the ball's level, as at halfway back | 25% past the ball to 75% inside: **Exits on the swing plane** | to 50% past (*slightly flat*) or 75–110% inside (*slightly steep*); beyond: **Exits flat** / **Exits steep**, still yellow | never |
-| **Vs halfway back** | this landing vs the halfway-back landing, as % of torso length | within ±60%: **Same line as going back** | 60–100% apart (*slightly steeper / flatter than going back*); more than 100%: *steeper / flatter than going back*, still yellow | never |
+| **Shaft points at** | the shaft line carried down to the ball's level, as at halfway back | 70% past the ball (≈35 cm; pros often exit a little flat, Tiger ≈28 cm) to 75% inside: **Exits on the swing plane** | to 100% past (*slightly flat*) or 75–110% inside (*slightly steep*); beyond: **Exits flat** / **Exits steep**, still yellow | never |
+| **Vs halfway back** | this landing vs the halfway-back landing, as % of torso length | up to 60% steeper or 90% flatter (≈30 / 45 cm; pros lean flatter, Tiger ≈34 cm): **Same line as going back** | 60–100% steeper or 90–130% flatter (*slightly steeper / flatter than going back*); beyond: *steeper / flatter than going back*, still yellow | never |
 
 The bands are loose on purpose: the ball is gone by the follow-through, so it
 mostly reflects what came before, good players exit in different ways, and a
