@@ -1,0 +1,87 @@
+{
+  "name": "Tiger Woods",
+  "width": 480,
+  "height": 853,
+  "steps": {
+    "address": {
+      "image": "address.jpg",
+      "v": "316720e423",
+      "points": {
+        "clubhead": [
+          459.6,
+          798.7
+        ],
+        "grip": [
+          214.7,
+          565.3
+        ],
+        "ball": [
+          476.2,
+          775.3
+        ]
+      }
+    },
+    "takeaway": {
+      "image": "takeaway.jpg",
+      "v": "0e6e9b95b4",
+      "points": {
+        "clubhead": [
+          224.3,
+          503.2
+        ]
+      }
+    },
+    "halfway_back": {
+      "image": "halfway_back.jpg",
+      "v": "e565427886",
+      "points": {
+        "clubhead": [
+          9.9,
+          203.5
+        ],
+        "grip": [
+          142.7,
+          384.4
+        ]
+      }
+    },
+    "top": {
+      "image": "top.jpg",
+      "v": "a456a0307c",
+      "points": {
+        "clubhead": [
+          72.1,
+          139.9
+        ],
+        "grip": [
+          79.1,
+          197.9
+        ]
+      }
+    },
+    "downswing": {
+      "image": "downswing.jpg",
+      "v": "7770f1db2a",
+      "points": {
+        "clubhead": [
+          203.6,
+          557.1
+        ]
+      }
+    },
+    "follow_through": {
+      "image": "follow_through.jpg",
+      "v": "6376475731",
+      "points": {
+        "clubhead": [
+          7.1,
+          113.7
+        ],
+        "grip": [
+          90.1,
+          224.2
+        ]
+      }
+    }
+  }
+}

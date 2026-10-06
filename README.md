@@ -741,7 +741,8 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    you can see, if your hands are hidden).
 
    **The example.** Rory McIlroy at the same moment, with that step's marks, so
-   you can see what to look for and where to click. On a wide screen with a
+   you can see what to look for and where to click (for a swing set to **Driver or
+   wood**, Tiger Woods with a driver instead). On a wide screen with a
    portrait video he's beside your frame at the same size; otherwise (a phone,
    or a landscape video) he's a small picture in the top corner on the side you
    face, sized to stay clear of you: the quick pass after upload saves where you
@@ -749,8 +750,10 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    the point the bar asks for pulses on the example. Tap the small picture to
    enlarge it, and again to shrink it (taps on it never place a point). The
    frames ship with the app
-   (`swingcheck/app/static/reference/`); rebuild them from any fully marked
-   swing with `python -m swingcheck.app.make_reference runs/<swing-folder> "Name"`.
+   (`swingcheck/app/static/reference/`, and `reference/driver/` for the driver);
+   rebuild them from any fully marked swing with
+   `python -m swingcheck.app.make_reference runs/<swing-folder> "Name"` (add
+   `driver` at the end for the driver example).
 
    **Mark checks.** Marks that look wrong get a yellow note under the frame and
    a **!** on the step: hands below the club neck at address, the club neck far
@@ -1059,7 +1062,7 @@ The app's footer Ko-fi link comes from `KOFI_URL` at the top of
 ```
 swingcheck/
   app/                web app: server, background jobs, swing storage, frontend (static/)
-    make_reference.py builds the McIlroy example frames in static/reference/
+    make_reference.py builds the marking examples: McIlroy (iron) in static/reference/, Tiger (driver) in reference/driver/
     hosted.py         hosted mode (--hosted): owner-key privacy, swing limits, expiry
   pipeline.py         convert -> mark -> pose -> phases -> checks -> outputs
   camera_check.py     after upload: is it a usable down-the-line view?

@@ -46,7 +46,9 @@ const POINT_INFO = {
   clubhead: { label: "Club neck", hint: "Where the shaft goes into the clubhead (the hosel)", color: "#ff5ca8", shape: "circle", dx: -70, dy: -10 },
   grip: { label: "Hands", hint: "Middle of your grip, between your two hands", color: "#4dc3ff", shape: "square", dx: 13, dy: -9 },
 };
-const REFERENCE_DIR = "/reference"; // static/reference: the example swing shown beside each step
+// static/reference: the example swing shown beside each step, one per club: Rory McIlroy
+// with an iron, and Tiger Woods with a driver (reference/driver).
+const REFERENCE_DIRS = { iron: "/reference", driver: "/reference/driver" };
 const PLANE_COLOR = "#ff9f43"; // the address shaft line is the swing plane, in the brand's plane orange
 // Wording for points on a later checkpoint frame.
 const STEP_POINT_INFO = {
@@ -101,10 +103,10 @@ const LOUPE_SIZE = 150;
 const LOUPE_ZOOM = 4;
 
 export async function renderMark(view, id, isCurrent) {
-  const [s, reference] = await Promise.all([
-    api(`/api/swings/${encodeURIComponent(id)}`),
-    api(`${REFERENCE_DIR}/reference.json`).catch(() => null),
-  ]);
+  const s = await api(`/api/swings/${encodeURIComponent(id)}`);
+  // The example for this swing's club (switching the club renders this page again).
+  const refDir = REFERENCE_DIRS[s.club] || REFERENCE_DIRS.iron;
+  const reference = await api(`${refDir}/reference.json`).catch(() => null);
   if (!isCurrent()) return;
   if (!s.video || (s.job && ["queued", "running"].includes(s.job.state))) {
     navigate(swingUrl(id), { replace: true });
@@ -530,7 +532,7 @@ export async function renderMark(view, id, isCurrent) {
     const st = s.view === "dtl" && reference ? reference.steps[state.active] : null;
     refBox.hidden = !st;
     if (!st) return;
-    const url = `${REFERENCE_DIR}/${st.image}${st.v ? `?v=${st.v}` : ""}`; // v: the picture's fingerprint
+    const url = `${refDir}/${st.image}${st.v ? `?v=${st.v}` : ""}`; // v: the picture's fingerprint
     const { width: w, height: h } = reference;
     const r = Math.max(w, h) / 55;
     // Only what this step asks you to click; the ball (clicked on the takeaway) from his address.

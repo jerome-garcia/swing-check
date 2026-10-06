@@ -4,6 +4,10 @@ The marking screen shows these frames, with their marks, beside each step as an
 example to follow. Rebuild them from a fully marked down-the-line swing with:
 
     python -m swingcheck.app.make_reference runs/<swing-folder> "Rory McIlroy"
+    python -m swingcheck.app.make_reference runs/<swing-folder> "Tiger Woods" driver
+
+The second form builds the driver example (static/reference/driver), shown for swings
+marked as a driver or wood.
 
 One point in the shipped reference.json is set by hand after the rebuild: the halfway-back
 hands, moved 28 video px down the shaft line (to 271.8, 468.1 on the 720-wide clip) to the
@@ -46,5 +50,6 @@ def build(run_dir: Path, name: str, out: Path = OUT) -> dict:
 
 
 if __name__ == "__main__":
-    built = build(Path(sys.argv[1]), sys.argv[2] if len(sys.argv) > 2 else "Rory McIlroy")
-    print(f"Wrote {len(built['steps'])} steps to {OUT}")
+    out = OUT / sys.argv[3] if len(sys.argv) > 3 else OUT
+    built = build(Path(sys.argv[1]), sys.argv[2] if len(sys.argv) > 2 else "Rory McIlroy", out)
+    print(f"Wrote {len(built['steps'])} steps to {out}")
