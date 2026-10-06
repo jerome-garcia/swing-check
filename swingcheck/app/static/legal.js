@@ -2,7 +2,7 @@
 // TERMS_VERSION is recorded with each hosted upload (the visitor agreed to this version);
 // change it whenever the wording of either page changes.
 
-import { el, features, plural } from "./util.js";
+import { backLink, el, features, plural } from "./util.js";
 
 export const TERMS_VERSION = "2026-10-06";
 const UPDATED = "October 6, 2026";
@@ -108,7 +108,7 @@ export async function renderLegal(view, page, isCurrent) {
   if (!isCurrent()) return;
   const isTerms = page === "terms";
   view.replaceChildren(el("article", { class: "legal" },
-    el("a", { class: "back", href: "/" }, "← Your swings"),
+    backLink(),
     el("h1", {}, isTerms ? "Terms of use" : "Privacy notice"),
     ...(isTerms ? terms(hosted) : privacy(hosted)).filter(Boolean),
     el("p", { class: "subtle small" }, `Last updated ${UPDATED}.`)));

@@ -1,5 +1,5 @@
 import { renderResults } from "./results.js";
-import { api, CLUB_NAMES, el, expiryText, formatDate, HAND_NAMES, moreMenu, navigate, pollJob, postJSON, progressBlock, STATUS_TEXT,
+import { api, backLink, CLUB_NAMES, el, expiryText, formatDate, HAND_NAMES, moreMenu, navigate, pollJob, postJSON, progressBlock, STATUS_TEXT,
   swingUrl, VIEW_NAMES } from "./util.js";
 
 const JOB_TITLES = { convert: "Converting video", analyze: "Analyzing swing" };
@@ -17,7 +17,7 @@ export function swingHeader(s, actions = [], menuItems = []) {
   pencil.addEventListener("click", () => renameInPlace(s, title, name));
   return el("div", { class: "page-head" },
     el("div", { class: "page-title" },
-      el("a", { class: "back", href: "/" }, "← Your swings"),
+      backLink(),
       title,
       el("div", { class: "subtle small" },
         `${formatDate(s.created)} · ${VIEW_NAMES[s.view] || "View not set"} · ${HAND_NAMES[s.handedness] || HAND_NAMES.right}`
