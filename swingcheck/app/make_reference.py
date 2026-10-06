@@ -6,7 +6,7 @@ example to follow. Rebuild them from a fully marked down-the-line swing with:
     python -m swingcheck.app.make_reference runs/<swing-folder> "Rory McIlroy"
 
 The shipped reference.json has one point set by hand after a rebuild: the takeaway
-clubhead at the middle of the head (video px 259, 557 on the 720-wide clip), where the
+clubhead at the hosel, low on the head (video px 258, 576 on the 720-wide clip), where the
 marks had it on the head's bottom tip. Re-mark it there, or set it again, after rebuilding.
 """
 
