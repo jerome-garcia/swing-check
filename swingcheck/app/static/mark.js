@@ -585,6 +585,9 @@ export async function renderMark(view, id, isCurrent) {
           : el("span", { class: "hud-next done" }, "✓ Step done"),
         el("span", { class: "hud-hint" }, info ? info.hint : doneHint)),
       el("div", { class: "actions" },
+        // Back to finding the frame; this step's clicks go, since they were made on this frame.
+        el("button", { class: "btn small hud-btn", type: "button",
+          onclick: () => { cur().frameOk = false; cur().points = {}; refresh(); } }, "‹ Change frame"),
         el("button", { class: "btn small hud-btn", type: "button", onclick: undo, disabled: !started(state.active) }, "Undo"),
         el("button", { class: "btn small hud-btn", type: "button", disabled: !started(state.active),
           onclick: () => { cur().points = {}; refresh(); } }, "Clear step"),

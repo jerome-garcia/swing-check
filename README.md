@@ -687,7 +687,8 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
       suggested frame** returns to it.
    2. **Click the points,** one at a time, in large type with exactly where
       under it (*Click the ball*, *Center of the ball*). When the step is done,
-      **Next ›** moves to the next step.
+      **Next ›** moves to the next step. **‹ Change frame** goes back to part 1
+      and clears the step's clicks (they were made on the old frame).
 
    **Address.** Move the slider to your set-up position, then click:
    - the **ball**
