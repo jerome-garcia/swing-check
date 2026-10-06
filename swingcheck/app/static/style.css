@@ -538,8 +538,8 @@ button.score-item:hover { background: var(--surface-2); }
 .hud-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .hud-step { font-size: 12px; font-weight: 700; color: var(--bright); text-transform: uppercase; letter-spacing: 0.08em; }
 .hud-next { display: inline-flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 750; letter-spacing: -0.02em; line-height: 1.25; }
-.hud-next .swatch { width: 18px; height: 18px; border-color: #fff; }
-.hud-next .swatch.circle, .hud-next .swatch.square { background: radial-gradient(circle, #fff 0 2.5px, transparent 3px); }
+.hud-next .swatch { width: 18px; height: 18px; border-color: var(--c, #fff); }
+.hud-next .swatch.circle, .hud-next .swatch.square { background: radial-gradient(circle, var(--c, #fff) 0 2.5px, transparent 3px); }
 .hud-next.done { color: var(--bright); }
 .hud-hint { font-size: 15px; color: var(--on-deep-soft); }
 .mark-hud .hud-btn { background: transparent; border-color: var(--on-deep-line); color: var(--on-deep); }
@@ -619,8 +619,8 @@ button.score-item:hover { background: var(--surface-2); }
 .point-list li.done .check { color: var(--ok); font-weight: 700; }
 .point-list .check { font-size: 13px; color: var(--muted); }
 /* Point swatches: the same shapes as on the frame (clubhead circle, hands square, ball ring). */
-.swatch { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--text, #1d221c); flex: none; box-sizing: border-box; }
-.swatch.circle, .swatch.square { background: radial-gradient(circle, var(--text, #1d221c) 0 2px, transparent 2.5px); }
+.swatch { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--c, var(--text, #1d221c)); flex: none; box-sizing: border-box; }
+.swatch.circle, .swatch.square { background: radial-gradient(circle, var(--c, var(--text, #1d221c)) 0 2px, transparent 2.5px); }
 .swatch.square { border-radius: 2px; }
 .mark-side .notice { margin: 0 0 10px; }
 .mark-side .actions { margin-bottom: 12px; }

@@ -696,7 +696,9 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
      the clubface: the shaft line through it is your swing plane
    - your **hands**, the middle of your grip, between your two hands
 
-   A magnifier follows the cursor; on a phone, touch and hold, slide to aim with
+   Each point has its own color: the ball a yellow ring, the club neck and clubhead
+   a pink circle, your hands a blue square (the same on the example and in the
+   list). A magnifier follows the cursor; on a phone, touch and hold, slide to aim with
    the magnifier above your finger, and let go to place the point. **Undo**
    (above the frame) removes the last point, and **Clear step** removes all of
    this step's points. **The frame you mark on is your address frame**:

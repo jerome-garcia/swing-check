@@ -38,12 +38,13 @@ const FIND = {
 };
 // Label offsets (CSS px) keep the ball and clubhead labels apart; those points sit together.
 // Shapes match the key frames: clubhead = circle, hands = square, ball = ring. Here they're
-// outlines with a center dot, so you can still see exactly what you clicked.
+// outlines with a center dot, so you can still see exactly what you clicked, each in its own
+// color (also on the example and in the swatches) so the three are told apart at a glance.
 const POINT_INFO = {
-  ball: { label: "Ball", hint: "Center of the ball", color: "#ffffff", shape: "ring", dx: 13, dy: 20 },
+  ball: { label: "Ball", hint: "Center of the ball", color: "#ffe14d", shape: "ring", dx: 10, dy: 18 },
   // At address the point is the club neck, not the clubface: the shaft line through it is the swing plane.
-  clubhead: { label: "Club neck", hint: "Where the shaft goes into the clubhead (the hosel)", color: "#ffffff", shape: "circle", dx: -70, dy: -10 },
-  grip: { label: "Hands", hint: "Middle of your grip, between your two hands", color: "#ffffff", shape: "square", dx: 13, dy: -9 },
+  clubhead: { label: "Club neck", hint: "Where the shaft goes into the clubhead (the hosel)", color: "#ff5ca8", shape: "circle", dx: -70, dy: -10 },
+  grip: { label: "Hands", hint: "Middle of your grip, between your two hands", color: "#4dc3ff", shape: "square", dx: 13, dy: -9 },
 };
 const REFERENCE_DIR = "/reference"; // static/reference: the example swing shown beside each step
 const PLANE_COLOR = "#ff9f43"; // the address shaft line is the swing plane, in the brand's plane orange
@@ -312,7 +313,7 @@ export async function renderMark(view, id, isCurrent) {
   // An outline mark (circle / square / ring) with a dark edge, plus a center dot for the
   // clubhead and hands so the clicked spot stays visible.
   function drawMark(c, shape, x, y, color, dpr) {
-    const r = (shape === "ring" ? 9 : 7) * dpr;
+    const r = (shape === "ring" ? 5 : 7) * dpr; // the ring about the size of a ball on screen
     const path = () => {
       c.beginPath();
       if (shape === "square") c.rect(x - r, y - r, 2 * r, 2 * r);
@@ -532,10 +533,12 @@ export async function renderMark(view, id, isCurrent) {
     const shaft = p.clubhead && p.grip
       ? `<line x1="${p.clubhead[0]}" y1="${p.clubhead[1]}" x2="${p.grip[0]}" y2="${p.grip[1]}" stroke="${state.active === "address" ? PLANE_COLOR : "#fff"}" stroke-width="${r / 4}"/>` : "";
     const mark = (name, [x, y]) => {
-      const outline = POINT_INFO[name].shape === "square"
-        ? `<rect x="${x - r}" y="${y - r}" width="${2 * r}" height="${2 * r}"/>` : `<circle cx="${x}" cy="${y}" r="${r}"/>`;
+      const { shape, color } = POINT_INFO[name];
+      const rr = shape === "ring" ? r * 0.55 : r;
+      const outline = shape === "square"
+        ? `<rect x="${x - rr}" y="${y - rr}" width="${2 * rr}" height="${2 * rr}"/>` : `<circle cx="${x}" cy="${y}" r="${rr}"/>`;
       return `<g fill="none"><g stroke="rgba(0,0,0,.8)" stroke-width="${r / 1.8}">${outline}</g>`
-        + `<g stroke="#fff" stroke-width="${r / 3.5}">${outline}</g></g>`;
+        + `<g stroke="${color}" stroke-width="${r / 3.5}">${outline}</g></g>`;
     };
     const link = el("button", { type: "button", class: "ref-toggle", title: reference.name,
       onclick: () => { if (!refSide) { refBig = !refBig; refitRef(); } } });
@@ -634,7 +637,7 @@ export async function renderMark(view, id, isCurrent) {
     hud.replaceChildren(
       el("div", { class: "hud-text" }, stepLine,
         info
-          ? el("span", { class: "hud-next" }, el("span", { class: `swatch ${info.shape}` }), `Click the ${info.label.toLowerCase()}`)
+          ? el("span", { class: "hud-next" }, el("span", { class: `swatch ${info.shape}`, style: `--c: ${info.color}` }), `Click the ${info.label.toLowerCase()}`)
           : el("span", { class: "hud-next done" }, "✓ Step done"),
         el("span", { class: "hud-hint" }, info ? info.hint : doneHint)),
       el("div", { class: "actions" },
@@ -684,7 +687,7 @@ export async function renderMark(view, id, isCurrent) {
       const done = Boolean(cur().points[name]);
       const info = pointInfo(state.active, name);
       return el("li", { class: `${done ? "done" : ""} ${name === next && cur().frameOk ? "next" : ""}` },
-        el("span", { class: `swatch ${info.shape}` }),
+        el("span", { class: `swatch ${info.shape}`, style: `--c: ${info.color}` }),
         el("div", {}, el("strong", {}, info.label), el("div", { class: "subtle small" }, info.hint)),
         el("span", { class: "check" }, done ? "✓" : name === next && cur().frameOk ? "Click it" : ""));
     }));
