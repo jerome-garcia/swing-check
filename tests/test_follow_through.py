@@ -61,6 +61,7 @@ def test_reference_like_exit_is_green():
 
 @pytest.mark.parametrize("inside_by, status, label", [
     (0.3, "ok", "Exits on the swing plane"),
+    (0.5, "warn", "Exits slightly steep"),  # 25 cm toward the feet: past the 20 cm green
     (0.9, "warn", "Exits slightly steep"),
     (1.3, "warn", "Exits steep"),  # past the red line, but Watch at most
     (-0.56, "ok", "Exits on the swing plane"),  # Tiger: 28 cm past the ball; pros often exit a little flat
