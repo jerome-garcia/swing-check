@@ -8,6 +8,7 @@ missing falls back to safe defaults with a warning rather than an error.
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 from collections.abc import Callable
@@ -191,6 +192,14 @@ def normalize(
     if hdr:
         warnings.append("HDR clip: converted to SDR without tone mapping, colors may look flat (pose is unaffected).")
 
+    # Black bars baked into the picture (screen recordings, re-shared clips): cropped off,
+    # so the golfer fills the frame and a portrait clip is portrait again.
+    filters = [f"fps={fps:g}"]
+    crop = black_bars(source, stream, rotation, start, end, ingest_cfg) if ingest_cfg.get("crop_black_bars", True) else None
+    if crop:
+        filters.insert(0, "crop={}:{}:{}:{}".format(*crop))
+        warnings.append("Black bars at the edges of the video were cropped off.")
+
     # ffmpeg auto-rotates on decode and drops the rotation tag on output, so the
     # result is upright pixels with no display matrix.
     cmd = [find_tool("ffmpeg"), "-v", "error", "-y"]
@@ -201,7 +210,7 @@ def normalize(
     cmd += [
         "-i", str(source),
         "-map", "0:v:0", "-an",
-        "-vf", f"fps={fps:g}",
+        "-vf", ",".join(filters),
         "-fps_mode", "cfr",
         "-c:v", "libx264", "-preset", "fast", "-crf", str(ingest_cfg["crf"]),
         "-g", str(ingest_cfg.get("keyframe_interval", 15)),
@@ -235,6 +244,39 @@ def normalize(
     )
     info.save(info_path)
     return info
+
+
+CROP_LINE = re.compile(r"crop=(\d+):(\d+):(\d+):(\d+)")
+
+
+def black_bars(source: Path, stream: dict[str, Any], rotation: int, start: float | None, end: float | None,
+               cfg: dict[str, Any]) -> tuple[int, int, int, int] | None:
+    """The picture inside black bars, as (width, height, x, y) in upright pixels, if the bars
+    are worth cropping: ffmpeg's cropdetect over a sample of the clip (a couple of frames a
+    second, the largest picture area seen), used only if it takes off at least
+    `black_bar_min` of the width or height and leaves at least a quarter of each (a portrait
+    picture inside a landscape frame keeps about a third of the width)."""
+    width, height = int(stream.get("width") or 0), int(stream.get("height") or 0)
+    if rotation in (90, 270):
+        width, height = height, width
+    if not width or not height:
+        return None
+    cmd = [find_tool("ffmpeg"), "-hide_banner", "-nostats"]
+    if start is not None:
+        cmd += ["-ss", f"{start:.3f}"]
+    if end is not None:
+        cmd += ["-to", f"{end:.3f}"]
+    cmd += ["-i", str(source), "-t", "12", "-map", "0:v:0", "-an",
+            "-vf", "fps=2,cropdetect=limit=24:round=2:reset=0", "-f", "null", "-"]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    found = CROP_LINE.findall(result.stderr)
+    if result.returncode != 0 or not found:
+        return None
+    w, h, x, y = map(int, found[-1])
+    cut = cfg.get("black_bar_min", 0.04)
+    if (width - w < cut * width and height - h < cut * height) or w < width / 4 or h < height / 4:
+        return None
+    return w, h, x, y
 
 
 def _run_with_progress(cmd: list[str], duration_s: float, progress: Callable[[float], None] | None) -> None:

@@ -29,6 +29,10 @@ crf = 18
 keyframe_interval = 15
 # Warn if a clip's capture fps is at or below this (likely a flattened slo-mo).
 low_fps_warning = 60
+# Black bars baked into the picture (screen recordings, re-shared clips) are cropped off
+# when they take at least this share of the width or height.
+crop_black_bars = true
+black_bar_min = 0.04
 
 [trim]
 # Auto-trim for high frame rate clips: a quick pose pass at coarse_fps over

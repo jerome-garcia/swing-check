@@ -593,6 +593,9 @@ during the clip. A tripod is the single most important thing.
   2-second swing comes through as a 10+ second video, because the slow-motion
   part was baked in for playback. Such copies also often have frames missing;
   the app keeps every frame that's there and repeats the previous one over a gap.
+  Black bars baked into the picture (screen recordings, re-shared clips) are
+  cropped off when the video is converted (`crop_black_bars` in `[ingest]`), and
+  **About this clip** says so.
 - **Same camera spot every session** (mark the tripod feet with tape). Angles
   and distances are measured in 2D, so moving the camera changes the numbers even
   when your swing doesn't.

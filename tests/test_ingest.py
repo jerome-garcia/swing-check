@@ -42,3 +42,29 @@ def test_parse_rotation():
     assert parse_rotation({"tags": {"rotate": "90"}}) == 90
     assert parse_rotation({}) == 0
     assert parse_rotation({"tags": {"rotate": "junk"}}) == 0
+
+
+def test_black_bars_are_cropped_off(tmp_path):
+    import shutil
+    import subprocess
+
+    import pytest
+
+    from swingcheck.config import load_config
+    from swingcheck.ingest import normalize
+
+    if not shutil.which("ffmpeg"):
+        pytest.skip("needs ffmpeg")
+    # A portrait picture (180x320, moving noise) inside a landscape frame with black bars.
+    src = tmp_path / "barred.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=180x320:rate=30:duration=2",
+                    "-vf", "pad=568:320:194:0:black", "-pix_fmt", "yuv420p", str(src)], check=True)
+    info = normalize(src, tmp_path / "run", load_config())
+    assert (info.width, info.height) == (180, 320)
+    assert any("Black bars" in w for w in info.warnings)
+    # No bars: the frame is kept as it is.
+    plain = tmp_path / "plain.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=180x320:rate=30:duration=2",
+                    "-pix_fmt", "yuv420p", str(plain)], check=True)
+    info = normalize(plain, tmp_path / "run2", load_config())
+    assert (info.width, info.height) == (180, 320) and not any("Black bars" in w for w in info.warnings)
