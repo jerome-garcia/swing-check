@@ -687,11 +687,11 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
       suggested frame** returns to it.
    2. **Click the points,** one at a time, in large type with exactly where
       under it (*Click the ball*, *Center of the ball*). When the step is done,
-      **Next ›** moves to the next step. **‹ Change frame** goes back to part 1
-      and clears the step's clicks (they were made on the old frame).
+      **Next ›** moves to the next step. The frame is locked meanwhile, so the
+      clicks stay on it; **‹ Change frame** goes back to part 1 and clears the
+      step's clicks.
 
    **Address.** Move the slider to your set-up position, then click:
-   - the **ball**
    - the **club neck**, where the shaft goes into the clubhead (the hosel), not
      the clubface: the shaft line through it is your swing plane
    - your **hands**, the middle of your grip, between your two hands
@@ -705,9 +705,12 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    handedness, switch it under **Camera view** or **Golfer** below the marking
    panel.
 
-   **Takeaway.** Switch to the **Takeaway** step, move the slider to where the
-   shaft is parallel to the target line (from behind it points at the camera),
-   and click the **clubhead**. That frame becomes the takeaway checkpoint.
+   **Takeaway.** Move the slider to where the shaft is parallel to the target
+   line (from behind it points at the camera), and click the **ball**, then the
+   **clubhead**. That frame becomes the takeaway checkpoint. The ball is clicked
+   here rather than at address because the clubhead often hides it at address;
+   it doesn't move until impact and the camera is still, so it's the same spot,
+   and it's saved with the address marks.
 
    **Halfway back.** Switch to the **Halfway back** step, move the slider to
    where your lead arm is parallel to the ground, and click the **clubhead**

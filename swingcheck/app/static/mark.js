@@ -3,12 +3,15 @@ import { swingHeader } from "./swing.js";
 
 // Marking steps per view, all required. After address, one step per checkpoint, and
 // each has its own frame (the pose model can't see the club, so you click it).
+// Down the line, the ball is clicked on the takeaway: at address the clubhead often hides
+// it, and it doesn't move until impact (the camera is still), so it's the same spot. It's
+// saved with the address marks, where the checks look for it (BALL_STEP).
 const STEPS = {
   dtl: [
-    { key: "address", title: "Address", points: ["ball", "clubhead", "grip"],
-      intro: "Move the slider to your address position (set up and still), then click the points. This frame is used for the address checks." },
-    { key: "takeaway", title: "Takeaway", points: ["clubhead"],
-      intro: "Move the slider to where the shaft is parallel to the target line (from behind, it points at the camera). Click the clubhead. This frame is the takeaway checkpoint." },
+    { key: "address", title: "Address", points: ["clubhead", "grip"],
+      intro: "Move the slider to your address position (set up and still), then click the club neck and your hands. This frame is used for the address checks." },
+    { key: "takeaway", title: "Takeaway", points: ["ball", "clubhead"],
+      intro: "Move the slider to where the shaft is parallel to the target line (from behind, it points at the camera). Click the ball (the club has moved off it now), then the clubhead. This frame is the takeaway checkpoint." },
     { key: "halfway_back", title: "Halfway back", points: ["clubhead", "grip"],
       intro: "Move the slider to where your front arm is parallel to the ground (hands about level with your front shoulder). Click the clubhead, then your hands. This frame is the halfway-back checkpoint." },
     { key: "top", title: "Top", points: ["clubhead", "grip"],
@@ -91,6 +94,7 @@ function cameraCheck(s) {
       : "You can still mark this video, but some results may be off."));
 }
 
+const BALL_STEP = { dtl: "takeaway", fo: "address" };
 const pointInfo = (step, name) => ({ ...POINT_INFO[name], ...((STEP_POINT_INFO[step] || {})[name] || {}) });
 const LOUPE_SIZE = 150;
 const LOUPE_ZOOM = 4;
@@ -122,10 +126,12 @@ export async function renderMark(view, id, isCurrent) {
   // scenes, for the camera check and to find the later checkpoints.)
   const addressSuggested = !savedAddress && s.suggested ? 0 : undefined;
   const addressFrame = savedAddress ? clampFrame(s.marks.address_frame) : addressSuggested ?? 0;
+  const ballStep = BALL_STEP[s.view] || "address";
+  const savedBall = savedAddress && s.marks.points && s.marks.points.ball ? { ball: s.marks.points.ball } : {};
   const stepState = {};
   for (const st of steps) {
     if (st.key === "address") {
-      const points = pick((s.marks && s.marks.points) || {}, st.points);
+      const points = pick({ ...((s.marks && s.marks.points) || {}), ...(ballStep === "address" ? savedBall : {}) }, st.points);
       stepState.address = { frame: addressFrame, suggested: addressSuggested, points,
         frameOk: Object.keys(points).length > 0 };
       continue;
@@ -137,7 +143,7 @@ export async function renderMark(view, id, isCurrent) {
     stepState[st.key] = {
       frame: clampFrame(saved ? saved.frame : suggested ?? addressFrame + 0.6 * v.fps),
       suggested,
-      points: saved ? pick(saved.points, st.points) : {},
+      points: { ...(st.key === ballStep ? savedBall : {}), ...(saved ? pick(saved.points, st.points) : {}) },
       frameOk: Boolean(saved),
     };
   }
@@ -433,7 +439,16 @@ export async function renderMark(view, id, isCurrent) {
   // --- Scrubber -------------------------------------------------------------
   const slider = el("input", { type: "range", min: 0, max: v.frame_count - 1, value: cur().frame, class: "scrub", "aria-label": "Frame" });
   const frameLabel = el("span", { class: "frame-label" });
-  slider.addEventListener("input", () => setFrame(Number(slider.value)));
+  slider.addEventListener("input", () => { if (!cur().frameOk) setFrame(Number(slider.value)); });
+  // Once "Frame looks right" is pressed the frame stays put, so the clicks stay on it; "‹ Change
+  // frame" goes back to finding it (lockFrame keeps the slider and buttons in step).
+  const scrubButtons = [];
+  function lockFrame() {
+    const locked = cur().frameOk;
+    slider.disabled = locked;
+    for (const b of scrubButtons) b.disabled = locked;
+    backToSuggested.hidden = locked || cur().suggested === undefined || cur().frame === cur().suggested;
+  }
 
   // The step opened on a suggested frame: say so, and offer a way back to it after scrubbing.
   const suggestedTag = el("span", { class: "suggested-tag", hidden: true,
@@ -451,9 +466,13 @@ export async function renderMark(view, id, isCurrent) {
     showFrame(cur().frame);
     refresh(); // the frame-order check and the step tabs depend on the frame
   }
-  const step = n => el("button", { class: "btn small", type: "button", onclick: () => setFrame(cur().frame + n),
-    title: `${n > 0 ? "Forward" : "Back"} ${Math.abs(n)} frame${Math.abs(n) > 1 ? "s" : ""}` },
-  n === -10 ? "«" : n === -1 ? "‹" : n === 1 ? "›" : "»");
+  const step = n => {
+    const b = el("button", { class: "btn small", type: "button", onclick: () => { if (!cur().frameOk) setFrame(cur().frame + n); },
+      title: `${n > 0 ? "Forward" : "Back"} ${Math.abs(n)} frame${Math.abs(n) > 1 ? "s" : ""}` },
+    n === -10 ? "«" : n === -1 ? "‹" : n === 1 ? "›" : "»");
+    scrubButtons.push(b);
+    return b;
+  };
 
   // --- Reference swing ------------------------------------------------------
   // Rory McIlroy in the same position, with his marks, so the two can be compared while
@@ -507,7 +526,9 @@ export async function renderMark(view, id, isCurrent) {
     const url = `${REFERENCE_DIR}/${st.image}`;
     const { width: w, height: h } = reference;
     const r = Math.max(w, h) / 55;
-    const p = pick(st.points, stepDef().points); // only what this step asks you to click
+    // Only what this step asks you to click; the ball (clicked on the takeaway) from his address.
+    const ball = reference.steps.address && reference.steps.address.points.ball;
+    const p = pick({ ...(ball ? { ball } : {}), ...st.points }, stepDef().points);
     const shaft = p.clubhead && p.grip
       ? `<line x1="${p.clubhead[0]}" y1="${p.clubhead[1]}" x2="${p.grip[0]}" y2="${p.grip[1]}" stroke="${state.active === "address" ? PLANE_COLOR : "#fff"}" stroke-width="${r / 4}"/>` : "";
     const mark = (name, [x, y]) => {
@@ -535,7 +556,7 @@ export async function renderMark(view, id, isCurrent) {
     // [stepKey, sentence, blocks]: marks that can't be right block saving (a frame out of
     // order, clicks swapped); the rougher distance checks only ask "anyway?".
     const out = [];
-    const a = state.steps.address.points;
+    const a = { ...state.steps.address.points, ball: state.steps[ballStep].points.ball };
     if (a.clubhead && a.grip && a.grip[1] >= a.clubhead[1]) {
       out.push(["address", "Your hands should be above the club neck. Check you clicked the club neck first, then your hands.", true]);
     }
@@ -642,6 +663,7 @@ export async function renderMark(view, id, isCurrent) {
   }
 
   function refresh() {
+    lockFrame();
     const next = nextPoint();
     renderHud(next);
     const warned = new Set(markWarnings().map(([key]) => key));
@@ -696,12 +718,14 @@ export async function renderMark(view, id, isCurrent) {
       const list = warnings.map(([, t]) => `• ${t}`).join("\n");
       if (!confirm(`Some marks look off (${titles.join(", ")}):\n\n${list}\n\nSave and analyze anyway?`)) return;
     }
+    const withoutBall = ({ ball, ...rest }) => rest;
     const checkpoints = Object.fromEntries(steps.filter(st => st.key !== "address")
-      .map(st => [st.key, { frame: state.steps[st.key].frame, points: state.steps[st.key].points }]));
+      .map(st => [st.key, { frame: state.steps[st.key].frame, points: withoutBall(state.steps[st.key].points) }]));
+    const ball = state.steps[ballStep].points.ball;
     saveBtn.disabled = true;
     try {
       await postJSON(`/api/swings/${encodeURIComponent(id)}/marks`,
-        { address_frame: state.steps.address.frame, points: state.steps.address.points, checkpoints });
+        { address_frame: state.steps.address.frame, points: { ...state.steps.address.points, ball }, checkpoints });
       // Analyze straight away; the swing page shows the job's progress. If it can't start,
       // the marks are still saved and the swing page offers Analyze.
       try { await postJSON(`/api/swings/${encodeURIComponent(id)}/analyze`, {}); } catch { /* see above */ }
@@ -809,7 +833,7 @@ export async function renderMark(view, id, isCurrent) {
   function onKey(e) {
     if (!isCurrent()) { document.removeEventListener("keydown", onKey); return; }
     if (e.target instanceof HTMLInputElement && e.target.type !== "range") return;
-    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !cur().frameOk) {
       e.preventDefault();
       setFrame(cur().frame + (e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 10 : 1));
     } else if (e.key === "Backspace" || e.key === "u") {
