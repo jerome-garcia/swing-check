@@ -155,7 +155,7 @@ def test_override_recomputes_checkpoints():
 
 def test_overrides_required_when_detection_failed():
     track = np.full((200, 2), 500.0)
-    with pytest.raises(PhaseError, match="--top"):
+    with pytest.raises(PhaseError, match="set the top frame"):
         apply_overrides(None, {"address": 10, "impact": 150}, track, 240.0, CFG, 200)
     phases = apply_overrides(None, {"address": 10, "top": 80, "impact": 150}, track, 240.0, CFG, 200)
     assert phases.manual == ["address", "top", "impact"]

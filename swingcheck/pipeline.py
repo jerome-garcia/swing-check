@@ -260,7 +260,8 @@ def analyze(
     except PhaseOrderError as e:
         raise PipelineError(str(e)) from e
     except (PhaseError, ValueError) as e:
-        raise PipelineError(f"{e} Set the phase frames manually.") from e
+        raise PipelineError(f"{e} Check the video shows one whole swing with your hands in view, or trim it to "
+                            "just the swing (Edit marks, then Trim the clip), and try again.") from e
     takeaway_mark = marks.checkpoint("takeaway")
     if takeaway_mark and phases.takeaway != takeaway_mark.frame:
         warnings.append("The takeaway frame you marked isn't between address and the top, so it was ignored.")

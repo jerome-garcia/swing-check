@@ -95,7 +95,7 @@ def detect_phases(hands: np.ndarray, fps: float, scale: float, cfg: dict[str, An
     xy = clean_track(hands, fps, max_gap_ms=0, smoothing_ms=cfg["smoothing_ms"])
     y = xy[:, 1]
     if np.isfinite(y).sum() < 10:
-        raise PhaseError("Hands were not tracked in enough frames to find the swing.")
+        raise PhaseError("SwingCheck couldn't follow your hands in enough frames to find the swing.")
 
     vy = np.gradient(y)  # px/frame, positive = moving down
     speed = np.linalg.norm(np.gradient(xy, axis=0), axis=1)
@@ -142,7 +142,7 @@ def detect_phases(hands: np.ndarray, fps: float, scale: float, cfg: dict[str, An
     low_start = before if before is not None else 0
     top = low_start + int(np.nanargmin(y[low_start : d + 1]))
     if top >= impact or y[impact] - y[top] < cfg["low_level_tolerance"] * scale:
-        raise PhaseError("Could not separate top of backswing from impact.")
+        raise PhaseError("SwingCheck couldn't tell the top of your backswing from impact.")
 
     # 4. Address: last still stretch at or before the low point preceding the backswing.
     peak = float(np.nanpercentile(speed, 98))
@@ -194,12 +194,17 @@ def halfway_back(hands: np.ndarray, fps: float, phases: Phases, cfg: dict[str, A
     return phases.takeaway + up if up is not None else (phases.takeaway + top) // 2
 
 
+def _frames(phases: Phases) -> str:
+    """"address 0, top 240, impact 237": the key frames, for an error message."""
+    return ", ".join(f"{k} {getattr(phases, k)}" for k in KEY_PHASES)
+
+
 def validate(phases: Phases, frame_count: int) -> None:
     values = [getattr(phases, name) for name in PHASE_NAMES]
     if not all(0 <= v < frame_count for v in values):
-        raise PhaseError(f"Phase frame out of range: {phases.as_dict()}")
+        raise PhaseError(f"SwingCheck found swing frames outside the clip ({_frames(phases)}).")
     if not all(a <= b for a, b in zip(values, values[1:])):
-        raise PhaseError(f"Phases out of order: {phases.as_dict()}")
+        raise PhaseError(f"SwingCheck couldn't put your swing in order: address, then the top, then impact ({_frames(phases)}).")
 
 
 def apply_overrides(
@@ -208,7 +213,7 @@ def apply_overrides(
     """Replace detected key phases with manual ones and recompute the checkpoints between them."""
     if auto is None and not all(k in overrides for k in KEY_PHASES):
         missing = [k for k in KEY_PHASES if k not in overrides]
-        raise PhaseError(f"Automatic detection failed; set the rest manually: --{' --'.join(missing)}")
+        raise PhaseError(f"SwingCheck couldn't find the swing by itself; set the {' and '.join(missing)} frame{'s' if len(missing) > 1 else ''}.")
     key = {k: overrides.get(k, getattr(auto, k) if auto else None) for k in KEY_PHASES}
     if not overrides:
         assert auto is not None
@@ -296,6 +301,8 @@ def get_phases(
         error = None
     except PhaseError as e:
         auto, error = None, str(e)
+        if not all(k in overrides or (k == "address" and marked_address is not None) for k in KEY_PHASES):
+            raise  # detection's own reason says more than "set the frames"
     effective = dict(overrides)
     if marked_address is not None and "address" not in effective:
         effective["address"] = marked_address
