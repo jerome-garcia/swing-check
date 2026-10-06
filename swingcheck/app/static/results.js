@@ -100,8 +100,13 @@ function summaryPanel(s, states, focusPick, onSelect) {
       focusRow ? el("p", { class: "focus-line" }, el("strong", {}, "Biggest issue "), `${focusRow.label}: ${focusRow.value}`) : null,
       v.tip ? el("p", { class: "focus-line" }, el("strong", {}, `${tipWord(focusPick.status)} `), v.tip) : null,
       el("button", { class: "btn small", type: "button", onclick: () => onSelect(focusIndex) }, "See this checkpoint →"));
+  } else if (counts.ok && !notMarked.length) {
+    focusBox = el("div", { class: "focus ok good-note" },
+      el("div", { class: "focus-kicker" }, "Great swing"),
+      el("div", { class: "focus-title" },
+        `All ${counts.ok} checkpoints are in the green. Nothing to fix, nothing to watch: keep swinging like this.`));
   } else if (counts.ok) {
-    focusBox = el("div", { class: "focus ok" },
+    focusBox = el("div", { class: "focus ok good-note" },
       el("div", { class: "focus-kicker" }, "Looking good"),
       el("div", { class: "focus-title" }, "Every checkpoint that was measured is in the green."));
   }

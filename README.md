@@ -780,7 +780,8 @@ checkpoint (green, yellow, red; dashed = not measured yet), how many are good /
 to watch / to fix, and **Work on first**: the one fault to work on, with its
 fix and the measurement behind it ("Biggest issue"). With nothing red, it's
 **Worth a look** instead, and when every checkpoint was measured a green **Good
-swing** note comes first ("Nothing to fix right now"). Tap a dot to jump to that
+swing** note comes first ("Nothing to fix right now"); all green and all measured
+is **Great swing**. Tap a dot to jump to that
 checkpoint.
 
 **Reading the drawings.** Every key frame and the annotated video use one
