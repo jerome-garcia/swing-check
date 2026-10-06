@@ -453,7 +453,7 @@ export async function renderMark(view, id, isCurrent) {
     for (const b of scrubButtons) b.disabled = locked;
     slider.parentElement?.classList.toggle("finding", !locked);
     scrubHint.textContent = locked ? " · Frame set: ‹ Change frame to move it"
-      : " · Drag the slider (or tap ‹ ›) to find the frame";
+      : " · Tap ‹ › to step one frame at a time";
     backToSuggested.hidden = locked || cur().suggested === undefined || cur().frame === cur().suggested;
   }
 
@@ -636,7 +636,7 @@ export async function renderMark(view, id, isCurrent) {
     if (!cur().frameOk) {
       hud.replaceChildren(
         el("div", { class: "hud-text" }, stepLine,
-          el("span", { class: "hud-next" }, hasExample() ? "Slide to match the example" : "Slide to the right frame"),
+          el("span", { class: "hud-next" }, hasExample() ? "Drag the slider to match the example" : "Drag the slider to the right frame"),
           el("span", { class: "hud-hint" }, FIND[state.active] || stepDef().intro)),
         el("div", { class: "actions" },
           el("button", { class: "btn small primary", type: "button",

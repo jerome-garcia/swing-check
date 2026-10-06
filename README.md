@@ -685,7 +685,7 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    it's marked. **Save and analyze** unlocks once every step is marked, and
    the line under it lists what's still to mark. Each step has two parts, led by
    the dark bar above the frame (it flashes when it changes):
-   1. **Slide to match the example.** Rory McIlroy at the same moment sits
+   1. **Drag the slider to match the example.** Rory McIlroy at the same moment sits
       beside or in the corner of your frame, with a one-line description (*Set up and still, just
       before the club moves*). Move the slider, the ‹ › buttons or the arrow keys
       (Shift = 10 frames) until your frame matches, then press **Frame looks
