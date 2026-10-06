@@ -18,7 +18,7 @@ py -3.11 -m venv .venv
 ```
 
 ```bash
-.venvScriptsctivate
+.venv\Scripts\activate
 ```
 
 ```bash
