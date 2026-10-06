@@ -335,6 +335,7 @@ button.score-item:hover { background: var(--surface-2); }
 .focus.ok { background: var(--ok-soft); border-left-color: var(--ok); }
 .focus-kicker { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 .focus-title { font-weight: 700; font-size: 16px; margin: 2px 0 4px; }
+.good-note .focus-title { margin-bottom: 0; }
 .focus-line { margin: 0 0 6px; font-size: 15px; }
 .focus-line:last-of-type { margin-bottom: 12px; }
 .not-marked { margin: 0; }

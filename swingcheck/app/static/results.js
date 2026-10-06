@@ -103,9 +103,18 @@ function summaryPanel(s, states, focusPick, onSelect) {
       el("div", { class: "focus-title" }, "Every checkpoint that was measured is in the green."));
   }
 
+  // Nothing red (and every checkpoint measured): say so first, so a yellow "Worth a look"
+  // doesn't read as something wrong.
+  const goodNote = counts.warn && !counts.flag && !notMarked.length
+    ? el("div", { class: "focus ok good-note" },
+      el("div", { class: "focus-kicker" }, "Good swing"),
+      el("div", { class: "focus-title" }, `Nothing to fix right now. Just keep an eye on the yellow ${counts.warn === 1 ? "one" : "ones"}.`))
+    : null;
+
   return el("section", { class: "panel summary" },
     el("div", { class: "panel-head" }, el("h2", {}, "Swing summary"), tally),
     scorecard(states, { onSelect, labels: true }),
+    goodNote,
     focusBox || null,
     notMarked.length ? el("p", { class: "subtle small not-marked" },
       `${listText(notMarked.map(x => x.cp.title))} ${notMarked.length === 1 ? "isn't" : "aren't"} measured yet. `,
