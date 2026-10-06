@@ -81,16 +81,35 @@ def swing_plane_line(ctx: SwingContext, show: tuple[int, int] | None) -> list[Ov
     """The swing plane line (from the address clubhead toward the belt buckle, see
     plane_points) across the whole frame, labeled, with a grey boundary line either side
     marking the on-plane corridor (the takeaway's green band, [analyzers.takeaway]
-    line_tolerance). Every checkpoint from 2 to 8 draws it on its key frame, so the
-    clubhead can be judged against it by eye."""
+    line_tolerance toward the golfer, line_tolerance_outside toward the ball). Every
+    checkpoint from 2 to 8 draws it on its key frame, so the clubhead can be judged
+    against it by eye."""
     ch0, gr0 = plane_points(ctx)
     if np.linalg.norm(gr0 - ch0) < 1:
         return []
+    cfg = ctx.config["analyzers"]["takeaway"]
+    try:
+        inward = golfer_side(ctx, ch0, gr0)
+    except MissingData:
+        inward = None
+    lines = [Overlay("line", [tuple(ch0), tuple(gr0)], PLANE_COLOR, "Swing plane", show, 2)]
+    if inward is not None:
+        for off in (inward * cfg["line_tolerance"] * ctx.scale, -inward * cfg["line_tolerance_outside"] * ctx.scale):
+            lines.insert(0, Overlay("line", [tuple(ch0 + off), tuple(gr0 + off)], PLANE_BAND_COLOR, "", show, 1))
+    return lines
+
+
+def golfer_side(ctx: SwingContext, ch0: np.ndarray, gr0: np.ndarray) -> np.ndarray:
+    """Unit vector square to the swing plane line, pointing to the golfer's side (inside):
+    on screen, from the ball toward the hips at address."""
+    ball = np.asarray(ctx.marks.points["ball"], float)
+    hip = ctx.midpoint("left_hip", "right_hip")[ctx.marks.address_frame]
+    if not np.all(np.isfinite(hip)):
+        hip = ctx.value(ctx.track(ctx.side("hip", "trail")), ctx.marks.address_frame, "back hip")
+    toward_golfer = -1.0 if hip[0] < ball[0] else 1.0
     d = (gr0 - ch0) / np.linalg.norm(gr0 - ch0)
-    off = np.array([-d[1], d[0]]) * ctx.config["analyzers"]["takeaway"]["line_tolerance"] * ctx.scale
-    return [Overlay("line", [tuple(ch0 + off), tuple(gr0 + off)], PLANE_BAND_COLOR, "", show, 1),
-            Overlay("line", [tuple(ch0 - off), tuple(gr0 - off)], PLANE_BAND_COLOR, "", show, 1),
-            Overlay("line", [tuple(ch0), tuple(gr0)], PLANE_COLOR, "Swing plane", show, 2)]
+    normal = np.array([-d[1], d[0]])
+    return -normal if normal[0] * toward_golfer < 0 else normal
 
 
 @register("swing_plane", view="dtl", title="Swing plane", phase="address")

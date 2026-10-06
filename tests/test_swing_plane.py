@@ -153,5 +153,5 @@ def test_swing_plane_line_spans_the_frame_and_the_whole_video():
     assert len(bounds) == 2 and all(b.frames == (0, 39) for b in bounds)  # grey on-plane boundaries
     # ±20% of torso either side, square to the line.
     p0, p1 = np.array(bounds[0].points[0]), np.array(bounds[1].points[0])
-    assert np.linalg.norm(p0 - p1) == pytest.approx(2 * 0.20 * 260.0, abs=0.5)
+    assert np.linalg.norm(p0 - p1) == pytest.approx((0.20 + 0.40) * 260.0, abs=0.5)  # 10 cm in, 20 cm out
     assert [o.label for o in v.overlays if o.kind == "text"] == ["Points at your belt buckle"]

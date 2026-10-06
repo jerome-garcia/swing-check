@@ -74,8 +74,9 @@ itself points at the ball's level. The top (5) checks the lead arm against the
 spine.
 
 The swing plane line is drawn across the whole frame, with a grey boundary
-line either side marking the on-plane corridor (±20% of torso length, about
-±10 cm: the takeaway's green band, `line_tolerance`), on every checkpoint's key
+line either side marking the on-plane corridor (the takeaway's green band: 20% of
+torso length, about 10 cm, toward you, `line_tolerance`, and 40%, about 20 cm,
+toward the ball, `line_tolerance_outside`), on every checkpoint's key
 frame from 2 to 8, and it stays on screen for the whole annotated video, so you
 can follow the clubhead against it through the swing by eye.
 
@@ -152,7 +153,7 @@ don't matter here); that frame is the takeaway checkpoint. Settings live in `[an
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|
-| **Clubhead vs swing plane** | distance of the clubhead from the swing plane line (checkpoint 2's line, toward the belt buckle), square to it, as % of torso length | within ±20% (≈10 cm): **Clubhead on the swing plane** | 20–50%: *clubhead slightly toward you / toward the ball* | past 50% (≈25 cm): *clubhead too far toward you* (pulled inside or rolled open) or *too far toward the ball* (picked up outside) |
+| **Clubhead vs swing plane** | distance of the clubhead from the swing plane line (checkpoint 2's line, toward the belt buckle), square to it, as % of torso length | up to 20% (≈10 cm) toward you or 40% (≈20 cm) toward the ball (good players often go back a little outside; Tiger ≈18 cm): **Clubhead on the swing plane** | 20–50% toward you or 40–50% toward the ball: *clubhead slightly toward you / toward the ball* | past 50% (≈25 cm): *clubhead too far toward you* (pulled inside or rolled open) or *too far toward the ball* (picked up outside) |
 | **Spine bend kept** | spine bend (hip center → shoulder center, from vertical) on the takeaway frame vs address, from tracking | up to 6° more upright or 5° more bent: **posture kept** | 6–10° more upright (*slightly standing up*) or 5–10° more bent (*slightly bending over*) | more than 10°: **standing up** early or **bending over** |
 | **Back knee bend kept** | trail knee flex (180° − hip-knee-ankle angle) on the takeaway frame vs address, from tracking | up to 5° straighter or 8° more bent: **flex kept** | more than 5° straighter (*slightly straightening*; past 10°, *straightening*) or more than 8° more bent (*sinking*) | never: a watch item (see below) |
 

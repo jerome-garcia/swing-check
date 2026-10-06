@@ -93,8 +93,17 @@ def test_row_shows_offset_with_units():
     row = run(inside_by=0.3).rows[0]
     assert row.value == "15 cm toward you"  # 30% of the default 50 cm torso
     assert row.note == "Slightly toward you"
-    assert (row.good, row.fix) == ("within 10 cm of the line", "more than 25 cm off")
+    assert (row.good, row.fix) == ("up to 10 cm toward you or 20 cm toward the ball", "more than 25 cm off")
     assert run(inside_by=-0.6).rows[0].value == "30 cm toward the ball"
+
+
+def test_green_reaches_further_toward_the_ball():
+    # Good players often take it back a little outside (Tiger about 18 cm): green to 20 cm
+    # toward the ball, 10 cm toward you; red past 25 cm either way.
+    assert run(inside_by=-0.36).status == "ok"
+    assert run(inside_by=-0.44).status == "warn"
+    assert run(inside_by=0.24).status == "warn"
+    assert run(inside_by=-0.6).status == "flag"
 
 
 def test_only_the_clubhead_is_clicked():

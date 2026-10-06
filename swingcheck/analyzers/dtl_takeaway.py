@@ -5,7 +5,8 @@ behind it points at the camera), the clubhead should still be on the shaft
 line you set at address: the club is on plane. Measured as the clubhead's
 distance from that line (square to it), as a share of torso length:
 
-  on the line        within line_tolerance either way (OK)
+  on the line        within line_tolerance toward you, line_tolerance_outside toward
+                     the ball (OK; good players often go back a little outside)
   slightly in / out  up to flag_distance: a style many good players have (Watch)
   well inside        clubhead far behind the line, on your side: pulled inside /
                      rolled open (Flag)
@@ -37,7 +38,7 @@ import numpy as np
 
 from swingcheck.analyzers import (MissingData, Overlay, Row, STATUS_COLORS, SwingContext, Verdict, clubhead_mark, grade,
                                   register)
-from swingcheck.analyzers.dtl_swing_plane import plane_points, swing_plane_line
+from swingcheck.analyzers.dtl_swing_plane import golfer_side, plane_points, swing_plane_line
 from swingcheck.analyzers.dtl_body import posture_kept, trail_knee_kept, with_body
 
 HOLD_MS = 400  # how long the takeaway overlays stay up in the annotated video
@@ -59,20 +60,11 @@ class AddressLine:
 
 
 def address_line(ctx: SwingContext) -> AddressLine:
-    ball = np.asarray(ctx.marks.points["ball"], float)
     ch0, gr0 = plane_points(ctx)
     if np.linalg.norm(gr0 - ch0) < 1:
         raise MissingData("The address clubhead and hands marks are on top of each other. Mark them again.")
-    # "Toward the golfer" on screen: from the ball toward the hips at address.
-    hip = ctx.midpoint("left_hip", "right_hip")[ctx.marks.address_frame]
-    if not np.all(np.isfinite(hip)):
-        hip = ctx.value(ctx.track(ctx.side("hip", "trail")), ctx.marks.address_frame, "back hip")
-    toward_golfer = -1.0 if hip[0] < ball[0] else 1.0
-    d = (gr0 - ch0) / np.linalg.norm(gr0 - ch0)
-    normal = np.array([-d[1], d[0]])
-    if normal[0] * toward_golfer < 0:
-        normal = -normal
-    return AddressLine(ch0, gr0, normal, toward_golfer)
+    normal = golfer_side(ctx, ch0, gr0)
+    return AddressLine(ch0, gr0, normal, 1.0 if normal[0] > 0 else -1.0)
 
 
 @register("takeaway", view="dtl", title="Takeaway", phase="takeaway")
@@ -81,6 +73,7 @@ def takeaway(ctx: SwingContext) -> Verdict:
     if mark is None:
         raise MissingData("The takeaway isn't marked yet. Go to Edit marks → Takeaway and click the clubhead.")
     tol = ctx.cfg["line_tolerance"]
+    tol_out = ctx.cfg["line_tolerance_outside"]
     flag_at = ctx.cfg["flag_distance"]
     clubhead = np.asarray(mark.points["clubhead"], float)
     f = mark.frame
@@ -99,7 +92,7 @@ def takeaway(ctx: SwingContext) -> Verdict:
         status, label = "warn", "Clubhead slightly toward you"
         meaning = ("The clubhead is a little off your swing plane line, toward you (slightly inside). "
                    "Many good players go back like this, so just keep an eye on it.")
-    elif inside_by < -tol:
+    elif inside_by < -tol_out:
         status, label = "warn", "Clubhead slightly toward the ball"
         meaning = ("The clubhead is a little off your swing plane line, toward the ball (slightly outside). "
                    "Many good players go back like this, so just keep an eye on it.")
@@ -146,6 +139,7 @@ def takeaway(ctx: SwingContext) -> Verdict:
         measurements={
             "clubhead_inside_line": round(inside_by, 3),
             "line_tolerance": tol,
+            "line_tolerance_outside": tol_out,
             "flag_distance": flag_at,
             "takeaway_frame": f,
             "units": "share of torso length, square to the swing plane line; + = golfer's side (inside), "
@@ -153,8 +147,9 @@ def takeaway(ctx: SwingContext) -> Verdict:
         },
         rows=[
             Row("Clubhead vs swing plane", offset_text, plane_label.removeprefix("Clubhead ").capitalize(),
-                grade(inside_by, -tol, tol, -flag_at, flag_at),
-                good=f"within {ctx.distance_text(tol)} of the line", fix=f"more than {ctx.distance_text(flag_at)} off"),
+                grade(inside_by, -tol_out, tol, -flag_at, flag_at),
+                good=f"up to {ctx.distance_text(tol)} toward you or {ctx.distance_text(tol_out)} toward the ball",
+                fix=f"more than {ctx.distance_text(flag_at)} off"),
         ] + [b.row for b in body],
         overlays=overlays,
     )

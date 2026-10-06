@@ -186,8 +186,10 @@ angle_watch_max = 70
 # DTL checkpoint 3, on the takeaway frame you mark (shaft parallel to the
 # target line): the clubhead should still be on the address shaft line (the
 # club is on plane). Distance from that line, square to it, as a share of
-# torso length (0.20 = 20%, about 10 cm), either side.
-line_tolerance = 0.20   # green: on plane
+# torso length (0.20 = 20%, about 10 cm).
+line_tolerance = 0.20          # green: on plane, up to this toward you (inside)...
+line_tolerance_outside = 0.40  # ...and up to this toward the ball (about 20 cm; Tiger
+                               # takes it back about 18 cm outside)
 flag_distance = 0.50    # yellow up to this (slightly inside/outside, which many
                         # good players do); red beyond (well inside/outside)
 # Body kept from address, degrees. Spine bend (hip center -> shoulder center
