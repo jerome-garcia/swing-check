@@ -49,7 +49,7 @@ def test_summary_counts_days_speed_and_problems():
     assert "SwingCheck admin" in page and "+1 failed" in page and "Boom" in page
     assert "Active browsers" not in page and "Uploaders" in page and "Idle" in page and "In line" in page
     assert "avg wait 22 s" in page and "avg upload 21 s" in page and "412 MB" in page
-    assert "analysis 1 min typical · marking 2 min typical" in page
+    assert "analysis 80 s typical · marking 2 min typical" in page
     assert "one at a time" not in page and "since the last restart" not in page  # descriptions removed
     live["running"] = [{"kind": "analyze", "for_s": 45}]
     assert '<div class="value">Analyzing</div><div class="sub">45 s</div>' in admin.page(admin.summary(events, live, now))
