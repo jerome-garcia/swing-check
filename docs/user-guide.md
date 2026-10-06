@@ -38,18 +38,6 @@ during the clip. A tripod is the single most important thing.
 
 ### Down-the-line
 
-```
-            target
-              ^
-              |
-     ball o   |   target line
-              |
-    golfer    |
-              |
-              |
-           [camera]   on the line through your hands, parallel to the target line
-```
-
 - Stand behind yourself, looking **toward the target**.
 - Put the camera **on the line through your hands at address**, parallel to the
   target line (not on the ball-to-target line, which hides the hands behind the
@@ -63,17 +51,6 @@ during the clip. A tripod is the single most important thing.
 ### Face-on (for a future release)
 
 Face-on analysis isn't available in the app yet; this is how to film it when it is.
-
-```
-       target <-- (for a left-hander)        (for a right-hander) --> target
-
-                    golfer
-                      |
-                    ball o
-                      |
-                      |
-                   [camera]   square to the target line, facing your chest
-```
 
 - The camera faces you, **square to the target line**.
 - Center it on the **ball / your sternum**, at about **chest height**.
