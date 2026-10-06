@@ -3,6 +3,10 @@
 Everything you need to get a useful swing check, from filming to reading your
 results. It takes about 5 minutes per swing.
 
+> This guide is for **down-the-line** videos (filmed from behind you, looking
+> toward the target), the only view SwingCheck analyzes for now. Face-on is
+> planned for a future release.
+
 ## Quick start
 
 1. **Film** one swing from behind, with your phone on a tripod.
