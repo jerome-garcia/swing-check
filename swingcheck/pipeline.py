@@ -170,6 +170,13 @@ def save_marks(run_dir: Path, view: str, address_frame: int, points: dict[str, P
         if frame <= address_frame:
             raise PipelineError(f"The {name} frame must come after the address frame")
         kept[name] = CheckpointMark(frame=frame, points=cp_points)
+    # Checkpoints come in swing order (CHECKPOINT_MARKS lists them so); one marked on an
+    # earlier frame than the one before it can't be right.
+    marked = [name for name in CHECKPOINT_MARKS[view] if name in kept]
+    for before, name in zip(marked, marked[1:]):
+        if kept[name].frame <= kept[before].frame:
+            this, that = name.replace("_", " "), before.replace("_", " ")
+            raise PipelineError(f"Your {this} frame comes before your {that} frame. Pick a {this} frame after it.")
     marks = Marks(view=view, address_frame=int(address_frame),
                   points={k: (float(x), float(y)) for k, (x, y) in points.items() if k in REQUIRED_MARKS[view]},
                   video_signature=video_signature(info), checkpoints=kept)

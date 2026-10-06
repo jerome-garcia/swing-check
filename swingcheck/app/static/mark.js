@@ -494,10 +494,12 @@ export async function renderMark(view, id, isCurrent) {
   // Quick sanity checks on the marks; they warn but never block saving.
   const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
   function markWarnings() {
-    const out = []; // [stepKey, sentence]
+    // [stepKey, sentence, blocks]: marks that can't be right block saving (a frame out of
+    // order, clicks swapped); the rougher distance checks only ask "anyway?".
+    const out = [];
     const a = state.steps.address.points;
     if (a.clubhead && a.grip && a.grip[1] >= a.clubhead[1]) {
-      out.push(["address", "Your hands should be above the club neck. Check you clicked the club neck first, then your hands."]);
+      out.push(["address", "Your hands should be above the club neck. Check you clicked the club neck first, then your hands.", true]);
     }
     const shaft = a.clubhead && a.grip ? dist(a.clubhead, a.grip) : null;
     if (a.ball && a.clubhead && shaft && dist(a.ball, a.clubhead) > 0.5 * shaft) {
@@ -508,12 +510,12 @@ export async function renderMark(view, id, isCurrent) {
       if (!started(st.key)) continue;
       const here = state.steps[st.key];
       if (here.frame <= state.steps[prev.key].frame) {
-        out.push([st.key, `This ${st.title.toLowerCase()} frame comes before your ${prev.title.toLowerCase()} frame. Check the frame.`]);
+        out.push([st.key, `This ${st.title.toLowerCase()} frame comes before your ${prev.title.toLowerCase()} frame. Pick a later frame.`, true]);
       }
       const p = here.points;
       if (p.clubhead && p.grip) {
         if (["halfway_back", "follow_through"].includes(st.key) && p.clubhead[1] >= p.grip[1]) {
-          out.push([st.key, "The clubhead should be above your hands here. Check you clicked the clubhead first, then your hands."]);
+          out.push([st.key, "The clubhead should be above your hands here. Check you clicked the clubhead first, then your hands.", true]);
         }
         // From behind, the club looks shorter at address (it leans away from the camera) than
         // upright at halfway back: real marks reach 1.5x, so only flag what can't be the club.
@@ -622,6 +624,14 @@ export async function renderMark(view, id, isCurrent) {
     if (left.length) {
       saveError.textContent = `Mark every step first. Still to mark: ${listText(left.map(st => st.title.toLowerCase()))}.`;
       saveError.hidden = false;
+      return;
+    }
+    const blocking = markWarnings().filter(([, , blocks]) => blocks);
+    if (blocking.length) {
+      const titles = [...new Set(blocking.map(([key]) => steps.find(st => st.key === key).title))];
+      saveError.textContent = `Fix these marks first (${listText(titles)}): ${blocking.map(([, t]) => t).join(" ")}`;
+      saveError.hidden = false;
+      selectStep(blocking[0][0]);
       return;
     }
     const warnings = markWarnings();

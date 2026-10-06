@@ -21,6 +21,16 @@ def test_save_marks_rejects_frame_outside_clip(tmp_path):
         save_marks(tmp_path, "fo", 10_000, {"ball": (1, 2)}, make_info())
 
 
+def test_save_marks_rejects_checkpoints_out_of_order(tmp_path):
+    address = {"ball": (1, 2), "clubhead": (3, 4), "grip": (5, 6)}
+    cps = {"takeaway": {"frame": 30, "points": {"clubhead": (1, 1)}},
+           "halfway_back": {"frame": 25, "points": {"clubhead": (1, 1), "grip": (2, 2)}}}
+    with pytest.raises(PipelineError, match="Your halfway back frame comes before your takeaway frame"):
+        save_marks(tmp_path, "dtl", 10, address, make_info(), checkpoints=cps)
+    cps["halfway_back"]["frame"] = 40
+    assert save_marks(tmp_path, "dtl", 10, address, make_info(), checkpoints=cps).checkpoint("halfway_back").frame == 40
+
+
 def test_analyze_needs_converted_video(tmp_path):
     with pytest.raises(PipelineError, match="converted"):
         analyze(tmp_path, "dtl", CONFIG)
