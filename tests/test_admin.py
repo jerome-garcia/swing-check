@@ -32,6 +32,9 @@ def test_summary_counts_days_speed_and_problems():
         {"t": now, "event": "convert", "ok": True, "wait_s": 2, "run_s": 10, "camera": ["You're small in the frame"]},
         {"t": now, "event": "analyze", "ok": True, "wait_s": 60, "run_s": 80},
         {"t": now, "event": "analyze", "ok": False, "wait_s": 4, "run_s": 5, "error": "Boom"},
+        {"t": now, "event": "marks", "mark_s": 70},
+        {"t": now, "event": "marks", "mark_s": 110},
+        {"t": now, "event": "marks", "mark_s": 3600},  # left open: the median isn't thrown by it
     ]
     live = {"version": "v1", "up_s": 5, "running": [], "queued": 0, "uploading": 0, "swings_stored": 2,
             "disk_free_gb": 30.0, "disk_used_pct": 18, "swings_bytes": 412_000_000}
@@ -39,13 +42,14 @@ def test_summary_counts_days_speed_and_problems():
     assert s["days"][0] == {"date": s["days"][0]["date"], "uploaders": 2, "upload": 4, "convert_ok": 1,
                             "convert_failed": 0, "analyze_ok": 1, "analyze_failed": 1}
     assert s["speed"] == {"median_wait_s": 4, "longest_wait_s": 60, "median_analysis_s": 80,
-                          "average_wait_s": 22, "average_upload_s": 21}
+                          "average_wait_s": 22, "average_upload_s": 21, "median_marking_s": 110}
     assert s["problems"][0]["error"] == "Boom"
     assert s["camera"] == [("You're small in the frame", 1)]
     page = admin.page(s)
     assert "SwingCheck admin" in page and "+1 failed" in page and "Boom" in page
     assert "Active browsers" not in page and "Uploaders" in page and "Idle" in page and "In line" in page
     assert "avg wait 22 s" in page and "avg upload 21 s" in page and "412 MB" in page
+    assert "marking 2 min typical" in page
     assert "one at a time" not in page and "since the last restart" not in page  # descriptions removed
     live["running"] = [{"kind": "analyze", "for_s": 45}]
     assert '<div class="value">Analyzing</div><div class="sub">45 s</div>' in admin.page(admin.summary(events, live, now))

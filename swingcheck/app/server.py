@@ -370,11 +370,18 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         if not (folder / "video.json").exists():
             raise HTTPException(409, "The video hasn't been converted yet.")
         info = VideoInfo.load(folder / "video.json")
+        # How long marking took (admin): from the video being ready (its suggestions saved,
+        # the end of conversion) to the first save of its marks; later edits don't count.
+        ready = folder / "suggest.json" if (folder / "suggest.json").exists() else folder / "video.json"
+        first_save = not (folder / "marks.json").exists()
+        mark_s = round(time.time() - ready.stat().st_mtime, 1)
         try:
             marks = save_marks(folder, meta.view, body.address_frame, body.points, info,
                                checkpoints={k: v.model_dump() for k, v in body.checkpoints.items()})
         except PipelineError as e:
             raise HTTPException(400, str(e)) from None
+        if first_save:
+            events.add("marks", mark_s=mark_s)
         return {"view": marks.view, "address_frame": marks.address_frame, "points": marks.points,
                 "checkpoints": {k: {"frame": c.frame, "points": c.points} for k, c in marks.checkpoints.items()}}
 

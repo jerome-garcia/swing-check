@@ -382,3 +382,21 @@ def test_key_frame_addresses_change_with_each_analysis(client, runs):
     os.utime(runs / "old_swing" / "analysis.json", ns=(later, later))
     assert client.get("/api/swings/old_swing").json()["images_version"] != before
     assert all("images_version" in s for s in client.get("/api/swings").json())
+
+
+def test_first_save_of_marks_logs_how_long_marking_took(tmp_path):
+    import json
+
+    from swingcheck.app.store import Store
+    from tests.helpers import make_info
+
+    meta = Store(tmp_path).create("swing.mp4", "dtl")
+    folder = tmp_path / meta.id
+    make_info().save(folder / "video.json")
+    client = TestClient(create_app(tmp_path))
+    body = {"address_frame": 5, "points": {"ball": [1, 2], "clubhead": [3, 4], "grip": [5, 6]}, "checkpoints": {}}
+    assert client.post(f"/api/swings/{meta.id}/marks", json=body).status_code == 200
+    assert client.post(f"/api/swings/{meta.id}/marks", json=body).status_code == 200  # an edit: not counted
+    logged = [json.loads(line) for line in (tmp_path / "admin-events.jsonl").read_text().splitlines()]
+    marks = [e for e in logged if e["event"] == "marks"]
+    assert len(marks) == 1 and marks[0]["mark_s"] >= 0 and set(marks[0]) == {"t", "event", "mark_s"}

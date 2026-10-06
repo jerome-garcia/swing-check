@@ -102,6 +102,7 @@ def summary(events: list[dict[str, Any]], live: dict[str, Any], now: float | Non
     jobs = [e for e in events if e["event"] in ("convert", "analyze") and e["t"] >= week_ago]
     analyses = [e for e in jobs if e["event"] == "analyze" and e.get("ok")]
     waits = [e["wait_s"] for e in jobs if e.get("wait_s") is not None]
+    marking = [e["mark_s"] for e in events if e["event"] == "marks" and e["t"] >= week_ago and e.get("mark_s") is not None]
     upload_times = [e["upload_s"] for e in events
                     if e["event"] == "upload" and e["t"] >= week_ago and e.get("upload_s") is not None]
     month_ago = now - 30 * 86400
@@ -122,6 +123,8 @@ def summary(events: list[dict[str, Any]], live: dict[str, Any], now: float | Non
             "average_wait_s": round(statistics.mean(waits)) if waits else None,
             "average_upload_s": round(statistics.mean(upload_times)) if upload_times else None,
             "median_analysis_s": round(statistics.median(e["run_s"] for e in analyses)) if analyses else None,
+            # Typical, not average: a swing left open for an hour mid-marking would skew a mean.
+            "median_marking_s": round(statistics.median(marking)) if marking else None,
         },
         "problems": [{"t": e["t"], "event": e["event"], "error": e.get("error", "")}
                      for e in sorted(events, key=lambda e: e["t"], reverse=True)
@@ -275,7 +278,7 @@ def page(data: dict[str, Any]) -> str:
         or "<li class=muted>None.</li>"
     speed = data["speed"]
     timing = (f"wait {_duration(speed['median_wait_s'])} typical, {_duration(speed['longest_wait_s'])} longest"
-              f" · analysis {_duration(speed['median_analysis_s'])}")
+              f" · analysis {_duration(speed['median_analysis_s'])} · marking {_duration(speed['median_marking_s'])} typical")
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="refresh" content="30"><meta name="robots" content="noindex"><meta name="theme-color" content="#123824">
