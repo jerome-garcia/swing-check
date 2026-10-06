@@ -207,6 +207,7 @@ def _hour_chart(hours: dict[str, list[int]]) -> str:
 
 STYLE = """
   main { max-width: 920px; }
+  .admin-note { margin: 4px 0 0; color: var(--muted); font-size: 13px; text-align: center; }
   .admin-bar .brand-sub { color: var(--on-deep-soft); font-size: 13px; font-weight: 500; }
   .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
@@ -277,8 +278,11 @@ def page(data: dict[str, Any]) -> str:
     camera = "".join(f"<li>{esc(title)} <span class=muted>× {n}</span></li>" for title, n in data["camera"]) \
         or "<li class=muted>None.</li>"
     speed = data["speed"]
-    timing = (f"wait {_duration(speed['median_wait_s'])} typical, {_duration(speed['longest_wait_s'])} longest"
-              f" · analysis {_duration(speed['median_analysis_s'])} typical · marking {_duration(speed['median_marking_s'])} typical")
+    def typical(seconds: float | None) -> str:  # a median, or a dash before there's any data
+        return f"{_duration(seconds)} typical" if seconds is not None else "–"
+
+    timing = (f"wait {typical(speed['median_wait_s'])}, {_duration(speed['longest_wait_s'])} longest"
+              f" · analysis {typical(speed['median_analysis_s'])} · marking {typical(speed['median_marking_s'])}")
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="refresh" content="30"><meta name="robots" content="noindex"><meta name="theme-color" content="#123824">
@@ -286,7 +290,7 @@ def page(data: dict[str, Any]) -> str:
 {THEME}<style>{STYLE}</style></head><body>
 <header class="topbar admin-bar"><span class="brand">{LOGO}<span class="brand-name">SwingCheck
   <span class="stage-badge">Admin</span></span></span>
-  <span class="brand-sub">Numbers only · refreshes every 30 s</span></header>
+  <span class="brand-sub">Refreshes every 30 s</span></header>
 <main class="stack">
 <section class="tiles">{tiles}</section>
 <section class="panel"><h2>Activity by hour <small>last {DAYS_SHOWN} days, PHT</small></h2>
@@ -296,4 +300,6 @@ def page(data: dict[str, Any]) -> str:
 <div class="table-wrap"><table><tr><th>Day</th><th>Uploaders</th><th>Uploads</th><th>Converted</th><th>Analyzed</th></tr>{rows}</table></div></section>
 <section class="panel"><h2>Recent problems</h2><ul>{problems}</ul></section>
 <section class="panel"><h2>Camera check problems <small>30 days</small></h2><ul>{camera}</ul></section>
+<p class="admin-note">This page and its log hold counts and timings only, never anyone's swings, videos, names,
+IP addresses, or private keys.</p>
 </main></body></html>"""
