@@ -30,6 +30,13 @@ In the Philippines? Support with InstaPay: scan this with GCash, Maya, or your b
 
 <img src="swingcheck/app/static/support/instapay-qr.png" alt="InstaPay QR code" width="200">
 
+### Release notes
+
+One page per release, as a PDF in [docs/releases/](docs/releases/): what each minor
+version added, with its patch releases. The PDFs are made from the Markdown beside
+them (`vX.Y.md`); edit one or add the next and run `python docs/releases/render.py`
+(Windows, uses Edge like the branding pages).
+
 ### Brand
 
 The one-page brand guide (logo, versions, clear space, colors, type, voice) is
