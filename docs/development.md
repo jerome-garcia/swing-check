@@ -6,21 +6,39 @@ server, see [hosting.md](hosting.md).
 
 ## Getting started
 
-Set up Python 3.11, ffmpeg, and the virtual environment as in the
-[README](../README.md#run-it-on-your-own-computer), then:
+On Windows, install Python 3.11 ([python.org](https://www.python.org/downloads/))
+and ffmpeg, then set up the project from its folder:
+
+```bash
+winget install Gyan.FFmpeg
+```
+
+```bash
+py -3.11 -m venv .venv
+```
+
+```bash
+.venvScriptsctivate
+```
+
+```bash
+pip install -e ".[dev]"
+```
 
 ```bash
 swingcheck
 ```
 
-The app opens at `http://localhost:8765`. Useful options:
+The app opens at `http://localhost:8765`. Open a new terminal after installing
+ffmpeg so it's on your PATH. The first analysis downloads the pose model (about
+30 MB) into `models/`; after that it works offline. Useful options:
 
 | Option | What it does |
 |---|---|
 | `--port 8766` | Use another port, so a test copy can run beside your own |
 | `--runs-dir <folder>` | Store swings somewhere else, such as a scratch folder for testing |
 | `--no-browser` | Don't open a browser tab |
-| `--phone` | Listen on your Wi-Fi so your phone can open it |
+| `--phone` | Listen on your Wi-Fi so your phone can open it (allow Python through the firewall on private networks; anyone on the Wi-Fi can open it) |
 | `--hosted` | Run as on swingcheck.org: owner keys, limits, and expiry |
 
 ## Project layout

@@ -1,122 +1,96 @@
-# SwingCheck
+<p align="center">
+  <a href="https://swingcheck.org"><img src="swingcheck/app/static/og-image.jpg" alt="SwingCheck: film it, check it, fix what matters" width="720"></a>
+</p>
 
-**Free golf swing analysis from one phone video.** Try it at
-**[swingcheck.org](https://swingcheck.org)**.
+<p align="center">
+  <b>Find the one thing holding your golf swing back, from a single phone video.</b><br>
+  Free. No sign-up. Results in minutes.
+</p>
 
-> **Alpha.** SwingCheck is in active development: features, results, and limits
-> may change. Results are estimates from video, for practice only.
+<p align="center">
+  <a href="https://swingcheck.org"><b>👉 Check your swing at swingcheck.org</b></a>
+</p>
 
-Film one swing from behind (down the line), mark a few points, and SwingCheck
-grades eight checkpoints through your swing. You get an annotated video, key
-frames, and the one thing to work on first, with a fix in plain words.
+---
 
-## Features
+## Stop guessing what's wrong with your swing
 
-- **Eight checkpoints**, each graded green (Good), yellow (Watch), or red (Fix):
+Fat shots? Slicing? Wedges ballooning instead of going forward? Most golfers
+know *something* is off, but not *what*. SwingCheck watches your swing frame by
+frame and tells you the **one thing to work on first**, in plain words, with
+what to try.
 
-  | # | Checkpoint | What it checks |
-  |---|---|---|
-  | 1 | Address | Arms hang straight, spine and knee bend, upper back |
-  | 2 | Swing plane | The shaft points at your belt buckle |
-  | 3 | Takeaway | The clubhead stays on the swing plane |
-  | 4 | Halfway back | The shaft points at the ball |
-  | 5 | Top | The lead arm matches your shoulders, hands over the back heel |
-  | 6 | Downswing | The club comes down on plane, flatter than it went back |
-  | 7 | Impact | The hips stay back and the spine bend is kept |
-  | 8 | Follow-through | The club exits on the same line as halfway back |
+## How it works
 
-- **Work on first:** the one fault that matters most, with how to fix it.
-- **Guided marking:** each step shows Rory McIlroy at the same moment (Tiger
-  Woods for a driver) and the points to click.
-- **Camera check:** says right away if the video is filmed from a usable angle.
-- **Share your results** as a PDF link, with a preview card in chats.
-- **Right- or left-handed**, and **iron or driver** ranges.
-- **Private by design:** no sign-up; swings are deleted after 3 days.
+1. **📱 Film** one swing from behind, with your phone on a tripod.
+2. **👆 Mark** a few points. A tour pro at the same moment shows you exactly
+   what to match and where to click.
+3. **✅ Get your results:** every checkpoint graded green, yellow, or red, an
+   annotated video, and a clear next step.
 
-Face-on analysis is planned for a future release.
+## Eight checkpoints, start to finish
 
-## Filming your swing
+| | Checkpoint | What it looks at |
+|---|---|---|
+| 1 | **Address** | Your posture: arms, spine, knees, and back |
+| 2 | **Swing plane** | Whether your club is set up on the right line |
+| 3 | **Takeaway** | Whether the club starts back on plane |
+| 4 | **Halfway back** | Whether the club points where it should |
+| 5 | **Top** | Your front arm, and where your hands are |
+| 6 | **Downswing** | Whether you come over the top or drop it in |
+| 7 | **Impact** | Whether you stand up early (early extension) |
+| 8 | **Follow-through** | Whether the club exits on the same line |
 
-- **Use a tripod.** The camera must not move during the clip.
-- **Film from behind**, with the camera on the line through your hands, at hip
-  height, aimed down the target line.
-- **One swing per clip**, with your whole body, the ball, and the club at the
-  top in frame.
-- **Slo-mo if you have it** (120 or 240 fps). Upload the original from your
-  camera roll: copies sent through chat apps are often re-saved at 30 fps.
+🟢 **Good**: you're where good players are. 🟡 **Watch**: worth a look.
+🔴 **Fix**: work on this. Every result shows its measurement in centimetres or
+degrees, next to the good range.
 
-The app also has a setup guide with pictures on the upload page.
+## Why golfers like it
 
-## Privacy
+- **One clear priority.** Not a wall of numbers: the fault that matters most,
+  with how to fix it.
+- **Made for real practice.** Range, backyard, or simulator bay: all you need is
+  a phone and a tripod.
+- **Easy to follow.** A pro example guides every step of marking.
+- **Share it with your coach or friends** as a one-page PDF link, with a preview
+  in chat apps.
+- **Irons and drivers, right- and left-handed,** each with their own ranges.
+- **Private.** No account, no email. Your swings are yours alone, and deleted
+  after 3 days.
+- **Free.** No subscription, no ads.
 
-On swingcheck.org, your swings are tied to a private key in your browser, not
-an account. Nobody else can see them unless you share a PDF link. Videos are
-deleted 3 days after upload. See the Terms of use and Privacy notice in the app.
+## Ready to try it?
 
-## Run it on your own computer
+1. Read the 2-minute [filming guide](docs/user-guide.md#1-filming-your-swing).
+2. Film a swing.
+3. Upload it at **[swingcheck.org](https://swingcheck.org)**.
 
-Everything stays on your computer. Windows, with Python 3.11 and ffmpeg:
+New to it? The [user guide](docs/user-guide.md) walks through every step.
 
-```bash
-winget install Gyan.FFmpeg
-```
-
-```bash
-py -3.11 -m venv .venv
-```
-
-```bash
-.venv\Scripts\activate
-```
-
-```bash
-pip install -e ".[dev]"
-```
-
-```bash
-swingcheck
-```
-
-The app opens at `http://localhost:8765`. To use it from your phone on the same
-Wi-Fi, start it with `swingcheck --phone` and open the address it prints (allow
-Python through the firewall on private networks). Other options: `--port`,
-`--no-browser`, and `--runs-dir`.
-
-The first analysis downloads the pose model (about 30 MB); after that it works
-offline. Ranges can be tuned in `config/local.toml`; see
-[docs/development.md](docs/development.md#tuning).
-
-## Troubleshooting
-
-| Problem | What to do |
-|---|---|
-| Warning that a slo-mo clip is 30 or 60 fps | Upload the original file from your phone's camera roll. |
-| Wrong impact frame | On the results page, open **Impact frame** and adjust it. |
-| A check says "Not measured" | A body point wasn't tracked: usually lighting, the body out of frame, or baggy clothing. |
-| A practice swing was found instead | **Edit marks**, then **Trim the clip**. |
-| `ffmpeg not found` (running locally) | Install ffmpeg, open a new terminal, and start the app again. |
-| Phone can't open the app (running locally) | Use `swingcheck --phone`, the same Wi-Fi, and allow Python through the firewall. |
-
-## Documentation
-
-- [User guide](docs/user-guide.md): filming, marking, and the results page, step by step.
-- [Checkpoints and ranges](docs/checkpoints.md): what each checkpoint measures,
-  its ranges, and how results are read.
-- [Hosting and operations](docs/hosting.md): the server, limits, privacy model,
-  and admin page.
-- [Development](docs/development.md): tests, releases, tuning, and adding a check.
-- [Release notes](docs/releases/): one PDF per release.
-
-Built with Python, OpenCV, MediaPipe Pose, and ffmpeg.
+> **Alpha.** SwingCheck is new and improving every week. Features and results
+> may change. Results are estimates from video, for practice, not a replacement
+> for a coach.
 
 ## Support SwingCheck
 
-SwingCheck is free. If it helps your game, you can
-[support it on Ko-fi](https://ko-fi.com/jeromegarcia) to help cover the server
-and upkeep costs. Thank you!
+SwingCheck is free. If it helps
+your game, you can [support it on Ko-fi](https://ko-fi.com/jeromegarcia) to
+help cover the server costs. Thank you!
 
 [![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/jeromegarcia)
 
 In the Philippines? Support with InstaPay: scan this with GCash, Maya, or your banking app.
 
 <img src="swingcheck/app/static/support/instapay-qr.png" alt="InstaPay QR code" width="200">
+
+---
+
+## For developers
+
+SwingCheck can also run on your own computer, where nothing leaves your machine.
+It's built with Python, OpenCV, MediaPipe Pose, and ffmpeg.
+
+- [Developer guide](docs/development.md): setup, code layout, testing, and releasing.
+- [Checkpoints and ranges](docs/checkpoints.md): exactly what each checkpoint measures.
+- [Hosting and operations](docs/hosting.md): how swingcheck.org runs.
+- [Release notes](docs/releases/): what's new in each release.
