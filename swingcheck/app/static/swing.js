@@ -7,8 +7,14 @@ const JOB_TITLES = { convert: "Converting video", analyze: "Analyzing swing" };
 // Page header: back link, name and status, the main actions as buttons, and the rest
 // (always including Delete) in a "⋯" menu.
 export function swingHeader(s, actions = [], menuItems = []) {
-  const title = el("h1", {}, s.name);
-  const rename = { label: "Rename", onclick: () => renameInPlace(s, title) };
+  const name = el("h1", {}, s.name);
+  // The name, with a small pencil after it to rename the swing.
+  const pencil = el("button", { class: "rename-btn", type: "button", title: "Rename", "aria-label": "Rename this swing" });
+  pencil.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" '
+    + 'stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/>'
+    + '<path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+  const title = el("div", { class: "title-row" }, name, pencil);
+  pencil.addEventListener("click", () => renameInPlace(s, title, name));
   return el("div", { class: "page-head" },
     el("div", { class: "page-title" },
       el("a", { class: "back", href: "/" }, "← Your swings"),
@@ -18,11 +24,11 @@ export function swingHeader(s, actions = [], menuItems = []) {
         + ` · ${CLUB_NAMES[s.club] || CLUB_NAMES.iron}`
         + ` · ${STATUS_TEXT[s.status]}`
         + (expiryText(s) ? ` · ${expiryText(s)}` : ""))),
-    el("div", { class: "actions" }, ...actions, moreMenu([...menuItems, rename, deleteItem(s)])));
+    el("div", { class: "actions" }, ...actions, moreMenu([...menuItems, deleteItem(s)])));
 }
 
 // The title becomes a text box with Save and Cancel (Enter and Escape too).
-function renameInPlace(s, title) {
+function renameInPlace(s, title, name) {
   const input = el("input", { type: "text", class: "rename-input", value: s.name, maxlength: 60,
     "aria-label": "Swing name" });
   const error = el("div", { class: "notice error small", hidden: true });
@@ -35,7 +41,7 @@ function renameInPlace(s, title) {
     try {
       const res = await postJSON(`/api/swings/${encodeURIComponent(s.id)}/name`, { name: input.value });
       s.name = res.name;
-      title.textContent = res.name;
+      name.textContent = res.name;
       form.replaceWith(title);
     } catch (err) {
       error.textContent = err.message;
