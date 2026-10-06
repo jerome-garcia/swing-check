@@ -1,5 +1,6 @@
 import { TERMS_VERSION } from "./legal.js";
-import { api, CLUB_NAMES, dtlExample, el, features, HAND_NAMES, listText, navigate, plural, progressBlock, swingUrl } from "./util.js";
+import { api, CLUB_NAMES, el, features, HAND_NAMES, listText, navigate, plural, progressBlock, swingUrl } from "./util.js";
+import { setupLink } from "./setup.js";
 
 const HAND_KEY = "swingcheck.handedness"; // the last choice, so it's preset next time
 
@@ -169,7 +170,7 @@ export async function renderUpload(view, isCurrent) {
   error,
   el("section", { class: "panel" }, el("h2", {}, "1. Video"), input, drop),
   el("section", { class: "panel" }, el("h2", {}, "2. Camera view"), el("div", { class: "choices" }, viewButtons),
-    dtlExample()),
+    el("p", { class: "setup-links subtle small" }, "ⓘ How to set up the camera: ", setupLink("dtl"), " · ", setupLink("fo"))),
   el("section", { class: "panel" }, el("h2", {}, "3. Golfer"), el("div", { class: "choices" }, handButtons)),
   el("section", { class: "panel" }, el("h2", {}, "4. Club"), el("div", { class: "choices" }, clubButtons)),
   agreeBox ? el("label", { class: "agree", for: "agree" }, agreeBox,

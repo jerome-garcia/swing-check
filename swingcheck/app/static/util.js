@@ -197,19 +197,3 @@ export function progressBlock(title) {
     },
   };
 }
-
-// What a down-the-line video looks like: the reference golfer at address, with the
-// filming tips (worded as in the camera check, swingcheck/camera_check.py).
-export function dtlExample() {
-  return el("figure", { class: "dtl-example" },
-    el("img", { src: "/reference/address.jpg", alt: "Example of a down-the-line video: a golfer filmed from behind, at address",
-      width: 480, height: 853, loading: "lazy" }),
-    el("figcaption", {},
-      el("strong", {}, "What down-the-line looks like"),
-      el("ul", {},
-        el("li", {}, "Camera straight behind your hands, pointing at the target"),
-        el("li", {}, "At about hip height, a few steps back"),
-        el("li", {}, "Your whole body in frame, with room above your head for the club"),
-        el("li", {}, "Upright (portrait) video; slo-mo if your phone has it")),
-      el("span", { class: "subtle small" }, "Example: Rory McIlroy")));
-}
