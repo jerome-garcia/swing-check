@@ -1,214 +1,196 @@
 # User guide
 
-How to film, mark, and read your swing, in detail.
+Everything you need to get a useful swing check, from filming to reading your
+results. It takes about 5 minutes per swing.
 
-## Filming your swing
+## Quick start
 
-The app measures positions in the image, so **the camera must not move**
-during the clip. A tripod is the single most important thing.
+1. **Film** one swing from behind, with your phone on a tripod.
+2. **Upload** it at [swingcheck.org](https://swingcheck.org).
+3. **Mark** your swing: match each step to the example and click a few points.
+4. **Read** your results, starting with **Work on first**.
 
-### For every clip
+## 1. Filming your swing
 
-- **Tripod, fixed position.** No zooming, panning or hand-holding. The ball and
-  club points you click once are assumed to stay put.
-- **One swing per clip.** Extra footage before and after is fine; practice
-  swings in the same clip can confuse phase detection. Cut them out with
-  **Trim the clip** on the marking screen.
-- **Whole body in frame**, including feet, the ball, and room above the head
-  for the club at the top. Portrait or landscape both work.
-- **Slo-mo (120 or 240 fps) if your phone has it.** 30 fps works, but the hands
-  move so fast near impact that the impact frame can be off by a frame or two.
-- **Steady, even light.** Avoid strong backlight (a bright window or screen
-  behind you).
-- **Use the original file.** Sharing or messaging an iPhone slo-mo clip often
-  re-exports it at 30 fps. On the PC, use iCloud.com "download original", the
-  Windows Photos app import, or a USB copy from the iPhone's DCIM folder. The app
-  warns if a clip is 60 fps or slower. A shared copy is easy to spot: a
-  2-second swing comes through as a 10+ second video, because the slow-motion
-  part was baked in for playback. Such copies also often have frames missing;
-  the app keeps every frame that's there and repeats the previous one over a gap.
-  Black bars baked into the picture (screen recordings, re-shared clips) are
-  cropped off when the video is converted (`crop_black_bars` in `[ingest]`), and
-  **About this clip** says so.
-- **Same camera spot every session** (mark the tripod feet with tape). Angles
-  and distances are measured in 2D, so moving the camera changes the numbers even
-  when your swing doesn't.
-- **Reasonably fitted clothing.** A loose shirt changes your outline, which the
-  back-rounding check reads.
+Good video is the most important part. SwingCheck measures positions in the
+picture, so a moving camera means wrong numbers.
 
-### Down-the-line
+### Where to put the camera
 
-- Stand behind yourself, looking **toward the target**.
-- Put the camera **on the line through your hands at address**, parallel to the
-  target line (not on the ball-to-target line, which hides the hands behind the
-  body).
-- Height: about **hand/hip height** (roughly 1 m). Higher or lower changes the
-  measured angles.
-- Distance: far enough that your full swing, including the club at the top, stays
-  in frame (often 3 to 4 m).
-- Aim the camera straight down the target line, not angled toward you.
+```
+            target
+              ^
+              |
+     ball o   |   target line
+              |
+    golfer    |
+              |
+           [camera]   behind you, in line with your hands
+```
 
-### Face-on (for a future release)
+- **Behind you**, looking toward the target (this is called "down the line").
+- **In line with your hands**, not with the ball: from the ball line, your body
+  hides your hands.
+- **At hip height**, about 1 m off the ground.
+- **3 to 4 m back**, so your whole swing fits, including the club at the top.
+- **Aimed straight down the target line**, not angled toward you.
 
-Face-on analysis isn't available in the app yet; this is how to film it when it is.
+The upload page has a setup guide with pictures: tap **How to set up the camera**.
 
-- The camera faces you, **square to the target line**.
-- Center it on the **ball / your sternum**, at about **chest height**.
-- For a right-hander the target is on the **right of the screen**; for a
-  left-hander, the left. Choose your handedness when uploading. If your setup
-  is unusual, set `target_direction_fo` explicitly.
-- Distance: full body plus the club at the top in frame (often 3 to 4 m).
+### Checklist
 
----
+- ✅ **Tripod or a steady stand.** No hand-holding, zooming, or panning.
+- ✅ **One swing per clip.** A little extra before and after is fine.
+- ✅ **Your whole body in the frame**, from your feet to the club at the top,
+  plus the ball.
+- ✅ **Slo-mo if your phone has it** (120 or 240 fps). Normal video works too, but
+  the impact frame is less exact.
+- ✅ **Even light.** Avoid a bright window or screen behind you.
+- ✅ **Fitted clothes.** A baggy shirt hides your posture.
+- ✅ **The same spot every session.** Mark the tripod's feet with tape, so
+  changes in your numbers come from your swing, not the camera.
 
-## Using the app
+### Upload the original video
 
-1. **New swing.** Choose a down-the-line video (or drop it on the page). It
-   uploads and converts with a progress bar; the conversion straightens rotated
-   phone video and keeps the slo-mo frame rate. It then takes a quick look
-   through the clip (about 5–20 s) to find your swing, so each marking step can
-   open on a **suggested frame** (address opens on the clip's first frame; the
-   address found automatically, the last still frame before the hands start back,
-   is used for the camera check and to find the other checkpoints; takeaway is
-   where the hands have covered 12% of their path to the top, which lands within
-   about a frame of the shaft being parallel; halfway back is where the hands
-   have risen 45% of the way to their top height), and checks
-   the camera at address. (Face-on is
-   shown but disabled until a future release.) Under the camera choice, **ⓘ How to set
-   up the camera** opens a guide for each view: a setup picture (the phone on a stand
-   at hip height, and a side view of where it goes; from
-   [OnForm](https://onform.com/blog/how-to-video-your-golf-swing-for-better-analysis/),
-   credited under the picture) and four tips. The home page shows the
-   down-the-line guide before your first swing (`static/setup.js`, pictures in
-   `static/setup/`). Choose **Right-handed** or
-   **Left-handed** under *Golfer*; the choice is remembered for next time, and a
-   swing's handedness can be switched later on the marking screen (*Golfer*):
-   the marks stay, and it's analyzed again. The same goes for **Club**: *Iron or
-   wedge* (irons, hybrids, and wedges) or *Driver or wood* (driver and fairway
-   woods), which sets a few address ranges (see [checkpoints.md](checkpoints.md)).
+Sending a slo-mo video through a chat app usually saves it again at normal
+speed, and you lose the slo-mo. Upload it **straight from your phone's camera
+roll**. SwingCheck warns you if a video came through at 60 fps or less.
 
-   **Camera check.** The marking screen opens with the result: a green "✓ a good
-   down-the-line view", or what to film differently: camera off to one side or
-   not behind you at all (your shoulders and hips look too wide), facing the wrong
-   way for the handedness chosen (camera on the target side, or the wrong
-   handedness picked), small in the frame, head or feet cut off, or
-   hard to see. A red one means results would likely be wrong, so film again.
-   Thresholds are in `[camera_check]` in `config/default.toml`.
-2. **Mark your swing.** There are six steps, all required: address, then one
-   per checkpoint. Each step tab shows its number, turning into a green ✓ once
-   it's marked. **Save and analyze** unlocks once every step is marked, and
-   the line under it lists what's still to mark. Each step has two parts, led by
-   the dark bar above the frame (it flashes when it changes):
-   1. **Drag the slider to match the example.** Rory McIlroy at the same moment sits
-      beside or in the corner of your frame, with a one-line description (*Set up and still, just
-      before the club moves*). Move the slider, the ‹ › buttons or the arrow keys
-      (Shift = 10 frames) until your frame matches, then press **Frame looks
-      right ›** (a click on the frame before that only points at the button). Each step opens on a
-      suggested frame (the caption says *Suggested frame*); **Back to the
-      suggested frame** returns to it.
-   2. **Click the points,** one at a time, in large type with exactly where
-      under it (*Click the ball*, *Center of the ball*). When the step is done,
-      **Next ›** moves to the next step. The frame is locked meanwhile, so the
-      clicks stay on it; **‹ Change frame** goes back to part 1 and clears the
-      step's clicks.
+## 2. Uploading
 
-   **Address.** Move the slider to your set-up position, then click:
-   - the **club neck**, where the shaft goes into the clubhead (the hosel), not
-     the clubface: the shaft line through it is your swing plane
-   - your **hands**, the middle of your grip, between your two hands
+On **New swing**, choose your video and pick:
 
-   Each point has its own color: the ball a yellow ring, the club neck and clubhead
-   a pink circle, your hands a blue square (the same on the example and in the
-   list). A magnifier follows the cursor; on a phone, touch and hold, slide to aim with
-   the magnifier above your finger, and let go to place the point. **Undo**
-   (above the frame) removes the last point, and **Clear step** removes all of
-   this step's points. **The frame you mark on is your address frame**:
-   the address checks are measured on it, so pick a frame where you're fully set
-   up and still. If a swing was saved with the wrong camera view or
-   handedness, switch it under **Camera view** or **Golfer** below the marking
-   panel.
+- **Golfer:** right-handed or left-handed. SwingCheck remembers it.
+- **Club:** *Iron or wedge* (including hybrids), or *Driver or wood*. A driver
+  has its own ranges, since you stand taller with a flatter shaft.
 
-   **Takeaway.** Move the slider to where the shaft is parallel to the target
-   line (from behind it points at the camera), and click the **ball**, then the
-   **clubhead**. That frame becomes the takeaway checkpoint. The ball is clicked
-   here rather than at address because the clubhead often hides it at address;
-   it doesn't move until impact and the camera is still, so it's the same spot,
-   and it's saved with the address marks.
+The video uploads and is prepared, which takes a few seconds. SwingCheck then
+checks the camera angle:
 
-   **Halfway back.** Switch to the **Halfway back** step, move the slider to
-   where your lead arm is parallel to the ground, and click the **clubhead**
-   (or the highest point of the shaft you can see) and then your **hands**.
+- ✅ **Green:** a good down-the-line view. Carry on.
+- ⚠️ **Yellow or red:** it says what to change, such as the camera being off to
+  one side, or your feet being cut off. With a red result, film again: the
+  numbers would likely be wrong.
 
-   **Top.** Switch to the **Top** step, move the slider to where the club stops
-   going back, and click the **clubhead** and then your **hands**.
+## 3. Marking your swing
 
-   **Downswing.** Switch to the **Downswing** step, move the slider to where
-   the shaft is parallel to the ground coming down, and click the
-   **clubhead**.
+The body tracking can't see the club, so you show it where the ball, club, and
+hands are. There are six steps, and each one has two parts:
 
-   **Follow-through.** Switch to the **Follow-through** step, move the slider
-   to where your trail arm is parallel to the ground after impact, and click
-   the **clubhead** and then your **hands** (or the lowest point of the shaft
-   you can see, if your hands are hidden).
+1. **Drag the slider to match the example.** A pro at the same moment of the
+   swing appears beside or above your video. Move the slider (or tap ‹ › to
+   step one frame) until your frame matches, then press **Frame looks right**.
+2. **Click the points** the bar asks for, one at a time. The point to click next
+   pulses on the example.
 
-   **The example.** Rory McIlroy at the same moment, with that step's marks, so
-   you can see what to look for and where to click (for a swing set to **Driver or
-   wood**, Tiger Woods with a driver instead). On a wide screen with a
-   portrait video he's beside your frame at the same size; otherwise (a phone,
-   or a landscape video) he's a small picture in the top corner on the side you
-   face, sized to stay clear of you: the quick pass after upload saves where you
-   are in the frame (`golfer_box` in `suggest.json`). While you click, the mark of
-   the point the bar asks for pulses on the example. Tap the small picture to
-   enlarge it, and again to shrink it (taps on it never place a point). The
-   frames ship with the app
-   (`swingcheck/app/static/reference/`, and `reference/driver/` for the driver);
-   rebuild them from any fully marked swing with
-   `python -m swingcheck.app.make_reference runs/<swing-folder> "Name"` (add
-   `driver` at the end for the driver example).
+### The six steps
 
-   **Mark checks.** Marks that look wrong get a yellow note under the frame and
-   a **!** on the step: hands below the club neck at address, the club neck far
-   from the ball, the clubhead below your hands at halfway back or the
-   follow-through, a step whose frame comes before the previous one, or a
-   clubhead much too far from your hands. The ones that can't be right (a frame
-   out of order, or the clubhead and hands clicked the wrong way round) block
-   **Save and analyze**, which says what to fix and opens that step; the rougher
-   distance checks only ask once whether to go ahead.
+| Step | Pick the frame where… | Click |
+|---|---|---|
+| **Address** | you're set up and still, just before the club moves | the club neck (where the shaft meets the head), then your hands |
+| **Takeaway** | the shaft is parallel to the target line (it points at the camera) | the ball, then the clubhead |
+| **Halfway back** | your front arm is parallel to the ground | the clubhead, then your hands |
+| **Top** | the club stops going back | the clubhead, then your hands |
+| **Downswing** | the shaft is parallel to the ground on the way down | the clubhead |
+| **Follow-through** | your back arm is parallel to the ground after impact | the clubhead, then your hands |
 
-   **Trim the clip** (below the points) cuts out practice swings or idle time:
-   move the slider to a frame, press **Start here** or **End here**, then **Apply trim**.
-   Your points are kept.
-3. **Save and analyze.** Saving your marks starts the analysis straight away.
-   Tracking your body takes about a minute for a few seconds of 240 fps slo-mo
-   on a laptop, with live progress. You can leave the page and come back.
-4. **Results.** The annotated video (with 0.25× and 0.5× speeds) on one side;
-   on the other, the **checkpoints**: a strip of the eight down-the-line
-   checkpoints in swing order, each colored by its result (dashed = coming
-   soon). It opens on the checkpoint to work on first. Pick another, or use ‹ ›
-   / the arrow keys, to see its key frame (drawn with only that check's lines)
-   next to its card. Each card lists its measurements one per row with a status
-   dot, with the biggest issue highlighted. **Impact frame** (collapsed) lets
-   you fix the impact frame, and **Text report** opens a plain-text summary.
+Each point has its own look: the **ball** is a yellow ring, the **club** a pink
+circle, and your **hands** a blue square.
 
-Your swings are listed on the home page, newest first, with their verdicts. Open
-one to see it again, **Edit marks** to re-mark, **Re-analyze** after changing
-settings, or **Delete** to remove it and its files.
+### Marking tips
 
-### When the impact frame is wrong
+- **On a phone,** touch and hold, slide to aim with the magnifier above your
+  finger, and let go to place the point.
+- **Hands hidden?** On the follow-through, click the lowest part of the shaft
+  you can see instead.
+- **Clubhead out of the picture?** Click the highest part of the shaft you can see.
+- **Made a mistake?** **Undo** removes the last point. **‹ Change frame** lets you
+  pick a different frame for the step.
+- **Practice swing in the clip?** Use **Trim the clip** to cut it out. Your
+  points are kept.
+- **Yellow note under the frame?** A point looks off, such as your hands below
+  the club. Check it, or carry on if it's right.
 
-Impact is the one checkpoint found automatically. If its frame is off, open
-**Impact frame** on the results page, press **Adjust impact**, move the slider to the
-right frame, and press **Set as impact**. The swing is re-analyzed with your
-frame, which is remembered. **Reset to automatic** goes back to detection. Every
-other checkpoint uses the frame you marked; change those with **Edit marks**.
-Impact has to come after the top you marked: an earlier frame is refused, with a
-note saying so.
+When every step has a green ✓, press **Save and analyze**. The analysis takes
+about a minute or two. You can leave the page and come back.
 
-### Where your swings are stored
+## 4. Reading your results
 
-Each swing is a folder in `runs/` in the project. It holds the original upload,
-the converted video, your marks, the analysis, `annotated.mp4` (saved 720 px wide
-to stay quick to load), the full-size key frame images and `report.txt`. The page
-shows small JPEG copies of the key frames (`*.w720.jpg`, `*.w360.jpg`, made on first
-view). Clicking a key frame shows it large over the page (tap anywhere or Close to go back);
-Ctrl/Cmd-click opens the full-size PNG in a new tab. Back up or delete that folder like any other files.
+### The summary
+
+At the top you'll see:
+
+- **One dot per checkpoint,** colored by its result. Tap a dot to jump to it.
+- **Work on first:** the one thing that will help most, with how to fix it.
+- **Good swing** when nothing is red, and **Tour-level swing** when everything
+  is green.
+
+### The colors
+
+| Color | Means |
+|---|---|
+| 🟢 **Good** | In the range good players are in |
+| 🟡 **Watch** | Just outside good: worth a look ("What to try") |
+| 🔴 **Fix** | Clearly outside: work on it ("How to fix") |
+
+Distances are in centimetres and angles in degrees. They're estimates from video,
+so treat small differences as noise.
+
+### The checkpoints
+
+Go through them one at a time with ‹ › or the arrow keys. Each one shows a key
+frame from your video next to a card with:
+
+- the result, in plain words;
+- what to try or how to fix it;
+- each measurement, with its **Good** and **Fix** ranges.
+
+Tap a key frame to see it large.
+
+### Reading the drawings
+
+| Look | Means |
+|---|---|
+| Green, yellow, or red line | Something measured, colored by its result |
+| White dashed line | Where it should be, or where it was at address |
+| Pink line with grey lines either side | Your swing plane, and the "on plane" zone |
+| Solid circle | The clubhead |
+| Solid square | Your hands |
+| Hollow ring | The ball, a heel, or where a shaft line lands |
+
+### If the impact frame is wrong
+
+Impact is the one moment SwingCheck finds by itself. If it picked the wrong
+frame, open **Impact frame** on the results page, press **Adjust impact**, move
+to the right frame, and press **Set as impact**. **Reset to automatic** undoes it.
+
+## 5. Sharing and managing your swings
+
+- **Share PDF** makes a link to a one-page summary, with a preview in chat
+  apps. It never includes your video. **Stop sharing** (in the ⋯ menu) turns
+  the link off.
+- **Download PDF** saves the summary to your device.
+- **Rename** a swing with the pencil next to its name.
+- **Edit marks** (⋯ menu) to change your points; the swing is analyzed again.
+- **Delete** (⋯ menu) removes the swing and its video.
+
+On swingcheck.org you can keep **4 swings** at a time, and each one is deleted
+**3 days** after upload. To see your swings on another device, use **Copy
+private link** on the home page.
+
+## Common questions
+
+**Do I need an account?** No. Your swings are tied to your browser. Use the
+private link to open them on another device.
+
+**Why does a check say "Not measured"?** A part of your body wasn't tracked
+clearly at that moment, usually because of lighting, baggy clothes, or part of
+you being out of the picture.
+
+**My numbers changed, but my swing didn't.** Check that the camera was in the
+same spot and at the same height. A small move changes the measurements.
+
+**Can I analyze a face-on video?** Not yet; it's planned for a future release.
+
+**Is this coaching advice?** No. Results are estimates from video, for practice
+only.
