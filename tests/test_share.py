@@ -98,3 +98,17 @@ def test_shared_summary_follows_each_new_analysis(tmp_path, monkeypatch):
     assert "2 good, 0 to watch, and 0 to fix" in client.get(f"/s/{code}").text  # same link, new results
     # Sharing again just gives the same link.
     assert client.post(f"/api/swings/{meta.id}/share", json={}).json()["url"] == url
+
+
+def test_rename_shows_on_the_swing_and_its_shared_summary(tmp_path):
+    meta = analyzed_swing(tmp_path)
+    owner = TestClient(create_app(tmp_path))
+    owner.post(f"/api/swings/{meta.id}/share", json={})
+    pdf_before = (tmp_path / meta.id / "shared-summary.pdf").read_bytes()
+    r = owner.post(f"/api/swings/{meta.id}/name", json={"name": "  Range day,   7 iron "})
+    assert r.status_code == 200 and r.json()["name"] == "Range day, 7 iron"
+    assert owner.get(f"/api/swings/{meta.id}").json()["name"] == "Range day, 7 iron"
+    assert (tmp_path / meta.id / "shared-summary.pdf").read_bytes() != pdf_before  # made again with the name
+    for bad in ("", "   ", "x" * 61):
+        assert owner.post(f"/api/swings/{meta.id}/name", json={"name": bad}).status_code == 400
+    assert owner.post("/api/swings/not-a-swing/name", json={"name": "A"}).status_code == 404

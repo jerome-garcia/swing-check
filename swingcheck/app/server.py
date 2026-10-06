@@ -114,6 +114,13 @@ class ClubIn(BaseModel):
     club: str
 
 
+class NameIn(BaseModel):
+    name: str
+
+
+NAME_MAX = 60
+
+
 class TrimIn(BaseModel):
     start: float | None = None  # seconds into the original video
     end: float | None = None
@@ -405,6 +412,23 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         meta = store.meta(swing_id)
         meta.club = body.club
         store.save_meta(meta)
+        return with_expiry(store.summary(swing_id))
+
+    @app.post("/api/swings/{swing_id}/name")
+    def rename_swing(swing_id: str, body: NameIn, request: Request) -> dict[str, Any]:
+        """A name of the golfer's choosing (it starts as the video's file name). It shows on
+        the swing's pages and its PDF, so a shared summary is made again with it."""
+        swing_or_404(swing_id, request)
+        name = " ".join(body.name.split())
+        if not 0 < len(name) <= NAME_MAX:
+            raise HTTPException(400, f"Give the swing a name of up to {NAME_MAX} characters.")
+        if jobs.active_for(swing_id):
+            raise HTTPException(409, "This swing is still being processed. Rename it once it's done.")
+        meta = store.meta(swing_id)
+        meta.name = name
+        store.save_meta(meta)
+        if meta.notes.get("share"):
+            write_shared(swing_id)
         return with_expiry(store.summary(swing_id))
 
     @app.post("/api/swings/{swing_id}/trim")

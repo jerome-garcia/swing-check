@@ -7,16 +7,45 @@ const JOB_TITLES = { convert: "Converting video", analyze: "Analyzing swing" };
 // Page header: back link, name and status, the main actions as buttons, and the rest
 // (always including Delete) in a "⋯" menu.
 export function swingHeader(s, actions = [], menuItems = []) {
+  const title = el("h1", {}, s.name);
+  const rename = { label: "Rename", onclick: () => renameInPlace(s, title) };
   return el("div", { class: "page-head" },
     el("div", { class: "page-title" },
       el("a", { class: "back", href: "/" }, "← Your swings"),
-      el("h1", {}, s.name),
+      title,
       el("div", { class: "subtle small" },
         `${formatDate(s.created)} · ${VIEW_NAMES[s.view] || "View not set"} · ${HAND_NAMES[s.handedness] || HAND_NAMES.right}`
         + ` · ${CLUB_NAMES[s.club] || CLUB_NAMES.iron}`
         + ` · ${STATUS_TEXT[s.status]}`
         + (expiryText(s) ? ` · ${expiryText(s)}` : ""))),
-    el("div", { class: "actions" }, ...actions, moreMenu([...menuItems, deleteItem(s)])));
+    el("div", { class: "actions" }, ...actions, moreMenu([...menuItems, rename, deleteItem(s)])));
+}
+
+// The title becomes a text box with Save and Cancel (Enter and Escape too).
+function renameInPlace(s, title) {
+  const input = el("input", { type: "text", class: "rename-input", value: s.name, maxlength: 60,
+    "aria-label": "Swing name" });
+  const error = el("div", { class: "notice error small", hidden: true });
+  const form = el("form", { class: "rename-form" }, input,
+    el("button", { class: "btn small primary", type: "submit" }, "Save"),
+    el("button", { class: "btn small", type: "button", onclick: () => form.replaceWith(title) }, "Cancel"),
+    error);
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    try {
+      const res = await postJSON(`/api/swings/${encodeURIComponent(s.id)}/name`, { name: input.value });
+      s.name = res.name;
+      title.textContent = res.name;
+      form.replaceWith(title);
+    } catch (err) {
+      error.textContent = err.message;
+      error.hidden = false;
+    }
+  });
+  input.addEventListener("keydown", e => { if (e.key === "Escape") form.replaceWith(title); });
+  title.replaceWith(form);
+  input.focus();
+  input.select();
 }
 
 function deleteItem(s) {

@@ -204,6 +204,11 @@ h2 { font-size: 16px; margin: 0 0 12px; letter-spacing: -0.01em; }
 /* --- Page structure ------------------------------------------------------ */
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .page-title { min-width: 0; }
+.rename-form { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 6px; }
+.rename-input { flex: 1 1 220px; min-width: 0; padding: 7px 10px; font: inherit; font-size: 20px; font-weight: 700;
+  color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.rename-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.rename-form .notice { flex-basis: 100%; margin: 0; }
 .hero { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: space-between; gap: 16px 24px;
   flex-wrap: wrap; margin-bottom: 24px; padding: 26px 28px; border-radius: var(--radius); color: var(--on-deep);
   background: radial-gradient(600px 260px at 50% 130%, rgba(88, 184, 116, 0.32), transparent 70%),

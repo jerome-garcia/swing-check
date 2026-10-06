@@ -846,7 +846,9 @@ screen and below it on a phone. The buttons are **Download PDF** and **Share
 PDF** (the main one): the PDF has the scorecard, the one thing to work on first,
 then each checkpoint's key frame, readings with their limits, and how to fix,
 built from the last analysis. **Edit marks**, **Re-analyze**, the text report,
-**Stop sharing** (once shared), and **Delete** are in the ⋯ menu. In the annotated video, the
+**Stop sharing** (once shared), **Rename**, and **Delete** are in the ⋯ menu. **Rename** turns the
+title into a text box (up to 60 characters); a swing starts with its video's file name, and the
+name also goes on its PDF, so a shared PDF is made again with the new one. In the annotated video, the
 header names only the checkpoint whose lines are on screen.
 
 **Share PDF** makes a link anyone can open (`/s/<code>`, opens the share
