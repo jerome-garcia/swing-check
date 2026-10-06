@@ -278,7 +278,7 @@ def page(data: dict[str, Any]) -> str:
         or "<li class=muted>None.</li>"
     speed = data["speed"]
     timing = (f"wait {_duration(speed['median_wait_s'])} typical, {_duration(speed['longest_wait_s'])} longest"
-              f" · analysis {_duration(speed['median_analysis_s'])} · marking {_duration(speed['median_marking_s'])} typical")
+              f" · analysis {_duration(speed['median_analysis_s'])} typical · marking {_duration(speed['median_marking_s'])} typical")
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="refresh" content="30"><meta name="robots" content="noindex"><meta name="theme-color" content="#123824">
