@@ -1,5 +1,6 @@
 import { api, checkpointStates, el, expiryText, features, fileUrl, formatDate, imageUrl, plural, scorecard, STATUS_TEXT, swingUrl,
   VIEW_NAMES } from "./util.js";
+import { setupGuide } from "./setup.js";
 
 // Brand band at the top of the list, like the Ko-fi cover: swing plane lines on deep green.
 const HERO_ART = `<svg class="hero-art" viewBox="0 0 1160 180" preserveAspectRatio="xMaxYMid slice" aria-hidden="true">
@@ -59,6 +60,7 @@ export async function renderHistory(view, isCurrent) {
     view.replaceChildren(...head.filter(Boolean), el("div", { class: "empty" },
       el("h2", {}, "No swings yet"),
       el("p", {}, "Film one swing from behind (down-the-line), then upload the video to get started."),
+      setupGuide("dtl"),
       el("a", { class: "btn primary", href: "/new" }, "New swing")));
     return;
   }
