@@ -23,6 +23,16 @@ const STEPS = {
       intro: "Move the slider to your address position, then click the ball." },
   ],
 };
+// Each step starts by finding the moment in the clip: one short line for the instruction
+// bar, next to the example (the step's intro below has the details).
+const FIND = {
+  address: "Set up and still, just before the club moves.",
+  takeaway: "The shaft is parallel to the target line (pointing at the camera).",
+  halfway_back: "Your front arm is parallel to the ground.",
+  top: "The top of your backswing, where the club stops going back.",
+  downswing: "The shaft is parallel to the ground on the way down.",
+  follow_through: "Your back arm is parallel to the ground after impact.",
+};
 // Label offsets (CSS px) keep the ball and clubhead labels apart; those points sit together.
 // Shapes match the key frames: clubhead = circle, hands = square, ball = ring. Here they're
 // outlines with a center dot, so you can still see exactly what you clicked.
@@ -115,8 +125,9 @@ export async function renderMark(view, id, isCurrent) {
   const stepState = {};
   for (const st of steps) {
     if (st.key === "address") {
-      stepState.address = { frame: addressFrame, suggested: addressSuggested,
-        points: pick((s.marks && s.marks.points) || {}, st.points) };
+      const points = pick((s.marks && s.marks.points) || {}, st.points);
+      stepState.address = { frame: addressFrame, suggested: addressSuggested, points,
+        frameOk: Object.keys(points).length > 0 };
       continue;
     }
     // Later checkpoints: saved marks (only if still valid for this trim), else where it opens.
@@ -127,6 +138,7 @@ export async function renderMark(view, id, isCurrent) {
       frame: clampFrame(saved ? saved.frame : suggested ?? addressFrame + 0.6 * v.fps),
       suggested,
       points: saved ? pick(saved.points, st.points) : {},
+      frameOk: Boolean(saved),
     };
   }
   const state = {
@@ -240,7 +252,7 @@ export async function renderMark(view, id, isCurrent) {
   // Page offset that the sticky top bar covers, plus a little air.
   const stickyTop = () => (document.querySelector(".topbar")?.offsetHeight || 0) + 12;
   // The top of the marking area: the suggested-frame note when it shows, else the instruction bar.
-  const markTop = () => (suggestNote.hidden ? hud : suggestNote);
+  const markTop = () => hud;
 
   // Once, on opening: scroll so the instruction bar sits under the top bar, if the frame and
   // slider don't fit as is. Not when the camera check found problems: those stay in view.
@@ -255,7 +267,7 @@ export async function renderMark(view, id, isCurrent) {
   function fitCanvas() {
     const stage = canvas.parentElement;
     if (!stage) return;
-    const maxW = stage.clientWidth;
+    const row = stage.parentElement;
     // Desktop: fit the instruction bar, the frame and the slider (with its caption, ~100 px)
     // in one screen with the page scrolled to the bar (scrollToMarking), so a tall phone
     // video isn't squeezed by the swing header above. Phones (one column, the page scrolls
@@ -264,6 +276,17 @@ export async function renderMark(view, id, isCurrent) {
     const hudToStage = stage.getBoundingClientRect().top - markTop().getBoundingClientRect().top;
     const maxH = narrow ? Math.max(320, window.innerHeight * 0.68)
       : Math.max(260, window.innerHeight - stickyTop() - hudToStage - 100);
+    // The example beside the frame: about 40% of the width on a phone; on a wide screen, as
+    // tall as about three quarters of the frame.
+    const gap = 8;
+    let refW = 0;
+    if (hasExample()) {
+      const aspect = reference.width / reference.height;
+      refW = Math.floor(narrow ? row.clientWidth * 0.4 : Math.min(row.clientWidth * 0.4, maxH * 0.75 * aspect));
+    }
+    refBox.style.width = `${refW}px`;
+    const maxW = row.clientWidth - (refW ? refW + gap : 0);
+    stage.style.width = `${maxW}px`;
     const scale = Math.min(maxW / v.width, maxH / v.height);
     const cssW = Math.floor(v.width * scale);
     const cssH = Math.floor(v.height * scale);
@@ -373,6 +396,7 @@ export async function renderMark(view, id, isCurrent) {
   function placePoint(p) {
     const name = nextPoint();
     if (!name) return;
+    cur().frameOk = true; // clicking means the frame is the one
     cur().points[name] = [Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10];
     refresh();
   }
@@ -421,8 +445,6 @@ export async function renderMark(view, id, isCurrent) {
     title: "Found automatically. Check it and move the slider to the exact frame if needed." }, "Suggested frame");
   const backToSuggested = el("button", { class: "linkish", type: "button", hidden: true,
     onclick: () => setFrame(cur().suggested) }, "Back to the suggested frame");
-  // A quiet reminder under the scrubber: the suggestion is a guess, the exact frame is theirs to pick.
-  const suggestNote = el("p", { class: "suggest-note", hidden: true });
 
   function setFrame(f) {
     cur().frame = clampFrame(f);
@@ -431,12 +453,6 @@ export async function renderMark(view, id, isCurrent) {
     const onSuggestion = cur().suggested !== undefined && cur().frame === cur().suggested;
     suggestedTag.hidden = !onSuggestion;
     backToSuggested.hidden = onSuggestion || cur().suggested === undefined;
-    suggestNote.hidden = cur().suggested === undefined;
-    suggestNote.replaceChildren(
-      state.active === "address" ? "This opens on the first frame of your clip."
-        : `This opens on a suggested frame, a best guess at your ${stepDef().title.toLowerCase()}.`, el("br"),
-      hasExample() ? "Before you click, check it against the example and move the slider to the exact frame if it's off."
-        : "Before you click, check it and move the slider to the exact frame if it's off.");
     showFrame(cur().frame);
     refresh(); // the frame-order check and the step tabs depend on the frame
   }
@@ -445,14 +461,10 @@ export async function renderMark(view, id, isCurrent) {
   n === -10 ? "«" : n === -1 ? "‹" : n === 1 ? "›" : "»");
 
   // --- Reference swing ------------------------------------------------------
-  // Rory McIlroy in the same position, with his marks, next to the step's instructions
-  // (frames built by swingcheck/app/make_reference.py).
+  // Rory McIlroy in the same position, with his marks, right beside your frame, so the
+  // two can be compared while finding the frame (frames built by swingcheck/app/make_reference.py).
   const refBox = el("figure", { class: "ref-frame" });
-  // On a phone the example sits far below the frame: "See example" in the instruction bar
-  // scrolls down to it, and "Back to marking" under it scrolls back up.
   const hasExample = () => Boolean(s.view === "dtl" && reference && reference.steps[state.active]);
-  const scrollToEl = node => window.scrollTo({
-    top: node.getBoundingClientRect().top + window.scrollY - stickyTop(), behavior: "smooth" });
   let refShown = null; // the step it's showing; redraw only on a step change
   function renderRef() {
     if (refShown === state.active) return;
@@ -480,14 +492,8 @@ export async function renderMark(view, id, isCurrent) {
       + Object.entries(p).filter(([n]) => POINT_INFO[n]).map(([n, pt]) => mark(n, pt)).join("") + "</g></svg>";
     // Labelled as an example on the picture itself too, so it's never mistaken for your swing.
     link.append(el("span", { class: "ref-tag" }, "Example"));
-    refBox.replaceChildren(
-      el("div", { class: "ref-head" },
-        el("div", { class: "ref-title" }, el("strong", {}, "Example to follow"),
-          el("button", { class: "btn small ref-back", type: "button", onclick: () => scrollToEl(markTop()) }, "↑ Back to marking")),
-        el("div", { class: "subtle small" }, `${reference.name} at ${stepDef().title.toLowerCase()}`
-          + (s.handedness === "left" ? " (mirrored to match a left-handed swing)" : "")
-          + ", for comparison. Not your swing: mark yours on your own video.")),
-      link);
+    refBox.replaceChildren(link,
+      el("figcaption", { class: "subtle small" }, reference.name + (s.handedness === "left" ? " (mirrored)" : "")));
   }
 
   // --- Mark checks ----------------------------------------------------------
@@ -558,9 +564,22 @@ export async function renderMark(view, id, isCurrent) {
     const info = next ? pointInfo(state.active, next) : null;
     const doneHint = after ? `Next step: ${after.title}.`
       : unfinished().length ? `Still to mark: ${unfinished()[0].title.toLowerCase()}.` : "Every step is marked.";
+    const stepLine = el("span", { class: "hud-step" },
+      steps.length > 1 ? `Step ${i + 1} of ${steps.length} · ${stepDef().title}` : stepDef().title);
+    // First part of each step: find the frame. Its button (or a click on the frame) moves on.
+    if (!cur().frameOk) {
+      hud.replaceChildren(
+        el("div", { class: "hud-text" }, stepLine,
+          el("span", { class: "hud-next" }, hasExample() ? "Slide to match the example" : "Slide to the right frame"),
+          el("span", { class: "hud-hint" }, FIND[state.active] || stepDef().intro)),
+        el("div", { class: "actions" },
+          el("button", { class: "btn small primary", type: "button",
+            onclick: () => { cur().frameOk = true; refresh(); } }, "Frame looks right ›")));
+      flashOnChange(`${state.active}:find`);
+      return;
+    }
     hud.replaceChildren(
-      el("div", { class: "hud-text" },
-        el("span", { class: "hud-step" }, steps.length > 1 ? `Step ${i + 1} of ${steps.length} · ${stepDef().title}` : stepDef().title),
+      el("div", { class: "hud-text" }, stepLine,
         info
           ? el("span", { class: "hud-next" }, el("span", { class: `swatch ${info.shape}` }), `Click the ${info.label.toLowerCase()}`)
           : el("span", { class: "hud-next done" }, "✓ Step done"),
@@ -569,14 +588,16 @@ export async function renderMark(view, id, isCurrent) {
         el("button", { class: "btn small hud-btn", type: "button", onclick: undo, disabled: !started(state.active) }, "Undo"),
         el("button", { class: "btn small hud-btn", type: "button", disabled: !started(state.active),
           onclick: () => { cur().points = {}; refresh(); } }, "Clear step"),
-        hasExample() ? el("button", { class: "btn small hud-btn", type: "button", onclick: () => scrollToEl(refBox) }, "See example") : null,
         !next && after ? el("button", { class: "btn small primary", type: "button", onclick: () => selectStep(after.key) }, `Next: ${after.title} ›`) : null,
         // Last step done: save once every step is marked, else go back to the first one left.
         !next && !after && !unfinished().length ? el("button", { class: "btn small primary", type: "button", onclick: save }, "Save and analyze") : null,
         !next && !after && unfinished().length
           ? el("button", { class: "btn small primary", type: "button", onclick: () => selectStep(unfinished()[0].key) }, `Finish: ${unfinished()[0].title} ›`) : null));
-    // A new instruction flashes once, so it's noticed.
-    const shown = `${state.active}:${next || "done"}`;
+    flashOnChange(`${state.active}:${next || "done"}`);
+  }
+
+  // A new instruction flashes once, so it's noticed.
+  function flashOnChange(shown) {
     if (hudShown !== null && shown !== hudShown) {
       hud.classList.remove("flash");
       void hud.offsetWidth; // restart the animation
@@ -605,10 +626,10 @@ export async function renderMark(view, id, isCurrent) {
     pointList.replaceChildren(...stepDef().points.map(name => {
       const done = Boolean(cur().points[name]);
       const info = pointInfo(state.active, name);
-      return el("li", { class: `${done ? "done" : ""} ${name === next ? "next" : ""}` },
+      return el("li", { class: `${done ? "done" : ""} ${name === next && cur().frameOk ? "next" : ""}` },
         el("span", { class: `swatch ${info.shape}` }),
         el("div", {}, el("strong", {}, info.label), el("div", { class: "subtle small" }, info.hint)),
-        el("span", { class: "check" }, done ? "✓" : name === next ? "Click it" : ""));
+        el("span", { class: "check" }, done ? "✓" : name === next && cur().frameOk ? "Click it" : ""));
     }));
     saveBtn.disabled = unfinished().length > 0;
     saveHint.textContent = unfinished().length
@@ -773,9 +794,8 @@ export async function renderMark(view, id, isCurrent) {
     el("div", { class: "mark-layout" },
       el("div", { class: "mark-main" },
         cameraCheck(s),
-        suggestNote,
         hud,
-        el("div", { class: "stage" }, canvas),
+        el("div", { class: "stage-row" }, el("div", { class: "stage" }, canvas), refBox),
         el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),
         el("div", { class: "subtle small center frame-caption" }, frameLabel, " ", suggestedTag, " ", backToSuggested,
           el("span", { class: "keys-hint" }, " · ← → step, Shift = 10 frames"))),
@@ -787,9 +807,7 @@ export async function renderMark(view, id, isCurrent) {
           stepIntro,
           pointList,
           warningBox,
-          saveError, saveBtn, saveHint,
-          // The example comes last, so the points to click and Save stay in view.
-          refBox),
+          saveError, saveBtn, saveHint),
         el("details", { class: "panel" },
           el("summary", {}, el("strong", {}, "Trim the clip")),
           el("p", { class: "subtle small" }, "Cut out practice swings or idle time. Move the slider to a frame and set the start or end there."),

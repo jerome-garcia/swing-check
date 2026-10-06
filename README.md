@@ -676,14 +676,18 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
 2. **Mark your swing.** There are six steps, all required: address, then one
    per checkpoint. Each step tab shows its number, turning into a green ✓ once
    it's marked. **Save and analyze** unlocks once every step is marked, and
-   the line under it lists what's still to mark. The dark bar above the frame
-   says what to click next in large type, with exactly where under it (for
-   example *Click the ball*, *Center of the ball*); it flashes when it changes.
-   Each step opens on its suggested frame (the caption says *Suggested frame*, and a
-   note above the instruction bar says to check it against the example before
-   clicking); check it and move the slider to
-   the exact frame if needed with the slider, the ‹ › buttons or the arrow keys
-   (Shift = 10 frames). **Back to the suggested frame** returns to it.
+   the line under it lists what's still to mark. Each step has two parts, led by
+   the dark bar above the frame (it flashes when it changes):
+   1. **Slide to match the example.** Rory McIlroy at the same moment sits right
+      beside your frame, with a one-line description (*Set up and still, just
+      before the club moves*). Move the slider, the ‹ › buttons or the arrow keys
+      (Shift = 10 frames) until your frame matches, then press **Frame looks
+      right ›** (clicking on the frame does the same). Each step opens on a
+      suggested frame (the caption says *Suggested frame*); **Back to the
+      suggested frame** returns to it.
+   2. **Click the points,** one at a time, in large type with exactly where
+      under it (*Click the ball*, *Center of the ball*). When the step is done,
+      **Next ›** moves to the next step.
 
    **Address.** Move the slider to your set-up position, then click:
    - the **ball**
@@ -720,10 +724,10 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    the **clubhead** and then your **hands** (or the lowest point of the shaft
    you can see, if your hands are hidden).
 
-   **Example to follow.** Below the points to click (so they and **Save and
-   analyze** stay in view), Rory McIlroy is shown in the same position with that
-   step's marks, so you can see what to look for
-   and where to click. The frames ship with the app
+   **The example.** Beside your frame (about 40% of the width on a phone), Rory
+   McIlroy is shown at the same moment with that step's marks, so you can see
+   what to look for and where to click; tap it for full size. The frames ship
+   with the app
    (`swingcheck/app/static/reference/`); rebuild them from any fully marked
    swing with `python -m swingcheck.app.make_reference runs/<swing-folder> "Name"`.
 
@@ -731,8 +735,10 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    a **!** on the step: hands below the club neck at address, the club neck far
    from the ball, the clubhead below your hands at halfway back or the
    follow-through, a step whose frame comes before the previous one, or a
-   clubhead much too far from your hands. They never block saving; **Save and
-   analyze** asks once whether to go ahead.
+   clubhead much too far from your hands. The ones that can't be right (a frame
+   out of order, or the clubhead and hands clicked the wrong way round) block
+   **Save and analyze**, which says what to fix and opens that step; the rougher
+   distance checks only ask once whether to go ahead.
 
    **Trim the clip** (below the points) cuts out practice swings or idle time:
    move the slider to a frame, press **Start here** or **End here**, then **Apply trim**.
