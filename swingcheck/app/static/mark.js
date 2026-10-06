@@ -445,10 +445,15 @@ export async function renderMark(view, id, isCurrent) {
   // Once "Frame looks right" is pressed the frame stays put, so the clicks stay on it; "‹ Change
   // frame" goes back to finding it (lockFrame keeps the slider and buttons in step).
   const scrubButtons = [];
+  // Under the slider: what it's for while finding the frame, and why it's grey once locked.
+  const scrubHint = el("span", { class: "scrub-hint" });
   function lockFrame() {
     const locked = cur().frameOk;
     slider.disabled = locked;
     for (const b of scrubButtons) b.disabled = locked;
+    slider.parentElement?.classList.toggle("finding", !locked);
+    scrubHint.textContent = locked ? " · Frame set: ‹ Change frame to move it"
+      : " · Drag the slider (or tap ‹ ›) to find the frame";
     backToSuggested.hidden = locked || cur().suggested === undefined || cur().frame === cur().suggested;
   }
 
@@ -877,8 +882,7 @@ export async function renderMark(view, id, isCurrent) {
         hud,
         el("div", { class: "stage-row" }, el("div", { class: "stage" }, canvas, refBox)),
         el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),
-        el("div", { class: "subtle small center frame-caption" }, frameLabel, " ", suggestedTag, " ", backToSuggested,
-          el("span", { class: "keys-hint" }, " · ← → step, Shift = 10 frames")),
+        el("div", { class: "subtle small center frame-caption" }, frameLabel, scrubHint, " ", suggestedTag, " ", backToSuggested),
         // Right under the frame, where you are when you press Save in the bar: why a mark looks
         // off, and why saving didn't go through.
         warningBox, saveError),

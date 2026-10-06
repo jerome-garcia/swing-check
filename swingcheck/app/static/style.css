@@ -568,7 +568,23 @@ button.score-item:hover { background: var(--surface-2); }
 .mark-main { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .mark-main, .mark-main * { -webkit-tap-highlight-color: transparent; }
 .scrub-row { display: flex; align-items: center; gap: 6px; }
-.scrub { flex: 1; min-width: 0; accent-color: var(--accent); height: 32px; }
+/* The frame slider: a thick track and a big handle, so it reads as something to drag. While
+   a step's frame is being found (.finding) the handle glows; locked, it's grey. */
+.scrub { flex: 1; min-width: 0; height: 36px; margin: 0; background: transparent; cursor: pointer;
+  -webkit-appearance: none; appearance: none; }
+.scrub::-webkit-slider-runnable-track { height: 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); }
+.scrub::-moz-range-track { height: 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); }
+.scrub::-webkit-slider-thumb { -webkit-appearance: none; width: 26px; height: 26px; margin-top: -10px; border-radius: 50%;
+  background: var(--accent); border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); }
+.scrub::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); }
+.scrub:disabled { cursor: not-allowed; }
+.scrub:disabled::-webkit-slider-thumb { background: var(--muted); border-color: var(--border); box-shadow: none; }
+.scrub:disabled::-moz-range-thumb { background: var(--muted); border-color: var(--border); box-shadow: none; }
+.scrub-row.finding .scrub::-webkit-slider-thumb { animation: thumb-glow 1.6s ease-in-out infinite; }
+.scrub-row.finding .scrub::-moz-range-thumb { animation: thumb-glow 1.6s ease-in-out infinite; }
+@keyframes thumb-glow { 50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--accent) 35%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .scrub-row.finding .scrub::-webkit-slider-thumb, .scrub-row.finding .scrub::-moz-range-thumb { animation: none; } }
 .frame-label { font-variant-numeric: tabular-nums; }
 .mark-side .panel h2 { margin-bottom: 4px; }
 .step-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 8px; }
@@ -666,11 +682,7 @@ button.score-item:hover { background: var(--surface-2); }
   .grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .card .body { padding: 8px 10px 10px; }
   .panel { padding: 14px; }
-  .keys-hint { display: none; }
   .page-head { align-items: flex-start; }
-}
-@media (hover: none) {
-  .keys-hint { display: none; }
 }
 .save-hint { margin: 6px 0 0; }
 .save-hint:empty { display: none; }
