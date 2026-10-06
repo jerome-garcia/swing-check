@@ -2,7 +2,7 @@
 
 Single source for the results page's checkpoint stepper. A checkpoint is
 "built" once an analyzer with its name is registered; until then the app
-shows it as coming soon. Keep this in step with the Roadmap in README.md.
+shows it as coming soon. Keep this in step with docs/checkpoints.md.
 """
 
 from __future__ import annotations
