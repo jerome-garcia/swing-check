@@ -230,8 +230,32 @@ function phaseAdjuster(s, phase, startFrame, onApply, onCancel) {
     slider.value = frame;
     label.textContent = `Frame ${frame} · ${(frame / v.fps).toFixed(3)}s`;
     img.src = `/api/swings/${encodeURIComponent(s.id)}/frames/${frame}.jpg?w=720`;
+    problem.hidden = true;
   }
   slider.addEventListener("input", () => show(Number(slider.value)));
+  // Address, top, and impact come in that order: say so here rather than run an analysis
+  // that can't work (the server checks the same).
+  const problem = el("div", { class: "notice error small", hidden: true });
+  const phases = (s.analysis && s.analysis.phases) || {};
+  function orderProblem(f) {
+    const order = ["address", "top", "impact"];
+    const i = order.indexOf(phase);
+    const name = p => PHASE_LABELS[p].toLowerCase();
+    const before = order[i - 1], after = order[i + 1];
+    if (before && phases[before] !== undefined && f <= phases[before]) {
+      return `This is at or before the ${name(before)} (frame ${phases[before]}). Pick a frame after it.`;
+    }
+    if (after && phases[after] !== undefined && f >= phases[after]) {
+      return `This is at or after the ${name(after)} (frame ${phases[after]}). Pick a frame before it.`;
+    }
+    return null;
+  }
+  function apply() {
+    const text = orderProblem(frame);
+    problem.textContent = text || "";
+    problem.hidden = !text;
+    if (!text) onApply(frame);
+  }
   const step = n => el("button", { class: "btn small", type: "button", onclick: () => show(frame + n) },
     n === -10 ? "«" : n === -1 ? "‹" : n === 1 ? "›" : "»");
   show(frame);
@@ -240,8 +264,9 @@ function phaseAdjuster(s, phase, startFrame, onApply, onCancel) {
     el("div", { class: "adjust-stage" }, img),
     el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),
     el("div", { class: "subtle small center" }, label),
+    problem,
     el("div", { class: "actions" },
-      el("button", { class: "btn primary small", type: "button", onclick: () => onApply(frame) }, `Set as ${PHASE_LABELS[phase].toLowerCase()}`),
+      el("button", { class: "btn primary small", type: "button", onclick: apply }, `Set as ${PHASE_LABELS[phase].toLowerCase()}`),
       el("button", { class: "btn small", type: "button", onclick: onCancel }, "Cancel")));
 }
 

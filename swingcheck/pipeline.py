@@ -26,7 +26,7 @@ from swingcheck.priority import pick_focus
 from swingcheck.models import CHECKPOINT_MARKS, REQUIRED_MARKS, CheckpointMark, Marks, Point, PoseSeq
 from swingcheck.output.annotate import Annotator, write_outputs
 from swingcheck.output.report import build_report
-from swingcheck.phases import PhaseError, Phases, detect_phases, get_phases, halfway_back
+from swingcheck.phases import PhaseError, PhaseOrderError, Phases, detect_phases, get_phases, halfway_back
 from swingcheck.pose import extract_pose, get_pose, write_debug_video
 
 ProgressFn = Callable[[str, float | None, str], None]
@@ -250,6 +250,8 @@ def analyze(
             search=_downswing_search(pose),
             marked_takeaway=marks.checkpoint("takeaway").frame if marks.checkpoint("takeaway") else None,
         )
+    except PhaseOrderError as e:
+        raise PipelineError(str(e)) from e
     except (PhaseError, ValueError) as e:
         raise PipelineError(f"{e} Set the phase frames manually.") from e
     takeaway_mark = marks.checkpoint("takeaway")

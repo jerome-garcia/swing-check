@@ -165,8 +165,21 @@ def test_bad_override_order_rejected():
     fps = 240.0
     track, _ = synthetic_swing(fps)
     auto = detect_phases(track, fps, SCALE, CFG)
-    with pytest.raises(PhaseError, match="order"):
+    with pytest.raises(PhaseError, match="The top frame you set .* comes after the impact"):
         apply_overrides(auto, {"top": auto.impact + 5}, track, fps, CFG, len(track))
+
+
+def test_impact_set_before_top_is_a_plain_error():
+    # The golfer's frame stays theirs: no guessing a different top, just say what's wrong.
+    from swingcheck.phases import PhaseOrderError
+
+    fps = 240.0
+    track, _ = synthetic_swing(fps)
+    auto = detect_phases(track, fps, SCALE, CFG)
+    with pytest.raises(PhaseOrderError) as e:
+        apply_overrides(auto, {"impact": auto.top - 3}, track, fps, CFG, len(track))
+    assert str(e.value) == (f"The impact frame you set ({auto.top - 3}) comes before the top (frame {auto.top}). "
+                            "Pick an impact frame after the top, or reset it to automatic.")
 
 
 def test_marked_takeaway_replaces_detected_one(tmp_path):

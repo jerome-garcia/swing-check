@@ -39,6 +39,10 @@ class PhaseError(RuntimeError):
     pass
 
 
+class PhaseOrderError(PhaseError):
+    """Frames the user set are in an impossible order; the message says which, in plain words."""
+
+
 @dataclass
 class Phases:
     address: int
@@ -209,6 +213,7 @@ def apply_overrides(
     if not overrides:
         assert auto is not None
         return auto
+    check_order(key, overrides)
     xy = clean_track(hands, fps, max_gap_ms=0, smoothing_ms=cfg["smoothing_ms"])
     takeaway, early = checkpoints(xy, key["address"], key["top"], key["impact"],
                                   cfg["takeaway_fraction"], cfg["downswing_fraction"])
@@ -218,6 +223,22 @@ def apply_overrides(
     )
     validate(phases, frame_count)
     return phases
+
+
+def check_order(key: dict[str, int], overrides: dict[str, int]) -> None:
+    """Address, top, and impact must come in that order. When a frame the user set breaks
+    it, say which and what to do, rather than guess a different frame for them."""
+    for first, then in (("address", "top"), ("top", "impact")):
+        if key[first] < key[then]:
+            continue
+        mine = then if then in overrides else first if first in overrides else None
+        if mine is None:
+            continue  # detection's own frames; validate() reports those
+        other = first if mine == then else then
+        where, fix = ("before", "after") if mine == then else ("after", "before")
+        raise PhaseOrderError(
+            f"The {mine} frame you set ({key[mine]}) comes {where} the {other} (frame {key[other]}). "
+            f"Pick {'an' if mine[0] in 'aei' else 'a'} {mine} frame {fix} the {other}, or reset it to automatic.")
 
 
 def load_overrides(path: Path, signature: dict[str, Any]) -> dict[str, int]:
