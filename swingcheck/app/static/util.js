@@ -74,6 +74,22 @@ export function imageUrl(id, png, version, width = 720) {
   return `${fileUrl(id, png.replace(/\.png$/, ".jpg"), false)}?w=${width}&v=${encodeURIComponent(version || "0")}`;
 }
 
+// A picture shown large over the page instead of in a new tab: tap anywhere, Close, or
+// Escape to go back. Use as a link's onclick (the link stays for Ctrl/Cmd-click, a new tab).
+export function viewImage(src, alt) {
+  return e => {
+    if (e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    const dialog = el("dialog", { class: "image-viewer", "aria-label": alt },
+      el("img", { src, alt }),
+      el("button", { class: "btn small image-viewer-close", type: "button" }, "Close"));
+    dialog.addEventListener("click", () => dialog.close());
+    dialog.addEventListener("close", () => dialog.remove());
+    document.body.append(dialog);
+    dialog.showModal();
+  };
+}
+
 export function fileUrl(id, name, bust = true) {
   const url = `/files/${encodeURIComponent(id)}/${encodeURIComponent(name)}`;
   return bust ? `${url}?t=${Date.now()}` : url;

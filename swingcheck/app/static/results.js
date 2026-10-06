@@ -1,5 +1,6 @@
 import {
   api, checkpointStates, el, features, fileUrl, imageUrl, listText, pollJob, postJSON, progressBlock, scorecard, STATUS_WORD, swingUrl,
+  viewImage,
 } from "./util.js";
 
 // The link just made by Share PDF, so the page can say it was copied after it re-renders.
@@ -172,8 +173,9 @@ function checkpointStepper(s, states, focusPick) {
     if (name) [url, src] = [fileUrl(s.id, name), imageUrl(s.id, name, s.images_version)]; // full-size PNG to open, small JPEG to show
     else if (frame !== undefined && s.video) url = src = `/api/swings/${encodeURIComponent(s.id)}/frames/${frame}.jpg?w=720`;
     if (!url) return el("div", { class: "step-frame empty-frame" }, "Mark this checkpoint to see its frame");
-    return el("a", { class: "step-frame", href: url, target: "_blank", rel: "noopener", title: "Open full size" },
-      el("img", { src, alt: `${cp.title} frame` }));
+    return el("a", { class: "step-frame", href: url, target: "_blank", rel: "noopener", title: "View larger",
+      onclick: viewImage(src, `${cp.title} frame`) },
+    el("img", { src, alt: `${cp.title} frame` }));
   }
 
   function card({ cp, verdict, state }, i) {
@@ -228,7 +230,8 @@ function freezeFrames(s) {
     el("h2", {}, "Key frames"),
     el("div", { class: "freeze-row" }, names.map(n => {
       const url = fileUrl(s.id, `${n}.png`);
-      return el("a", { class: "freeze", href: url, target: "_blank", rel: "noopener" },
+      return el("a", { class: "freeze", href: url, target: "_blank", rel: "noopener",
+        onclick: viewImage(imageUrl(s.id, `${n}.png`, s.images_version), `${PHASE_LABELS[n]} frame`) },
         el("img", { src: imageUrl(s.id, `${n}.png`, s.images_version, 360), alt: `${PHASE_LABELS[n]} frame`, loading: "lazy" }),
         el("span", {}, PHASE_LABELS[n]));
     })));

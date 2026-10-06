@@ -799,7 +799,8 @@ Each swing is a folder in `runs/` in the project. It holds the original upload,
 the converted video, your marks, the analysis, `annotated.mp4` (saved 720 px wide
 to stay quick to load), the full-size key frame images and `report.txt`. The page
 shows small JPEG copies of the key frames (`*.w720.jpg`, `*.w360.jpg`, made on first
-view); **Open full size** opens the PNG. Back up or delete that folder like any other files.
+view). Clicking a key frame shows it large over the page (tap anywhere or Close to go back);
+Ctrl/Cmd-click opens the full-size PNG in a new tab. Back up or delete that folder like any other files.
 
 ---
 
