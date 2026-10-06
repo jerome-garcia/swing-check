@@ -1,15 +1,12 @@
 # SwingCheck
 
-**Alpha:** features, results and limits may still change. The app says so with a
-badge in the header, a footer line and the Terms.
+**Alpha:** features, results and limits may still change.
 
 A golf swing analyzer that runs on your own computer. Upload a **down-the-line**
 video of one swing, click the ball and club, and it gives you an annotated
-video, key frames and a verdict for each check. Open it in your browser on the
-PC, or on your phone over Wi-Fi.
+video, key frames and a verdict for each check. 
 
-The goal is to fix fat shots, scooping, and wedges/hybrids flying high instead
-of far. The down-the-line analysis is being built as **eight checkpoints**
+The down-the-line analysis is being built as **eight checkpoints**
 through the swing; see [Roadmap](#roadmap) for what each one checks and which
 are done. **Face-on** analysis is held back for a future release.
 
@@ -18,17 +15,7 @@ computer, everything stays there and nothing is uploaded anywhere. The online
 version (hosted mode, below) keeps each video on the server for 3 days; the app's
 Terms of use and Privacy notice pages explain it.
 
-### Support SwingCheck
 
-SwingCheck is free. If it helps your game, you can
-[support it on Ko-fi](https://ko-fi.com/jeromegarcia) to help cover the server
-and upkeep costs. Thank you!
-
-[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/jeromegarcia)
-
-In the Philippines? Support with InstaPay: scan this with GCash, Maya, or your banking app.
-
-<img src="swingcheck/app/static/support/instapay-qr.png" alt="InstaPay QR code" width="200">
 
 ### Release notes
 
@@ -1080,3 +1067,15 @@ swingcheck/
 config/default.toml   every threshold, commented
 tests/                unit tests (pytest)
 ```
+
+### Support SwingCheck
+
+SwingCheck is free. If it helps your game, you can
+[support it on Ko-fi](https://ko-fi.com/jeromegarcia) to help cover the server
+and upkeep costs. Thank you!
+
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/jeromegarcia)
+
+In the Philippines? Support with InstaPay: scan this with GCash, Maya, or your banking app.
+
+<img src="swingcheck/app/static/support/instapay-qr.png" alt="InstaPay QR code" width="200">
