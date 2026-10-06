@@ -256,6 +256,7 @@ def analyze(
             marked_address=marks.address_frame if view == "dtl" else None,
             search=_downswing_search(pose),
             marked_takeaway=marks.checkpoint("takeaway").frame if marks.checkpoint("takeaway") else None,
+            marked_top=marks.checkpoint("top").frame if view == "dtl" and marks.checkpoint("top") else None,
         )
     except PhaseOrderError as e:
         raise PipelineError(str(e)) from e

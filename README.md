@@ -759,6 +759,8 @@ Impact is the one checkpoint found automatically. If its frame is off, open
 right frame, and press **Set as impact**. The swing is re-analyzed with your
 frame, which is remembered. **Reset to automatic** goes back to detection. Every
 other checkpoint uses the frame you marked; change those with **Edit marks**.
+Impact has to come after the top you marked: an earlier frame is refused, with a
+note saying so.
 
 ### Where your swings are stored
 

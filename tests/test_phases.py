@@ -197,6 +197,29 @@ def test_marked_takeaway_replaces_detected_one(tmp_path):
     assert phases.takeaway == auto.takeaway and "takeaway" not in phases.manual
 
 
+def test_marked_top_is_the_top(tmp_path):
+    from swingcheck.phases import PhaseOrderError, get_phases
+
+    fps = 240.0
+    track, _ = synthetic_swing(fps)
+    config = {"phases": CFG}
+    auto, _ = get_phases(tmp_path, track, fps, SCALE, config, {}, {})
+    phases, _ = get_phases(tmp_path, track, fps, SCALE, config, {}, {}, clear_overrides=True, marked_top=auto.top - 6)
+    assert phases.top == auto.top - 6 and "top" in phases.manual
+    # An impact set before the detected top but after the marked one is fine...
+    phases, _ = get_phases(tmp_path, track, fps, SCALE, config, {}, {"impact": auto.top - 2}, clear_overrides=True,
+                           marked_top=auto.top - 6)
+    assert (phases.top, phases.impact) == (auto.top - 6, auto.top - 2)
+    # ...and one before the marked top says so in plain words.
+    with pytest.raises(PhaseOrderError, match=rf"comes before the top \(frame {auto.top - 6}\)"):
+        get_phases(tmp_path, track, fps, SCALE, config, {}, {"impact": auto.top - 8}, clear_overrides=True,
+                   marked_top=auto.top - 6)
+    # A marked top at or after the detected impact (none set) is left out: the detected top stays.
+    phases, _ = get_phases(tmp_path, track, fps, SCALE, config, {}, {}, clear_overrides=True,
+                           marked_top=auto.impact)
+    assert phases.top == auto.top
+
+
 def test_takeaway_counts_hands_moving_back_not_just_up():
     # Down the line, the hands first move back (sideways on screen) and only then rise.
     from swingcheck.phases import checkpoints

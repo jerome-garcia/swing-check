@@ -282,6 +282,7 @@ def get_phases(
     marked_address: int | None = None,
     search: tuple[int, int] | None = None,
     marked_takeaway: int | None = None,
+    marked_top: int | None = None,
 ) -> tuple[Phases, str | None]:
     """Detect phases, merge saved + new manual overrides, save phases.json.
 
@@ -289,6 +290,10 @@ def get_phases(
     an explicit address override exists; it isn't saved as an override.
     `marked_takeaway` (the frame the user marked the takeaway on) replaces the
     detected takeaway checkpoint when it falls between address and top.
+    `marked_top` (the frame the user marked the top on) is the top, unless an explicit top
+    override exists or it isn't before the detected impact (and no impact was set); like
+    the address, it isn't saved as an override. An impact set by the user is then checked
+    against the top they marked, not a hidden detected one.
     Returns (phases, detection_error) where detection_error explains a failed
     automatic detection that overrides papered over.
     """
@@ -301,11 +306,15 @@ def get_phases(
         error = None
     except PhaseError as e:
         auto, error = None, str(e)
-        if not all(k in overrides or (k == "address" and marked_address is not None) for k in KEY_PHASES):
-            raise  # detection's own reason says more than "set the frames"
     effective = dict(overrides)
     if marked_address is not None and "address" not in effective:
         effective["address"] = marked_address
+    if marked_top is not None and "top" not in effective:
+        impact = effective.get("impact", auto.impact if auto else None)
+        if "impact" in effective or impact is None or marked_top < impact:
+            effective["top"] = marked_top
+    if auto is None and not all(k in effective for k in KEY_PHASES):
+        raise PhaseError(error)  # detection's own reason says more than "set the frames"
     phases = apply_overrides(auto, effective, hands, fps, cfg, len(hands))
     if marked_takeaway is not None and phases.address < marked_takeaway <= phases.top:
         phases.takeaway = marked_takeaway
