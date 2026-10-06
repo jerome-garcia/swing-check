@@ -735,7 +735,8 @@ Face-on analysis isn't available in the app yet; this is how to film it when it 
    portrait video he's beside your frame at the same size; otherwise (a phone,
    or a landscape video) he's a small picture in the top corner on the side you
    face, sized to stay clear of you: the quick pass after upload saves where you
-   are in the frame (`golfer_box` in `suggest.json`). Tap the small picture to
+   are in the frame (`golfer_box` in `suggest.json`). While you click, the mark of
+   the point the bar asks for pulses on the example. Tap the small picture to
    enlarge it, and again to shrink it (taps on it never place a point). The
    frames ship with the app
    (`swingcheck/app/static/reference/`); rebuild them from any fully marked

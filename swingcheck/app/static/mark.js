@@ -538,7 +538,10 @@ export async function renderMark(view, id, isCurrent) {
       const rr = shape === "ring" ? r * 0.55 : r;
       const outline = shape === "square"
         ? `<rect x="${x - rr}" y="${y - rr}" width="${2 * rr}" height="${2 * rr}"/>` : `<circle cx="${x}" cy="${y}" r="${rr}"/>`;
-      return `<g fill="none"><g stroke="rgba(0,0,0,.8)" stroke-width="${r / 1.8}">${outline}</g>`
+      // A halo in the same shape ripples out from the mark of the point to click next (refresh).
+      return `<g class="ref-mark" data-point="${name}" fill="none">`
+        + `<g class="ref-halo" stroke="${color}" stroke-width="${r / 4}">${outline}</g>`
+        + `<g stroke="rgba(0,0,0,.8)" stroke-width="${r / 1.8}">${outline}</g>`
         + `<g stroke="${color}" stroke-width="${r / 3.5}">${outline}</g></g>`;
     };
     const link = el("button", { type: "button", class: "ref-toggle", title: reference.name,
@@ -704,6 +707,9 @@ export async function renderMark(view, id, isCurrent) {
     saveHint.textContent = unfinished().length
       ? `Still to mark: ${listText(unfinished().map(st => st.title.toLowerCase()))}.` : "";
     renderRef();
+    // On the example, the mark of the point the bar asks for pulses (once the frame is set).
+    const pulse = cur().frameOk ? next : null;
+    for (const g of refBox.querySelectorAll(".ref-mark")) g.classList.toggle("next", g.dataset.point === pulse);
     refreshWarnings();
     draw();
   }
