@@ -101,8 +101,7 @@ const BALL_STEP = { dtl: "takeaway", fo: "address" };
 const pointInfo = (step, name) => ({ ...POINT_INFO[name], ...((STEP_POINT_INFO[step] || {})[name] || {}) });
 const LOUPE_SIZE = 150;
 const LOUPE_ZOOM = 4;
-const TAP_ZOOM = 3; // Zoom, then a tap: this many times bigger around the tapped spot
-const MAX_ZOOM = 5; // pinching stops here
+const MAX_ZOOM = 5; // pinching to zoom stops here
 
 export async function renderMark(view, id, isCurrent) {
   const s = await api(`/api/swings/${encodeURIComponent(id)}`);
@@ -159,9 +158,7 @@ export async function renderMark(view, id, isCurrent) {
     aiming: false,
     touch: false,
     drag: null,     // {name, dx, dy}: a placed point being dragged, and where on it it was picked up
-    selected: null, // the point the arrow buttons move: the last one placed or dragged
     zoom: { z: 1, cx: 0, cy: 0 }, // the part of the frame shown: z times bigger, centered on (cx, cy)
-    zoomPick: false, // Zoom pressed: the next tap picks the spot to zoom into
   };
   const stepDef = () => steps.find(st => st.key === state.active);
   const cur = () => state.steps[state.active];
@@ -390,14 +387,10 @@ export async function renderMark(view, id, isCurrent) {
       if (!p) continue;
       const [cx, cy] = toCanvas(...p);
       const info = pointInfo(state.active, name);
-      if (name === state.selected && cur().frameOk) { // the one the arrows move: a faint ring around it
-        ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 1.5 * dpr; ctx.setLineDash([3 * dpr, 3 * dpr]);
-        ctx.beginPath(); ctx.arc(cx, cy, 13 * dpr, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
-      }
       drawMark(ctx, info.shape, cx, cy, info.color, dpr);
       label(ctx, info.label, cx + info.dx * dpr, cy + info.dy * dpr, info.color, dpr);
     }
-    if (state.cursor && (nextPoint() || state.drag) && cur().frameOk && !state.zoomPick) drawLoupe(dpr);
+    if (state.cursor && (nextPoint() || state.drag) && cur().frameOk) drawLoupe(dpr);
   }
 
   function drawLoupe(dpr) {
@@ -448,7 +441,6 @@ export async function renderMark(view, id, isCurrent) {
     const name = nextPoint();
     if (!name) return;
     cur().points[name] = rounded(p);
-    state.selected = name;
     refresh();
   }
 
@@ -477,19 +469,17 @@ export async function renderMark(view, id, isCurrent) {
       const m = middle();
       pinch = { d0: Math.max(m.d, 1), z0: state.zoom.z, anchor: eventToVideo(m) };
       pinched = true;
-      state.aiming = false; state.drag = null; state.cursor = null; state.zoomPick = false;
+      state.aiming = false; state.drag = null; state.cursor = null;
       draw();
       return;
     }
     if (fingers.size > 2 || pinched) return;
     state.touch = e.pointerType !== "mouse";
-    if (state.zoomPick) return; // the spot to zoom into: on release
     const hit = pointAt(e);
     if (hit) { // pick up a placed point, keeping where on it the finger landed
       const at = eventToVideo(e);
       const [px, py] = cur().points[hit];
       state.drag = { name: hit, dx: px - at.x, dy: py - at.y };
-      state.selected = hit;
       state.cursor = { x: px, y: py };
     } else {
       state.cursor = eventToVideo(e);
@@ -507,7 +497,6 @@ export async function renderMark(view, id, isCurrent) {
       const w = v.width / z, h = v.height / z;
       setZoom(z, pinch.anchor.x - (m.clientX - rect.left) / rect.width * w + w / 2,
         pinch.anchor.y - (m.clientY - rect.top) / rect.height * h + h / 2);
-      renderTools();
       draw();
       return;
     }
@@ -529,14 +518,6 @@ export async function renderMark(view, id, isCurrent) {
   }
   canvas.addEventListener("pointerup", e => {
     if (endFinger(e)) return;
-    if (state.zoomPick) { // zoom in on the tapped spot
-      const at = eventToVideo(e);
-      state.zoomPick = false;
-      setZoom(TAP_ZOOM, at.x, at.y);
-      renderTools();
-      draw();
-      return;
-    }
     if (!state.aiming) return;
     state.aiming = false;
     if (state.drag) {
@@ -560,40 +541,6 @@ export async function renderMark(view, id, isCurrent) {
   canvas.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
   canvas.addEventListener("contextmenu", e => e.preventDefault());
   canvas.addEventListener("pointerleave", e => { if (e.pointerType === "mouse" && !state.aiming) { state.cursor = null; draw(); } });
-
-  // --- Zoom and fine-tuning -------------------------------------------------
-  // Under the frame once it's set: Zoom (then tap the spot to zoom into; pinching works
-  // too), and arrows that move the last point placed or dragged a screen pixel at a time.
-  const tools = el("div", { class: "mark-tools" });
-  function nudge(dx, dy) {
-    const p = state.selected && cur().points[state.selected];
-    if (!p) return;
-    const px = viewRect().w / (parseFloat(canvas.style.width) || v.width); // one screen pixel, in video pixels
-    cur().points[state.selected] = rounded({
-      x: Math.max(0, Math.min(v.width - 1, p[0] + dx * px)), y: Math.max(0, Math.min(v.height - 1, p[1] + dy * px)) });
-    refresh();
-  }
-  function renderTools() {
-    tools.hidden = !cur().frameOk;
-    if (tools.hidden) return;
-    const zoomed = state.zoom.z > 1;
-    const zoomBtn = el("button", {
-      class: `btn small ${state.zoomPick ? "selected" : ""}`, type: "button", "aria-pressed": String(state.zoomPick),
-      onclick: () => {
-        if (zoomed) setZoom(1); else state.zoomPick = !state.zoomPick;
-        renderTools(); draw();
-      },
-    }, zoomed ? "Zoom out" : state.zoomPick ? "Tap the spot to zoom in" : "🔍 Zoom");
-    const p = state.selected && cur().points[state.selected];
-    const what = p ? pointInfo(state.active, state.selected).label.toLowerCase() : null;
-    const arrow = (text, dx, dy, title) => el("button", { class: "btn small nudge-btn", type: "button", disabled: !p,
-      title, "aria-label": title, onclick: () => nudge(dx, dy) }, text);
-    tools.replaceChildren(
-      zoomBtn,
-      el("div", { class: "nudge" },
-        el("span", { class: "subtle small" }, p ? `Move the ${what}` : started(state.active) ? "Drag a point to move it" : ""),
-        arrow("‹", -1, 0, "Move left"), arrow("˄", 0, -1, "Move up"), arrow("˅", 0, 1, "Move down"), arrow("›", 1, 0, "Move right")));
-  }
 
   // --- Scrubber -------------------------------------------------------------
   const slider = el("input", { type: "range", min: 0, max: v.frame_count - 1, value: cur().frame, class: "scrub", "aria-label": "Frame" });
@@ -775,8 +722,6 @@ export async function renderMark(view, id, isCurrent) {
   function selectStep(key) {
     state.active = key;
     state.cursor = null;
-    state.selected = null;
-    state.zoomPick = false;
     setZoom(1);
     setFrame(cur().frame);
     refresh();
@@ -813,7 +758,7 @@ export async function renderMark(view, id, isCurrent) {
       el("div", { class: "actions" },
         // Back to finding the frame; this step's clicks go, since they were made on this frame.
         el("button", { class: "btn small hud-btn", type: "button",
-          onclick: () => { cur().frameOk = false; cur().points = {}; state.zoomPick = false; setZoom(1); refresh(); } }, "‹ Change frame"),
+          onclick: () => { cur().frameOk = false; cur().points = {}; setZoom(1); refresh(); } }, "‹ Change frame"),
         el("button", { class: "btn small hud-btn", type: "button", onclick: undo, disabled: !started(state.active) }, "Undo"),
         el("button", { class: "btn small hud-btn", type: "button", disabled: !started(state.active),
           onclick: () => { cur().points = {}; refresh(); } }, "Clear step"),
@@ -843,9 +788,7 @@ export async function renderMark(view, id, isCurrent) {
   }
 
   function refresh() {
-    if (state.selected && !cur().points[state.selected]) state.selected = null; // undone or cleared
     lockFrame();
-    renderTools();
     const next = nextPoint();
     renderHud(next);
     const warned = new Set(markWarnings().map(([key]) => key));
@@ -1024,10 +967,6 @@ export async function renderMark(view, id, isCurrent) {
     if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !cur().frameOk) {
       e.preventDefault();
       setFrame(cur().frame + (e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 10 : 1));
-    } else if (e.key.startsWith("Arrow") && cur().frameOk && state.selected) { // fine-tune the point
-      e.preventDefault();
-      const n = e.shiftKey ? 5 : 1;
-      nudge({ ArrowLeft: -n, ArrowRight: n }[e.key] || 0, { ArrowUp: -n, ArrowDown: n }[e.key] || 0);
     } else if (e.key === "Backspace" || e.key === "u") {
       e.preventDefault();
       undo();
@@ -1047,7 +986,6 @@ export async function renderMark(view, id, isCurrent) {
         cameraCheck(s),
         hud,
         el("div", { class: "stage-row" }, el("div", { class: "stage" }, canvas, refBox)),
-        tools,
         el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),
         el("div", { class: "subtle small center frame-caption" }, frameLabel, scrubHint, " ", suggestedTag, " ", backToSuggested),
         // Right under the frame, where you are when you press Save in the bar: why a mark looks
