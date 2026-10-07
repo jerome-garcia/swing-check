@@ -440,13 +440,24 @@ export async function renderMark(view, id, isCurrent) {
   function placePoint(p) {
     const name = nextPoint();
     if (!name) return;
+    remember();
     cur().points[name] = rounded(p);
     refresh();
   }
 
+  // Undo takes back the last thing done on this step (a point placed, a point moved, or
+  // Clear step), from a list of the step's points before each one. Marks saved earlier have
+  // no list: then it removes the last point, as before.
+  const history = {}; // step key -> [points before each change]
+  const remember = () => (history[state.active] ||= []).push({ ...cur().points });
   function undo() {
-    const placed = stepDef().points.filter(n => cur().points[n]);
-    if (placed.length) delete cur().points[placed[placed.length - 1]];
+    const before = history[state.active];
+    if (before && before.length) {
+      cur().points = before.pop();
+    } else {
+      const placed = stepDef().points.filter(n => cur().points[n]);
+      if (placed.length) delete cur().points[placed[placed.length - 1]];
+    }
     refresh();
   }
 
@@ -521,7 +532,9 @@ export async function renderMark(view, id, isCurrent) {
     if (!state.aiming) return;
     state.aiming = false;
     if (state.drag) {
-      cur().points[state.drag.name] = rounded(state.cursor);
+      const to = rounded(state.cursor);
+      const from = cur().points[state.drag.name];
+      if (to[0] !== from[0] || to[1] !== from[1]) { remember(); cur().points[state.drag.name] = to; } // a tap isn't a move
       state.drag = null;
       refresh();
     } else {
@@ -758,10 +771,10 @@ export async function renderMark(view, id, isCurrent) {
       el("div", { class: "actions" },
         // Back to finding the frame; this step's clicks go, since they were made on this frame.
         el("button", { class: "btn small hud-btn", type: "button",
-          onclick: () => { cur().frameOk = false; cur().points = {}; setZoom(1); refresh(); } }, "‹ Change frame"),
-        el("button", { class: "btn small hud-btn", type: "button", onclick: undo, disabled: !started(state.active) }, "Undo"),
+          onclick: () => { cur().frameOk = false; cur().points = {}; history[state.active] = []; setZoom(1); refresh(); } }, "‹ Change frame"),
+        el("button", { class: "btn small hud-btn", type: "button", onclick: undo, disabled: !started(state.active) && !history[state.active]?.length }, "Undo"),
         el("button", { class: "btn small hud-btn", type: "button", disabled: !started(state.active),
-          onclick: () => { cur().points = {}; refresh(); } }, "Clear step"),
+          onclick: () => { remember(); cur().points = {}; refresh(); } }, "Clear step"),
         !next && after ? el("button", { class: "btn small primary", type: "button", onclick: () => selectStep(after.key) }, `Next: ${after.title} ›`) : null,
         // Last step done: save once every step is marked, else go back to the first one left.
         !next && !after && !unfinished().length ? el("button", { class: "btn small primary", type: "button", onclick: save }, "Save and analyze") : null,
