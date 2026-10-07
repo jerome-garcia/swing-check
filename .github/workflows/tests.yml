@@ -1,9 +1,15 @@
-# Lint and run the tests on every push and pull request.
+# Lint and run the tests on every push and pull request, except ones that only change docs.
 name: tests
 
 on:
   push:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
   pull_request:
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
 
 jobs:
   test:
