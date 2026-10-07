@@ -101,6 +101,8 @@ const BALL_STEP = { dtl: "takeaway", fo: "address" };
 const pointInfo = (step, name) => ({ ...POINT_INFO[name], ...((STEP_POINT_INFO[step] || {})[name] || {}) });
 const LOUPE_SIZE = 150;
 const LOUPE_ZOOM = 4;
+const TAP_ZOOM = 3; // Zoom, then a tap: this many times bigger around the tapped spot
+const MAX_ZOOM = 5; // pinching stops here
 
 export async function renderMark(view, id, isCurrent) {
   const s = await api(`/api/swings/${encodeURIComponent(id)}`);
@@ -156,6 +158,10 @@ export async function renderMark(view, id, isCurrent) {
     cursor: null, // {x, y} in video pixels while hovering/aiming
     aiming: false,
     touch: false,
+    drag: null,     // {name, dx, dy}: a placed point being dragged, and where on it it was picked up
+    selected: null, // the point the arrow buttons move: the last one placed or dragged
+    zoom: { z: 1, cx: 0, cy: 0 }, // the part of the frame shown: z times bigger, centered on (cx, cy)
+    zoomPick: false, // Zoom pressed: the next tap picks the spot to zoom into
   };
   const stepDef = () => steps.find(st => st.key === state.active);
   const cur = () => state.steps[state.active];
@@ -302,13 +308,44 @@ export async function renderMark(view, id, isCurrent) {
     draw();
   }
 
-  const toCanvas = (x, y) => [x * canvas.width / v.width, y * canvas.height / v.height];
+  // The part of the video on screen, in video pixels: all of it, or a zoomed-in window.
+  function viewRect() {
+    const { z, cx, cy } = state.zoom;
+    const w = v.width / z, h = v.height / z;
+    return { x0: Math.max(0, Math.min(v.width - w, cx - w / 2)), y0: Math.max(0, Math.min(v.height - h, cy - h / 2)), w, h };
+  }
+  function setZoom(z, cx = v.width / 2, cy = v.height / 2) {
+    state.zoom = { z: Math.max(1, Math.min(MAX_ZOOM, z)), cx, cy };
+    const r = viewRect(); // keep the center where the window actually is, so panning never sticks at an edge
+    state.zoom.cx = r.x0 + r.w / 2;
+    state.zoom.cy = r.y0 + r.h / 2;
+  }
+  const toCanvas = (x, y) => {
+    const r = viewRect();
+    return [(x - r.x0) / r.w * canvas.width, (y - r.y0) / r.h * canvas.height];
+  };
 
   function eventToVideo(e) {
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width * v.width;
-    const y = (e.clientY - rect.top) / rect.height * v.height;
+    const r = viewRect();
+    const x = r.x0 + (e.clientX - rect.left) / rect.width * r.w;
+    const y = r.y0 + (e.clientY - rect.top) / rect.height * r.h;
     return { x: Math.max(0, Math.min(v.width - 1, x)), y: Math.max(0, Math.min(v.height - 1, y)) };
+  }
+
+  // The placed point of this step under the pointer, if any (a finger gets a bigger target).
+  function pointAt(e) {
+    const rect = canvas.getBoundingClientRect();
+    const reach = e.pointerType === "mouse" ? 12 : 28;
+    let best = null, bestD = reach;
+    for (const name of stepDef().points) {
+      const p = cur().points[name];
+      if (!p) continue;
+      const [cx, cy] = toCanvas(...p);
+      const d = Math.hypot(rect.left + cx / canvas.width * rect.width - e.clientX, rect.top + cy / canvas.height * rect.height - e.clientY);
+      if (d < bestD) { best = name; bestD = d; }
+    }
+    return best;
   }
 
   // --- Drawing --------------------------------------------------------------
@@ -332,7 +369,11 @@ export async function renderMark(view, id, isCurrent) {
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const img = full || preview;
-    if (img) ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    if (img) {
+      const r = viewRect();
+      const sx = img.naturalWidth / v.width, sy = img.naturalHeight / v.height;
+      ctx.drawImage(img, r.x0 * sx, r.y0 * sy, r.w * sx, r.h * sy, 0, 0, canvas.width, canvas.height);
+    }
     const dpr = window.devicePixelRatio || 1;
 
     const points = cur().points;
@@ -349,10 +390,14 @@ export async function renderMark(view, id, isCurrent) {
       if (!p) continue;
       const [cx, cy] = toCanvas(...p);
       const info = pointInfo(state.active, name);
+      if (name === state.selected && cur().frameOk) { // the one the arrows move: a faint ring around it
+        ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 1.5 * dpr; ctx.setLineDash([3 * dpr, 3 * dpr]);
+        ctx.beginPath(); ctx.arc(cx, cy, 13 * dpr, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      }
       drawMark(ctx, info.shape, cx, cy, info.color, dpr);
       label(ctx, info.label, cx + info.dx * dpr, cy + info.dy * dpr, info.color, dpr);
     }
-    if (state.cursor && nextPoint() && cur().frameOk) drawLoupe(dpr);
+    if (state.cursor && (nextPoint() || state.drag) && cur().frameOk && !state.zoomPick) drawLoupe(dpr);
   }
 
   function drawLoupe(dpr) {
@@ -367,7 +412,7 @@ export async function renderMark(view, id, isCurrent) {
     lx = Math.max(0, Math.min(canvas.width - size, lx));
     if (ly < 0) ly = Math.min(canvas.height - size, cy + 40 * dpr);
 
-    const srcSize = (LOUPE_SIZE / LOUPE_ZOOM) * (img.naturalWidth / v.width) * (v.width / (canvas.width / dpr));
+    const srcSize = (LOUPE_SIZE / LOUPE_ZOOM) * (img.naturalWidth / v.width) * (viewRect().w / (canvas.width / dpr));
     const sx = state.cursor.x * img.naturalWidth / v.width - srcSize / 2;
     const sy = state.cursor.y * img.naturalHeight / v.height - srcSize / 2;
     ctx.save();
@@ -397,10 +442,13 @@ export async function renderMark(view, id, isCurrent) {
   const started = key => Object.keys(state.steps[key].points).length > 0;
   const unfinished = () => steps.filter(st => !complete(st.key));
 
+  const rounded = p => [Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10];
+
   function placePoint(p) {
     const name = nextPoint();
     if (!name) return;
-    cur().points[name] = [Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10];
+    cur().points[name] = rounded(p);
+    state.selected = name;
     refresh();
   }
 
@@ -410,35 +458,142 @@ export async function renderMark(view, id, isCurrent) {
     refresh();
   }
 
+  // Fingers on the frame: one aims (or drags a placed point); two pinch to zoom and pan.
+  const fingers = new Map(); // pointerId -> {clientX, clientY}
+  let pinch = null;          // {d0, z0, anchor}: the pinch's start, and the video point under its middle
+  let pinched = false;       // a pinch happened: the finger left behind doesn't place a point
+  const middle = () => {
+    const [a, b] = [...fingers.values()];
+    return { clientX: (a.clientX + b.clientX) / 2, clientY: (a.clientY + b.clientY) / 2,
+      d: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) };
+  };
+
   canvas.addEventListener("pointerdown", e => {
     // Points only once the frame is confirmed: until then a click points at the button.
     if (!cur().frameOk) { nudgeConfirm(); return; }
+    if (e.pointerType !== "mouse") fingers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+    try { canvas.setPointerCapture(e.pointerId); } catch { /* not a live pointer: carry on without */ }
+    if (fingers.size === 2) {
+      const m = middle();
+      pinch = { d0: Math.max(m.d, 1), z0: state.zoom.z, anchor: eventToVideo(m) };
+      pinched = true;
+      state.aiming = false; state.drag = null; state.cursor = null; state.zoomPick = false;
+      draw();
+      return;
+    }
+    if (fingers.size > 2 || pinched) return;
     state.touch = e.pointerType !== "mouse";
+    if (state.zoomPick) return; // the spot to zoom into: on release
+    const hit = pointAt(e);
+    if (hit) { // pick up a placed point, keeping where on it the finger landed
+      const at = eventToVideo(e);
+      const [px, py] = cur().points[hit];
+      state.drag = { name: hit, dx: px - at.x, dy: py - at.y };
+      state.selected = hit;
+      state.cursor = { x: px, y: py };
+    } else {
+      state.cursor = eventToVideo(e);
+    }
     state.aiming = true;
-    state.cursor = eventToVideo(e);
-    canvas.setPointerCapture(e.pointerId);
     draw();
   });
   canvas.addEventListener("pointermove", e => {
-    if (e.pointerType !== "mouse" && !state.aiming) return;
+    if (fingers.has(e.pointerId)) fingers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+    if (pinch && fingers.size === 2) {
+      const m = middle();
+      const rect = canvas.getBoundingClientRect();
+      const z = Math.max(1, Math.min(MAX_ZOOM, pinch.z0 * m.d / pinch.d0));
+      // Keep the video point that was under the fingers' middle under it as they move.
+      const w = v.width / z, h = v.height / z;
+      setZoom(z, pinch.anchor.x - (m.clientX - rect.left) / rect.width * w + w / 2,
+        pinch.anchor.y - (m.clientY - rect.top) / rect.height * h + h / 2);
+      renderTools();
+      draw();
+      return;
+    }
+    if (e.pointerType === "mouse" && !state.aiming) canvas.style.cursor = cur().frameOk && pointAt(e) ? "grab" : "";
+    if ((e.pointerType !== "mouse" && !state.aiming) || pinched) return;
     state.touch = e.pointerType !== "mouse";
-    state.cursor = eventToVideo(e);
+    const at = eventToVideo(e);
+    state.cursor = state.drag
+      ? { x: Math.max(0, Math.min(v.width - 1, at.x + state.drag.dx)), y: Math.max(0, Math.min(v.height - 1, at.y + state.drag.dy)) }
+      : at;
     draw();
   });
+  // A finger lifted: true while a pinch is winding down, so the last finger places nothing.
+  function endFinger(e) {
+    fingers.delete(e.pointerId);
+    if (fingers.size < 2) pinch = null;
+    if (!fingers.size && pinched) { pinched = false; return true; }
+    return pinched;
+  }
   canvas.addEventListener("pointerup", e => {
+    if (endFinger(e)) return;
+    if (state.zoomPick) { // zoom in on the tapped spot
+      const at = eventToVideo(e);
+      state.zoomPick = false;
+      setZoom(TAP_ZOOM, at.x, at.y);
+      renderTools();
+      draw();
+      return;
+    }
     if (!state.aiming) return;
     state.aiming = false;
-    placePoint(eventToVideo(e));
+    if (state.drag) {
+      cur().points[state.drag.name] = rounded(state.cursor);
+      state.drag = null;
+      refresh();
+    } else {
+      placePoint(eventToVideo(e));
+    }
     if (state.touch) state.cursor = null;
     draw();
   });
-  canvas.addEventListener("pointercancel", () => { state.aiming = false; state.cursor = null; draw(); });
+  canvas.addEventListener("pointercancel", e => {
+    endFinger(e);
+    state.aiming = false; state.drag = null; state.cursor = null;
+    draw();
+  });
   // The frame handles its own touches: without this, iOS turns a long press (aiming with
   // the loupe) into text selection, the magnifier, or the image menu, and may cancel the
   // press so the point never lands. Pointer events still arrive.
   canvas.addEventListener("touchstart", e => e.preventDefault(), { passive: false });
   canvas.addEventListener("contextmenu", e => e.preventDefault());
   canvas.addEventListener("pointerleave", e => { if (e.pointerType === "mouse" && !state.aiming) { state.cursor = null; draw(); } });
+
+  // --- Zoom and fine-tuning -------------------------------------------------
+  // Under the frame once it's set: Zoom (then tap the spot to zoom into; pinching works
+  // too), and arrows that move the last point placed or dragged a screen pixel at a time.
+  const tools = el("div", { class: "mark-tools" });
+  function nudge(dx, dy) {
+    const p = state.selected && cur().points[state.selected];
+    if (!p) return;
+    const px = viewRect().w / (parseFloat(canvas.style.width) || v.width); // one screen pixel, in video pixels
+    cur().points[state.selected] = rounded({
+      x: Math.max(0, Math.min(v.width - 1, p[0] + dx * px)), y: Math.max(0, Math.min(v.height - 1, p[1] + dy * px)) });
+    refresh();
+  }
+  function renderTools() {
+    tools.hidden = !cur().frameOk;
+    if (tools.hidden) return;
+    const zoomed = state.zoom.z > 1;
+    const zoomBtn = el("button", {
+      class: `btn small ${state.zoomPick ? "selected" : ""}`, type: "button", "aria-pressed": String(state.zoomPick),
+      onclick: () => {
+        if (zoomed) setZoom(1); else state.zoomPick = !state.zoomPick;
+        renderTools(); draw();
+      },
+    }, zoomed ? "Zoom out" : state.zoomPick ? "Tap the spot to zoom in" : "🔍 Zoom");
+    const p = state.selected && cur().points[state.selected];
+    const what = p ? pointInfo(state.active, state.selected).label.toLowerCase() : null;
+    const arrow = (text, dx, dy, title) => el("button", { class: "btn small nudge-btn", type: "button", disabled: !p,
+      title, "aria-label": title, onclick: () => nudge(dx, dy) }, text);
+    tools.replaceChildren(
+      zoomBtn,
+      el("div", { class: "nudge" },
+        el("span", { class: "subtle small" }, p ? `Move the ${what}` : started(state.active) ? "Drag a point to move it" : ""),
+        arrow("‹", -1, 0, "Move left"), arrow("˄", 0, -1, "Move up"), arrow("˅", 0, 1, "Move down"), arrow("›", 1, 0, "Move right")));
+  }
 
   // --- Scrubber -------------------------------------------------------------
   const slider = el("input", { type: "range", min: 0, max: v.frame_count - 1, value: cur().frame, class: "scrub", "aria-label": "Frame" });
@@ -620,6 +775,9 @@ export async function renderMark(view, id, isCurrent) {
   function selectStep(key) {
     state.active = key;
     state.cursor = null;
+    state.selected = null;
+    state.zoomPick = false;
+    setZoom(1);
     setFrame(cur().frame);
     refresh();
   }
@@ -655,7 +813,7 @@ export async function renderMark(view, id, isCurrent) {
       el("div", { class: "actions" },
         // Back to finding the frame; this step's clicks go, since they were made on this frame.
         el("button", { class: "btn small hud-btn", type: "button",
-          onclick: () => { cur().frameOk = false; cur().points = {}; refresh(); } }, "‹ Change frame"),
+          onclick: () => { cur().frameOk = false; cur().points = {}; state.zoomPick = false; setZoom(1); refresh(); } }, "‹ Change frame"),
         el("button", { class: "btn small hud-btn", type: "button", onclick: undo, disabled: !started(state.active) }, "Undo"),
         el("button", { class: "btn small hud-btn", type: "button", disabled: !started(state.active),
           onclick: () => { cur().points = {}; refresh(); } }, "Clear step"),
@@ -685,7 +843,9 @@ export async function renderMark(view, id, isCurrent) {
   }
 
   function refresh() {
+    if (state.selected && !cur().points[state.selected]) state.selected = null; // undone or cleared
     lockFrame();
+    renderTools();
     const next = nextPoint();
     renderHud(next);
     const warned = new Set(markWarnings().map(([key]) => key));
@@ -864,6 +1024,10 @@ export async function renderMark(view, id, isCurrent) {
     if ((e.key === "ArrowLeft" || e.key === "ArrowRight") && !cur().frameOk) {
       e.preventDefault();
       setFrame(cur().frame + (e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 10 : 1));
+    } else if (e.key.startsWith("Arrow") && cur().frameOk && state.selected) { // fine-tune the point
+      e.preventDefault();
+      const n = e.shiftKey ? 5 : 1;
+      nudge({ ArrowLeft: -n, ArrowRight: n }[e.key] || 0, { ArrowUp: -n, ArrowDown: n }[e.key] || 0);
     } else if (e.key === "Backspace" || e.key === "u") {
       e.preventDefault();
       undo();
@@ -883,6 +1047,7 @@ export async function renderMark(view, id, isCurrent) {
         cameraCheck(s),
         hud,
         el("div", { class: "stage-row" }, el("div", { class: "stage" }, canvas, refBox)),
+        tools,
         el("div", { class: "scrub-row" }, step(-10), step(-1), slider, step(1), step(10)),
         el("div", { class: "subtle small center frame-caption" }, frameLabel, scrubHint, " ", suggestedTag, " ", backToSuggested),
         // Right under the frame, where you are when you press Save in the bar: why a mark looks

@@ -94,6 +94,10 @@ circle, and your **hands** a blue square.
 
 - **On a phone,** touch and hold, slide to aim with the magnifier above your
   finger, and let go to place the point.
+- **Point a little off?** Drag it to where it belongs, or use the arrows under
+  the frame to move it a pixel at a time.
+- **Hard to see?** Press **Zoom**, then tap the spot to zoom in (or pinch on a
+  phone). **Zoom out** goes back.
 - **Hands hidden?** On the follow-through, click the lowest part of the shaft
   you can see instead.
 - **Clubhead out of the picture?** Click the highest part of the shaft you can see.

@@ -570,6 +570,12 @@ button.score-item:hover { background: var(--surface-2); }
 .mark-main { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 .mark-main, .mark-main * { -webkit-tap-highlight-color: transparent; }
 .scrub-row { display: flex; align-items: center; gap: 6px; }
+/* Under the frame once it's set: Zoom, and arrows that move the last point a pixel at a time. */
+.mark-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+.mark-tools[hidden] { display: none; }
+.mark-tools .nudge { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.mark-tools .nudge .subtle { margin-right: 4px; }
+.nudge-btn { min-width: 40px; min-height: 36px; font-size: 18px; line-height: 1; padding: 0 8px; }
 /* The frame slider: a thick track and a big handle, so it reads as something to drag. While
    a step's frame is being found (.finding) the handle glows; locked, it's grey. */
 .scrub { flex: 1; min-width: 0; height: 36px; margin: 0; background: transparent; cursor: pointer;
