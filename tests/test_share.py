@@ -54,6 +54,10 @@ def test_share_shows_one_summary_and_stop_sharing_ends_it(tmp_path):
         assert visitor.get(path).status_code == 404
     assert not (tmp_path / meta.id / "shared-summary.pdf").exists()
     assert visitor.get("/s/not-a-real-code").status_code == 404
+    for path in (f"/s/{code}", f"/s/{code}/summary.pdf"):  # a page saying so, with a way in, not JSON
+        page = visitor.get(path)
+        assert page.headers["content-type"].startswith("text/html")
+        assert "isn't available any more" in page.text and 'href="/"' in page.text
 
 
 def test_hosted_share_link_works_for_anyone_but_the_swing_stays_private(tmp_path):

@@ -77,3 +77,26 @@ def page(share: dict[str, Any], base_url: str) -> str:
 <script>location.replace("{pdf}");</script>
 <style>body {{ background: #101311; color: #e9ece6; font: 16px system-ui, sans-serif; margin: 24px; }} a {{ color: #7fd49a; }}</style>
 </head><body><p>Opening the swing summary… <a href="{pdf}">Open the PDF</a></p></body></html>"""
+
+
+def gone_page() -> str:
+    """A shared link that was stopped, or whose swing was deleted: a plain page, not an error in JSON."""
+    return """<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><title>Link not available · SwingCheck</title><link rel="icon" href="/favicon.svg">
+<style>
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; box-sizing: border-box;
+  background: #101311; color: #e9ece6; font: 16px/1.5 system-ui, sans-serif; text-align: center; }
+main { width: 100%; max-width: 420px; }
+.logo { width: 48px; height: 48px; }
+h1 { margin: 16px 0 8px; font-size: 22px; }
+p { margin: 0 0 24px; color: #a9b0a6; }
+a.button { display: inline-block; padding: 12px 20px; border-radius: 999px; background: #2b7a47; color: #fff;
+  font-weight: 600; text-decoration: none; }
+a.button:hover { background: #338f54; }
+</style></head><body><main>
+<img class="logo" src="/favicon.svg" alt="">
+<h1>This shared swing isn't available any more</h1>
+<p>Its owner stopped sharing it, or the swing was deleted.</p>
+<a class="button" href="/">Check your own swing</a>
+</main></body></html>"""

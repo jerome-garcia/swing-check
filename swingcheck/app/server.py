@@ -583,17 +583,22 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
             raise HTTPException(404, "This shared swing isn't available any more.")
         return meta
 
+    def gone() -> HTMLResponse:
+        return HTMLResponse(share.gone_page(), status_code=404, headers={"Cache-Control": "no-cache"})
+
     @app.get("/s/{code}", include_in_schema=False)
     def shared_page(code: str, request: Request) -> HTMLResponse:
-        meta = shared_or_404(code)
+        meta = store.shared(code)
+        if meta is None:
+            return gone()
         return HTMLResponse(share.page(meta.notes["share"], site_url(request)), headers={"Cache-Control": "no-cache"})
 
     @app.get("/s/{code}/summary.pdf", include_in_schema=False)
-    def shared_pdf(code: str) -> FileResponse:
-        meta = shared_or_404(code)
-        path = store.path(meta.id) / share.PDF_FILE
-        if not path.exists():
-            raise HTTPException(404, "This shared swing isn't available any more.")
+    def shared_pdf(code: str) -> Response:
+        meta = store.shared(code)
+        path = store.path(meta.id) / share.PDF_FILE if meta else None
+        if path is None or not path.exists():
+            return gone()
         return FileResponse(path, media_type="application/pdf", headers={
             "Content-Disposition": 'inline; filename="swing-summary.pdf"', "Cache-Control": "no-cache"})
 
