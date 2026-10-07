@@ -104,3 +104,9 @@ def test_daily_codes_match_within_a_day_only():
     assert a == codes.code("owner-1", noon + 3600) != codes.code("owner-2", noon)
     assert codes.code("owner-1", noon + 86400) != a  # the next day: a new secret, so no link
 
+
+
+def test_disk_tile_says_when_uploads_are_paused(tmp_path):
+    from swingcheck.app.admin import live_status
+    assert not live_status([], 0, tmp_path, "v", 0.0)["uploads_paused"]
+    assert live_status([], 0, tmp_path, "v", 0.0, min_free_gb=1e9)["uploads_paused"]  # more than any disk

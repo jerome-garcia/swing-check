@@ -128,13 +128,14 @@ def summary(events: list[dict[str, Any]], live: dict[str, Any], now: float | Non
         },
         "problems": [{"t": e["t"], "event": e["event"], "error": e.get("error", "")}
                      for e in sorted(events, key=lambda e: e["t"], reverse=True)
-                     if e["event"] in ("convert", "analyze") and not e.get("ok")][:15],
+                     if e["event"] in ("convert", "analyze", "upload_refused") and not e.get("ok")][:15],
         "camera": camera.most_common(5),
         "hours": hours,
     }
 
 
-def live_status(jobs, uploading: int, runs_dir: Path, version: str, started: float) -> dict[str, Any]:
+def live_status(jobs, uploading: int, runs_dir: Path, version: str, started: float,
+                min_free_gb: float = 0) -> dict[str, Any]:
     now = time.time()
     running = [j for j in jobs if j.state == "running"]
     disk = shutil.disk_usage(runs_dir)
@@ -149,6 +150,7 @@ def live_status(jobs, uploading: int, runs_dir: Path, version: str, started: flo
                             for f in p.rglob("*") if f.is_file()),
         "disk_free_gb": round(disk.free / 1e9, 1),
         "disk_used_pct": round(100 * (disk.total - disk.free) / disk.total),
+        "uploads_paused": disk.free < min_free_gb * 1e9,  # hosted: new uploads refused till space frees up
     }
 
 
@@ -263,7 +265,8 @@ def page(data: dict[str, Any]) -> str:
         tile("In line", live["queued"], f"avg wait {_duration(data['speed']['average_wait_s'])}"),
         tile("Uploading", live["uploading"], f"avg upload {_duration(data['speed']['average_upload_s'])}"),
         tile("Swings stored", live["swings_stored"], _size(live.get("swings_bytes", 0))),
-        tile("Disk used", f"{live['disk_used_pct']}%", f"{live['disk_free_gb']} GB free"),
+        tile("Disk used", f"{live['disk_used_pct']}%",
+             "Full: uploads paused" if live.get("uploads_paused") else f"{live['disk_free_gb']} GB free"),
         tile("Up for", _duration(live["up_s"]), esc(live["version"])),
     ])
     rows = "".join(

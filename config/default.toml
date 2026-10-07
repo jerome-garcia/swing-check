@@ -354,6 +354,11 @@ max_playback_fps = 60
 # frames and the analysis use full-size frames.
 video_max_width = 720
 video_crf = 23
+# The key-frame PNGs are saved at most this many pixels on their longest side (0 = full
+# size). A 4K key frame is about 11 MB as a PNG; at 1920 it's about a quarter of that. The
+# page, the PDF, and the viewer show smaller copies, so nothing on screen changes; the
+# analysis itself always uses full-size frames.
+key_frame_max_size = 1920
 
 [hosted]
 # Only used when the app runs on a public server (`swingcheck --hosted`); see
@@ -366,6 +371,11 @@ max_queued_jobs = 10          # conversions/analyses waiting; past this, "busy, 
 # Uploads per IP address in 24 hours, so clearing cookies (a fresh owner key, so a fresh
 # swing limit) can't be used to upload without end. Counted in memory only.
 max_uploads_per_ip_per_day = 12
+# New uploads are refused while the swings folder's disk has less than this free (counting
+# the upload itself), so a full disk never breaks a conversion or analysis halfway. Swings
+# already uploaded can still be marked and analyzed, and uploads open again by themselves
+# as expired swings are deleted.
+min_free_gb = 5
 
 [clubs.driver]
 # A driver (or wood) changes the set-up: you stand taller, the hands sit further

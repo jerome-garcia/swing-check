@@ -54,6 +54,7 @@ is in `swingcheck/app/hosted.py` and the limits in `[hosted]` in
   | Clip length | 20 seconds |
   | Uploads per IP address per day | `max_uploads_per_ip_per_day`, so clearing cookies isn't a way around the limit |
   | Waiting jobs | 10, then "busy, try again" |
+  | Free disk | under 5 GB (`min_free_gb`), new uploads are paused with "SwingCheck is full right now"; they open again as expired swings are deleted, and the admin page shows it |
 
   Uploads over a limit are refused before they're received; a clip that's too
   long is deleted right after upload. Caddy's request body limit is set a little
@@ -115,7 +116,7 @@ forgotten after 6 hours.
 - **One job at a time.** Pose tracking uses the whole CPU, so a bigger server
   helps; more processes don't. At about 1.5 minutes per swing, the current
   server handles roughly 40 swings an hour.
-- **Disk.** Swings are tens of MB each and expire after 3 days, so disk grows
+- **Disk.** Key frames are saved at most 1920 px on their longest side (`[output] key_frame_max_size`), about a quarter of a 4K PNG. Swings are tens of MB each and expire after 3 days, so disk grows
   with daily uploads, not total users. The admin page shows disk use.
 
 **Next steps, as usage grows:**

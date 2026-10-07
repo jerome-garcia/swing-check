@@ -126,6 +126,17 @@ def test_upload_limits(alice, app):
     assert alice.get("/api/swings").json() == []
 
 
+def test_uploads_pause_when_the_disk_is_nearly_full(alice, app):
+    limits = app.state.config["hosted"]
+    free = shutil.disk_usage(app.state.store.root).free
+    limits["min_free_gb"] = free / 1e9 + 1  # more than there is: full
+    r = upload(alice)
+    assert r.status_code == 503 and "full right now" in r.json()["detail"]
+    assert alice.get("/api/swings").json() == []
+    limits["min_free_gb"] = 0
+    assert upload(alice).status_code == 200  # opens again once there's room
+
+
 def test_uploads_per_ip_per_day(alice, bob, app):
     app.state.config["hosted"]["max_uploads_per_ip_per_day"] = 2
     swing_id = upload(alice).json()["id"]

@@ -701,6 +701,9 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
             if jobs.pending() >= limits["max_queued_jobs"]:
                 return JSONResponse({"detail": "SwingCheck is busy with other swings right now. "
                                      "Try again in a few minutes."}, 503)
+            if shutil.disk_usage(store.root).free - size < limits["min_free_gb"] * 1e9:
+                events.add("upload_refused", ok=False, error=f"Uploads paused: under {limits['min_free_gb']:g} GB of disk free")
+                return JSONResponse({"detail": "SwingCheck is full right now. Try again in a few hours."}, 503)
             return None
 
     page = index_page()
@@ -721,7 +724,8 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     def admin_page(request: Request) -> HTMLResponse:
         if not admin_allowed(request):
             raise HTTPException(404, "Not Found")
-        live = admin.live_status(jobs.snapshot(), uploading, store.root, version, started_at)
+        live = admin.live_status(jobs.snapshot(), uploading, store.root, version, started_at,
+                                 limits["min_free_gb"] if limits else 0)
         return HTMLResponse(admin.page(admin.summary(events.read(), live)),
                             headers={"Cache-Control": "no-store"})
 

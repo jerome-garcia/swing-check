@@ -149,6 +149,15 @@ class Annotator:
             draw_text(img, text, (int(26 * s), y), 0.55 * s)
 
 
+def fit_within(img: np.ndarray, max_size: int) -> np.ndarray:
+    """The picture shrunk so its longest side is at most max_size pixels (0 = as is)."""
+    longest = max(img.shape[:2])
+    if not max_size or longest <= max_size:
+        return img
+    f = max_size / longest
+    return cv2.resize(img, (round(img.shape[1] * f), round(img.shape[0] * f)), interpolation=cv2.INTER_AREA)
+
+
 def write_outputs(run_dir: Path, annotator: Annotator, frame_range: tuple[int, int], config: dict[str, Any],
                   video: bool = True) -> dict[str, Path]:
     """Annotated video over frame_range, freeze frames, and summary.png. Returns written paths."""
@@ -197,6 +206,7 @@ def write_outputs(run_dir: Path, annotator: Annotator, frame_range: tuple[int, i
                 writer.write(out)
             for stem, ann, big, phase in stills.get(i, []):
                 img = ann.render(frame, i, f"{phase.replace('_', ' ')}   frame {i}   {i / fps:.3f}s", big_label=big)
+                img = fit_within(img, out_cfg.get("key_frame_max_size", 0))
                 if stem in freeze_names:
                     freezes[stem] = img
                 path = run_dir / f"{stem}.png"

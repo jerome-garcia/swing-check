@@ -160,3 +160,12 @@ def test_marks_have_their_own_shapes():
     assert spot_mark((1, 2), STATUS_COLORS["ok"], None).kind == "ring"
     # The plane and earlier-checkpoint colors stay clear of green / yellow / red.
     assert {PLANE_COLOR, PAST_COLOR}.isdisjoint(STATUS_COLORS.values())
+
+
+def test_key_frames_are_saved_no_bigger_than_the_limit():
+    from swingcheck.output.annotate import fit_within
+    tall = np.zeros((3840, 2160, 3), np.uint8)
+    assert fit_within(tall, 1920).shape == (1920, 1080, 3)
+    assert fit_within(tall, 0) is tall  # 0 = full size
+    small = np.zeros((1280, 720, 3), np.uint8)
+    assert fit_within(small, 1920) is small  # never made bigger
