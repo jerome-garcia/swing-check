@@ -22,9 +22,10 @@ and **Fix** range; anything between is **Watch**.
 
 **The swing plane line.**
 - Set at checkpoint 2: your shaft at address, extended to your belt buckle.
-- Drawn in magenta, with grey lines either side marking the on-plane band
-  (about 10 cm toward you, 20 cm toward the ball), on every key frame from 2 to
-  8 and the whole annotated video.
+- Drawn in magenta, with grey guide lines about 10 cm either side, on every key
+  frame from 2 to 8 and the whole annotated video. The lines are a visual guide:
+  each checkpoint's own Good range decides the color (the takeaway's green
+  reaches 20 cm toward the ball).
 - Takeaway (3) and downswing (6) check the **clubhead** against it.
 - Halfway back (4) and follow-through (8) check where the **shaft** points at the
   ball's level.

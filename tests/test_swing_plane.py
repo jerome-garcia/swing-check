@@ -150,8 +150,10 @@ def test_swing_plane_line_spans_the_frame_and_the_whole_video():
     assert len(lines) == 1
     assert lines[0].frames == (0, 39)  # the whole clip, so the clubhead can be followed against it
     bounds = [o for o in v.overlays if o.kind == "line" and o.label == ""]
-    assert len(bounds) == 2 and all(b.frames == (0, 39) for b in bounds)  # grey on-plane boundaries
-    # ±20% of torso either side, square to the line.
-    p0, p1 = np.array(bounds[0].points[0]), np.array(bounds[1].points[0])
-    assert np.linalg.norm(p0 - p1) == pytest.approx((0.20 + 0.40) * 260.0, abs=0.5)  # 10 cm in, 20 cm out
+    assert len(bounds) == 2 and all(b.frames == (0, 39) for b in bounds)  # grey guide lines
+    # The same 20% of torso (about 10 cm) either side, square to the line.
+    line = np.array(lines[0].points)
+    d = (line[1] - line[0]) / np.linalg.norm(line[1] - line[0])
+    gaps = [abs(d[0] * (b.points[0][1] - line[0][1]) - d[1] * (b.points[0][0] - line[0][0])) for b in bounds]
+    assert gaps == pytest.approx([0.20 * 260.0] * 2, abs=0.5)
     assert [o.label for o in v.overlays if o.kind == "text"] == ["Points at your belt buckle"]

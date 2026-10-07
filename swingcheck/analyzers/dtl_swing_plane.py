@@ -79,9 +79,10 @@ def plane_points(ctx: SwingContext) -> tuple[np.ndarray, np.ndarray]:
 
 def swing_plane_line(ctx: SwingContext, show: tuple[int, int] | None) -> list[Overlay]:
     """The swing plane line (from the address clubhead toward the belt buckle, see
-    plane_points) across the whole frame, labeled, with a grey boundary line either side
-    marking the on-plane corridor (the takeaway's green band, [analyzers.takeaway]
-    line_tolerance toward the golfer, line_tolerance_outside toward the ball). Every
+    plane_points) across the whole frame, labeled, with a grey guide line either side, the
+    same distance off it ([analyzers.takeaway] line_tolerance) so the corridor reads evenly.
+    It's a visual guide only: the takeaway's green band reaches farther toward the ball
+    (line_tolerance_outside), and the grading uses those ranges, not the lines. Every
     checkpoint from 2 to 8 draws it on its key frame, so the clubhead can be judged
     against it by eye."""
     ch0, gr0 = plane_points(ctx)
@@ -94,7 +95,7 @@ def swing_plane_line(ctx: SwingContext, show: tuple[int, int] | None) -> list[Ov
         inward = None
     lines = [Overlay("line", [tuple(ch0), tuple(gr0)], PLANE_COLOR, "Swing plane", show, 2)]
     if inward is not None:
-        for off in (inward * cfg["line_tolerance"] * ctx.scale, -inward * cfg["line_tolerance_outside"] * ctx.scale):
+        for off in (inward * cfg["line_tolerance"] * ctx.scale, -inward * cfg["line_tolerance"] * ctx.scale):
             lines.insert(0, Overlay("line", [tuple(ch0 + off), tuple(gr0 + off)], PLANE_BAND_COLOR, "", show, 1))
     return lines
 
