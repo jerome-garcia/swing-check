@@ -597,7 +597,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     def gone() -> HTMLResponse:
         return HTMLResponse(share.gone_page(), status_code=404, headers={"Cache-Control": "no-cache"})
 
-    # Feedback (the footer's Feedback page): a rating and an optional message, nothing about
+    # Feedback (the Feedback page, linked from the support card): a rating and an optional message, nothing about
     # who sent it. Kept in feedback.jsonl next to the swings until deleted by hand.
     @app.post("/api/feedback")
     def send_feedback(body: FeedbackIn, request: Request) -> dict[str, bool]:

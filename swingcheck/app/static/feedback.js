@@ -1,4 +1,4 @@
-// The feedback page (/feedback, linked from the footer): a rating from 1 to 5 and an
+// The feedback page (/feedback, linked from the support card, the Terms, and the Privacy notice): a rating from 1 to 5 and an
 // optional message. Saved on the server for the maker to read on the admin page; no name,
 // email, IP address, or key goes with it.
 
