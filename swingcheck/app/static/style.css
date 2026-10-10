@@ -136,6 +136,9 @@ h2 { font-size: 16px; margin: 0 0 12px; letter-spacing: -0.01em; }
 .nowrap { white-space: nowrap; }
 
 /* --- Buttons ------------------------------------------------------------- */
+/* Phones zoom the page on a quick double tap; tapping a button twice (the frame slider's
+   steps, say) mustn't. Pinching to zoom the page still works. */
+button, .btn, input, select, label, summary { touch-action: manipulation; }
 .btn {
   display: inline-flex;
   align-items: center;
