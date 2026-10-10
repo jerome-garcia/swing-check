@@ -50,7 +50,7 @@ def test_summary_counts_days_speed_and_problems():
     assert "Active browsers" not in page and "Uploaders" in page and "Idle" in page and "In line" in page
     assert "avg wait 22 s" in page and "avg upload 21 s" in page and "412 MB" in page
     assert "analysis 80 s typical · marking 2 min typical" in page
-    assert "Numbers only" not in page and "never anyone's swings, videos, names" in page
+    assert "Numbers only" not in page and "the feedback people send, never anyone's" in page
     assert "one at a time" not in page and "since the last restart" not in page  # descriptions removed
     live["running"] = [{"kind": "analyze", "for_s": 45}]
     assert '<div class="value">Analyzing</div><div class="sub">45 s</div>' in admin.page(admin.summary(events, live, now))
@@ -110,3 +110,31 @@ def test_disk_tile_says_when_uploads_are_paused(tmp_path):
     from swingcheck.app.admin import live_status
     assert not live_status([], 0, tmp_path, "v", 0.0)["uploads_paused"]
     assert live_status([], 0, tmp_path, "v", 0.0, min_free_gb=1e9)["uploads_paused"]  # more than any disk
+
+
+def test_feedback_is_saved_without_anything_personal_and_shown_to_the_admin(tmp_path):
+    client = TestClient(create_app(tmp_path))
+    assert client.post("/api/feedback", json={"rating": 5, "message": "  Love the <b>drag</b>!  "}).json() == {"sent": True}
+    assert client.post("/api/feedback", json={"rating": 3}).status_code == 200  # the message is optional
+    assert client.post("/api/feedback", json={"rating": 0}).status_code == 400
+    assert client.post("/api/feedback", json={"rating": 6}).status_code == 400
+    assert client.post("/api/feedback", json={"rating": 4, "message": "x" * 1001}).status_code == 400
+    saved = [json.loads(line) for line in (tmp_path / admin.FEEDBACK_FILE).read_text().splitlines()]
+    assert [(f["rating"], f["message"]) for f in saved] == [(5, "Love the <b>drag</b>!"), (3, "")]
+    assert all(set(f) == {"t", "event", "rating", "message"} for f in saved)  # no IP, key, or anything else
+    page = client.get("/admin").text
+    assert "2 sent · average 4.0 of 5" in page and "Love the &lt;b&gt;drag&lt;/b&gt;!" in page  # escaped
+    assert "★★★★★" in page and "★★★☆☆" in page
+
+
+def test_feedback_is_kept_until_deleted_and_limited_per_day(tmp_path):
+    old = {"t": time.time() - 400 * 86400, "event": "feedback", "rating": 4, "message": "From last year"}
+    (tmp_path / admin.FEEDBACK_FILE).write_text(json.dumps(old) + "\n")
+    kept = admin.EventLog(tmp_path / admin.FEEDBACK_FILE, keep_days=None).read()
+    assert [f["message"] for f in kept] == ["From last year"]
+    client = TestClient(create_app(tmp_path))
+    for _ in range(10):
+        assert client.post("/api/feedback", json={"rating": 4}).status_code == 200
+    r = client.post("/api/feedback", json={"rating": 4})
+    assert r.status_code == 429 and "tomorrow" in r.json()["detail"]
+    assert "None yet" not in client.get("/admin").text

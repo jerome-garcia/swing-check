@@ -60,7 +60,7 @@ def test_page_addresses_its_css_and_js_by_fingerprint(client):
 
 def test_clean_page_addresses_get_the_app(client):
     home = client.get("/").text
-    for path in ("/new", "/terms", "/privacy", "/swing/anything", "/swing/anything/mark"):
+    for path in ("/new", "/terms", "/privacy", "/feedback", "/swing/anything", "/swing/anything/mark"):
         res = client.get(path)
         assert res.status_code == 200 and res.text == home, path
     assert client.get("/swing/a/b/c").status_code == 404  # not a page

@@ -79,6 +79,9 @@ addresses, or keys:
 - uploads, conversions, and analyses per day for a week, with failures;
 - typical (median) wait, analysis, and marking time;
 - recent errors and the most common camera-check findings;
+- feedback from the footer's Feedback page: the average rating, how many of each, and the latest
+  messages (saved in `feedback.jsonl` next to the swings, with no IP address or key, and kept until
+  deleted by hand);
 - how many browsers uploaded each day, from a code that changes daily and is
   never saved, so days can't be linked.
 

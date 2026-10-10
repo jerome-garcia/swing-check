@@ -5,7 +5,7 @@
 import { backLink, el, features, plural } from "./util.js";
 
 export const TERMS_VERSION = "2026-10-06";
-const UPDATED = "October 6, 2026";
+const UPDATED = "October 10, 2026";
 const contact = () => el("a", { href: "https://ko-fi.com/jeromegarcia", target: "_blank", rel: "noopener" }, "the SwingCheck Ko-fi page");
 
 const section = (title, ...body) => el("section", { class: "legal-section" }, el("h2", {}, title), ...body);
@@ -79,7 +79,8 @@ function privacy(hosted) {
         "The video's file name and the time you uploaded it.",
         "A random key in a cookie, which is how SwingCheck knows which swings are yours. The server keeps only a scrambled fingerprint of it, next to your swings.",
         "Your IP address, counted in memory for a day to limit uploads. It isn't saved with your swings.",
-        "Anonymous counts for running the service: when a video was uploaded, converted, marked, or analyzed, how long it took, and any error message. They don't include your video, its name, your IP address, or your key, and they're kept for 90 days. To count how many browsers uploaded each day, an upload is tagged with a code that changes every day, so one day can't be linked to the next.")),
+        "Anonymous counts for running the service: when a video was uploaded, converted, marked, or analyzed, how long it took, and any error message. They don't include your video, its name, your IP address, or your key, and they're kept for 90 days. To count how many browsers uploaded each day, an upload is tagged with a code that changes every day, so one day can't be linked to the next.",
+        "Feedback you send from the Feedback page: your rating, your message, and when it was sent. Not your IP address, your key, or anything else about you. It's kept until the maker deletes it, so please don't put personal details in it.")),
     section("Why",
       p("Only to analyze your swing and show the results to you. Your videos aren't sold, shared (unless you ",
         "share a summary yourself), used for advertising, or used to train anything.")),

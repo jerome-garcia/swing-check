@@ -29,16 +29,19 @@ from pathlib import Path
 from typing import Any
 
 EVENTS_FILE = "admin-events.jsonl"
+FEEDBACK_FILE = "feedback.jsonl"  # the feedback page's ratings and messages, kept until deleted by hand
 KEEP_DAYS = 90
 LOCAL_TZ = timezone(timedelta(hours=8), "PHT")  # dates on the page: Philippine time
 DAYS_SHOWN = 7
 
 
 class EventLog:
-    """Append-only JSON lines; old events are dropped when the log is read."""
+    """Append-only JSON lines; events older than keep_days are dropped when the log is read
+    (None: kept until deleted by hand)."""
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, keep_days: float | None = KEEP_DAYS) -> None:
         self.path = path
+        self.keep_days = keep_days
         self._lock = threading.Lock()
 
     def add(self, event: str, **fields: Any) -> None:
@@ -47,7 +50,7 @@ class EventLog:
             f.write(line + "\n")
 
     def read(self, now: float | None = None) -> list[dict[str, Any]]:
-        cutoff = (now or time.time()) - KEEP_DAYS * 86400
+        cutoff = (now or time.time()) - self.keep_days * 86400 if self.keep_days is not None else 0
         with self._lock:
             if not self.path.exists():
                 return []
@@ -248,6 +251,25 @@ THEME = ('<script>try { if (localStorage.getItem("swingcheck.theme") === "light"
          'document.documentElement.dataset.theme = "light"; } catch {}</script>')
 
 
+FEEDBACK_SHOWN = 30
+
+
+def _feedback_panel(feedback: list[dict[str, Any]]) -> str:
+    """Feedback from the feedback page: the average rating, how many of each, and the latest messages."""
+    esc = html.escape
+    if not feedback:
+        return '<section class="panel"><h2>Feedback</h2><ul><li class=muted>None yet.</li></ul></section>'
+    ratings = [f["rating"] for f in feedback]
+    spread = " · ".join(f"{n}: {ratings.count(n)}" for n in range(5, 0, -1))
+    latest = "".join(
+        f"<li><span class=muted>{esc(datetime.fromtimestamp(f['t'], LOCAL_TZ).strftime('%b %d %H:%M'))} · "
+        f"{'★' * f['rating']}{'☆' * (5 - f['rating'])}</span>"
+        + (f"<br>{esc(f['message'])}" if f.get("message") else "") + "</li>"
+        for f in sorted(feedback, key=lambda f: f["t"], reverse=True)[:FEEDBACK_SHOWN])
+    return (f'<section class="panel"><h2>Feedback <small>{len(feedback)} sent · average '
+            f'{statistics.mean(ratings):.1f} of 5 · {spread}</small></h2><ul class="feedback-list">{latest}</ul></section>')
+
+
 def page(data: dict[str, Any]) -> str:
     """The admin page: the app's stylesheet and brand header, refreshing itself every 30 s."""
     esc = html.escape
@@ -303,6 +325,7 @@ def page(data: dict[str, Any]) -> str:
 <div class="table-wrap"><table><tr><th>Day</th><th>Uploaders</th><th>Uploads</th><th>Converted</th><th>Analyzed</th></tr>{rows}</table></div></section>
 <section class="panel"><h2>Recent problems</h2><ul>{problems}</ul></section>
 <section class="panel"><h2>Camera check problems <small>30 days</small></h2><ul>{camera}</ul></section>
-<p class="admin-note">This page and its log hold counts and timings only, never anyone's swings, videos, names,
-IP addresses, or private keys.</p>
+{_feedback_panel(data.get("feedback") or [])}
+<p class="admin-note">This page and its logs hold counts, timings, and the feedback people send, never anyone's
+swings, videos, names, IP addresses, or private keys.</p>
 </main></body></html>"""

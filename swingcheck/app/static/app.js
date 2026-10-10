@@ -4,12 +4,14 @@
 //   /swing/<id>        the swing (progress, results, or the next step)
 //   /swing/<id>/mark   mark points
 //   /terms, /privacy   terms of use and privacy notice
+//   /feedback          send feedback
 //   /#/claim/<key>     hosted: a private link, opening that owner's swings here. It stays
 //                      after the "#" on purpose: browsers never send that part to a server,
 //                      so the key never reaches a log.
 // Links to these pages switch views in place (no reload); the server answers each address
 // with the app too, for refreshes and links from outside. Old #/ links still work.
 
+import { renderFeedback } from "./feedback.js";
 import { renderHistory } from "./history.js";
 import { renderLegal } from "./legal.js";
 import { renderSwing } from "./swing.js";
@@ -62,6 +64,7 @@ async function route() {
     }
     const parts = location.pathname.split("/").filter(Boolean).map(decodeURIComponent);
     if (parts[0] === "terms" || parts[0] === "privacy") await renderLegal(view, parts[0], isCurrent);
+    else if (parts[0] === "feedback") renderFeedback(view);
     else if (parts.length === 0) await renderHistory(view, isCurrent);
     else if (parts[0] === "new") await renderUpload(view, isCurrent);
     else if (parts[0] === "swing" && parts[1] && parts[2] === "mark") {

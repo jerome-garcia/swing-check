@@ -121,6 +121,15 @@ class NameIn(BaseModel):
 NAME_MAX = 60
 
 
+class FeedbackIn(BaseModel):
+    rating: int
+    message: str = ""
+
+
+FEEDBACK_MAX = 1000         # characters in a message
+FEEDBACK_PER_IP_PER_DAY = 10
+
+
 class TrimIn(BaseModel):
     start: float | None = None  # seconds into the original video
     end: float | None = None
@@ -172,6 +181,8 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     app.state.jobs = jobs
     app.state.config = config
     uploads = hosting.UploadCounter()
+    feedback = admin.EventLog(store.root / admin.FEEDBACK_FILE, keep_days=None)
+    feedback_sent = hosting.UploadCounter()  # per IP address per day, in memory only, like uploads
     if limits:
         hosting.start_sweeper(store, jobs, limits["keep_days"],
                               before_delete=lambda swing_id: frames.forget(store.root / swing_id / "normalized.mp4"))
@@ -586,6 +597,22 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     def gone() -> HTMLResponse:
         return HTMLResponse(share.gone_page(), status_code=404, headers={"Cache-Control": "no-cache"})
 
+    # Feedback (the footer's Feedback page): a rating and an optional message, nothing about
+    # who sent it. Kept in feedback.jsonl next to the swings until deleted by hand.
+    @app.post("/api/feedback")
+    def send_feedback(body: FeedbackIn, request: Request) -> dict[str, bool]:
+        if not 1 <= body.rating <= 5:
+            raise HTTPException(400, "Pick a rating from 1 to 5.")
+        message = body.message.strip()
+        if len(message) > FEEDBACK_MAX:
+            raise HTTPException(400, f"Keep the message to {FEEDBACK_MAX} characters.")
+        ip = client_ip(request)
+        if feedback_sent.count(ip) >= FEEDBACK_PER_IP_PER_DAY:
+            raise HTTPException(429, "Thanks! That's plenty of feedback for today. Try again tomorrow.")
+        feedback_sent.record(ip)
+        feedback.add("feedback", rating=body.rating, message=message)
+        return {"sent": True}
+
     @app.get("/s/{code}", include_in_schema=False)
     def shared_page(code: str, request: Request) -> HTMLResponse:
         meta = store.shared(code)
@@ -726,7 +753,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
             raise HTTPException(404, "Not Found")
         live = admin.live_status(jobs.snapshot(), uploading, store.root, version, started_at,
                                  limits["min_free_gb"] if limits else 0)
-        return HTMLResponse(admin.page(admin.summary(events.read(), live)),
+        return HTMLResponse(admin.page({**admin.summary(events.read(), live), "feedback": feedback.read()}),
                             headers={"Cache-Control": "no-store"})
 
     # The app's pages (clean addresses, routed in the browser: static/app.js). Opening or
@@ -736,6 +763,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     @app.get("/new", include_in_schema=False)
     @app.get("/terms", include_in_schema=False)
     @app.get("/privacy", include_in_schema=False)
+    @app.get("/feedback", include_in_schema=False)
     @app.get("/swing/{swing_id}", include_in_schema=False)
     @app.get("/swing/{swing_id}/mark", include_in_schema=False)
     def index(swing_id: str | None = None) -> HTMLResponse:
