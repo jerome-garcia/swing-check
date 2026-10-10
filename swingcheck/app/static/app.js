@@ -34,11 +34,14 @@ features().then(f => {
   version.title = `SwingCheck ${f.version}`;
   version.hidden = !f.version;
 }).catch(() => { /* the header just goes without it */ });
-// Dark by default; the footer switch flips to light and back, remembered in this browser.
+// Dark by default; the footer switch (a sun or moon knob that slides across) flips to light
+// and back, remembered in this browser. Its label names the mode you're in.
 const themeToggle = document.getElementById("theme-toggle");
 function showTheme() {
   const light = document.documentElement.dataset.theme === "light";
-  themeToggle.textContent = light ? "Dark mode" : "Light mode";
+  themeToggle.setAttribute("aria-checked", String(light));
+  themeToggle.querySelector(".tt-label").textContent = light ? "Light" : "Dark";
+  themeToggle.title = light ? "Switch to dark mode" : "Switch to light mode";
 }
 themeToggle.addEventListener("click", () => {
   const light = document.documentElement.dataset.theme !== "light";
