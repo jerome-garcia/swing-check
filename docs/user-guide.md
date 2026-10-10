@@ -94,7 +94,7 @@ circle, and your **hands** a blue square.
 
 - **On a phone,** touch and hold, slide to aim with the magnifier above your
   finger, and let go to place the point.
-- **Point a little off?** Drag it to where it belongs.
+- **Point a little off?** Once the step's points are all placed, drag it to where it belongs.
 - **Hard to see?** Pinch the frame to zoom in, and pinch out to zoom back.
 - **Hands hidden?** On the follow-through, click the lowest part of the shaft
   you can see instead.

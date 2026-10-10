@@ -486,7 +486,9 @@ export async function renderMark(view, id, isCurrent) {
     }
     if (fingers.size > 2 || pinched) return;
     state.touch = e.pointerType !== "mouse";
-    const hit = pointAt(e);
+    // Placing comes first: while the step has points left to place, a tap places the next one,
+    // even right beside a placed point. Once they're all placed, a press picks one up to move it.
+    const hit = nextPoint() ? null : pointAt(e);
     if (hit) { // pick up a placed point, keeping where on it the finger landed
       const at = eventToVideo(e);
       const [px, py] = cur().points[hit];
@@ -511,7 +513,7 @@ export async function renderMark(view, id, isCurrent) {
       draw();
       return;
     }
-    if (e.pointerType === "mouse" && !state.aiming) canvas.style.cursor = cur().frameOk && pointAt(e) ? "grab" : "";
+    if (e.pointerType === "mouse" && !state.aiming) canvas.style.cursor = cur().frameOk && !nextPoint() && pointAt(e) ? "grab" : "";
     if ((e.pointerType !== "mouse" && !state.aiming) || pinched) return;
     state.touch = e.pointerType !== "mouse";
     const at = eventToVideo(e);
