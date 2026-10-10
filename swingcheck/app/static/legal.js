@@ -6,7 +6,7 @@ import { backLink, el, features, plural } from "./util.js";
 
 export const TERMS_VERSION = "2026-10-06";
 const UPDATED = "October 10, 2026";
-const contact = () => el("a", { href: "https://ko-fi.com/jeromegarcia", target: "_blank", rel: "noopener" }, "the SwingCheck Ko-fi page");
+const contact = () => el("a", { href: "/feedback" }, "the Feedback page");
 
 const section = (title, ...body) => el("section", { class: "legal-section" }, el("h2", {}, title), ...body);
 const p = (...text) => el("p", {}, ...text);
