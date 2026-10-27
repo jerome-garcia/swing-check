@@ -3,9 +3,9 @@
 Everything you need to get a useful swing check, from filming to reading your
 results. It takes about 5 minutes per swing.
 
-> This guide is for **down-the-line** videos (filmed from behind you, looking
-> toward the target), the only view SwingCheck analyzes for now. Face-on is
-> planned for a future release.
+> Sections 1 to 5 are for **down-the-line** videos (filmed from behind you,
+> looking toward the target). **Face-on** videos (filmed from in front of you)
+> are coming soon; [section 6](#6-face-on-videos-coming-soon) covers them.
 
 ## Quick start
 
@@ -174,6 +174,55 @@ On swingcheck.org you can keep **4 swings** at a time, and each one is deleted
 **3 days** after upload. To see your swings on another device, use **Copy
 private link** on the home page.
 
+## 6. Face-on videos (coming soon)
+
+Face-on is filmed from in front of you. It shows what down-the-line can't:
+side-to-side movement (sway, weight shift, your head) and whether your hands
+lead the club at impact. Uploading, results, and sharing work the same as down
+the line.
+
+### Filming face-on
+
+- **Straight in front of you**, facing your chest, lined up with the middle of
+  your stance.
+- **At hip height**, a few steps back.
+- **Your whole body in frame**, with room above your head for the club.
+- **Tripod, one swing, slo-mo if you have it**: the same checklist as down the
+  line.
+
+Choose **Face-on** on the upload page; **How to set up the camera** has a
+picture.
+
+### Marking: five steps
+
+The body is easy to track from the front, so most steps are just picking the
+frame. The example is Tiger Woods with an iron, or Rory McIlroy with a driver.
+
+| Step | Pick the frame where… | Click |
+|---|---|---|
+| **Address** | you're set up and still, just before the club moves | the ball |
+| **Top** | the club stops going back | nothing |
+| **Downswing** | the shaft is parallel to the ground on the way down | nothing |
+| **Impact** | the club meets the ball | your hands |
+| **Finish** | the swing is over and you're holding your finish | nothing |
+
+### The face-on checkpoints
+
+| Checkpoint | What it looks at |
+|---|---|
+| **Address** | Your stance width, where the ball is between your feet, and your spine tilted slightly away from the target |
+| **Top** | Your back hip staying inside your back foot (no sway), and your head staying about where it started |
+| **Downswing** | Your hips moving toward the target while your head stays back |
+| **Impact** | Your hands ahead of the ball, your hips moved toward the target, and your head behind the ball |
+| **Finish** | Your weight on your front side, with your head over your front foot |
+
+- **With a driver**, a wider stance and the ball further forward are expected,
+  and your hands can be level with or a little behind the ball at impact.
+- **The finish is never red**: the ball is gone by then, so it mostly shows
+  what came before.
+- **Work on first** looks hardest at impact: hands behind the ball (a scoop)
+  and hips hanging back cost the most shots.
+
 ## Common questions
 
 **Do I need an account?** No. Your swings are tied to your browser. Use the
@@ -186,7 +235,8 @@ you being out of the picture.
 **My numbers changed, but my swing didn't.** Check that the camera was in the
 same spot and at the same height. A small move changes the measurements.
 
-**Can I analyze a face-on video?** Not yet; it's planned for a future release.
+**Can I analyze a face-on video?** Not yet; it's coming soon. See
+[section 6](#6-face-on-videos-coming-soon) for how it will work.
 
 **Is this coaching advice?** No. Results are estimates from video, for practice
 only.
