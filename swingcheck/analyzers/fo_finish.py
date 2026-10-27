@@ -20,7 +20,7 @@ import numpy as np
 
 from swingcheck.analyzers import (MissingData, Overlay, REFERENCE_COLOR, Row, STATUS_COLORS, SwingContext, Verdict,
                                   WATCH_ONLY, grade, register, spot_mark, watch_at_most)
-from swingcheck.analyzers.fo_impact import ORDER, _point, head_center
+from swingcheck.analyzers.fo_impact import ORDER, _point, head_center, movement
 
 
 @register("fo_finish", view="fo", title="Finish")
@@ -73,10 +73,7 @@ def fo_finish(ctx: SwingContext) -> Verdict:
     overlays = [
         Overlay("dashed", [tuple(lead_ankle), (float(lead_ankle[0]), float(head[1]) - 0.2 * s)],
                 REFERENCE_COLOR, "Front foot", show, 2),
-        Overlay("vline", [(float(hip0[0]), float(hip0[1]) - 0.3 * s), (float(hip0[0]), float(hip0[1]) + 0.3 * s)],
-                REFERENCE_COLOR, "", show, 2),
-        Overlay("segment", [(float(hip0[0]), float(hip1[1])), tuple(hip1)], hips_col, "", show, 3),
-        Overlay("text", [(float(hip1[0]), float(hip1[1]) - 0.35 * s)], hips_col, hips_label, show),
+        *movement(ctx, "Hips", hip0, hip1, shift, hips_col, show),
         spot_mark(head, head_col, show, head_label),
     ]
     return Verdict(

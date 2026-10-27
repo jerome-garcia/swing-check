@@ -40,6 +40,23 @@ def head_center(ctx: SwingContext) -> np.ndarray:
         return np.nanmean(tracks, axis=0)
 
 
+def movement(ctx: SwingContext, what: str, start: np.ndarray, now: np.ndarray, moved: float, color,
+             show: tuple[int, int], lift: float = 0.0) -> list[Overlay]:
+    """How far `what` (Head, Hips) moved along the target line since address: a dashed line
+    where it was at address, an arrow across to where it is now, and the amount in words.
+    `lift` (torso lengths) raises the arrow, e.g. above the head's ring so a small move shows."""
+    s = ctx.scale
+    x0, x1, y = float(start[0]), float(now[0]), float(now[1]) - lift * s
+    still = abs(ctx.cm(moved)) < 0.75
+    text = (f"{what} where it started" if still else
+            f"{what} {ctx.distance_text(moved)} {'toward the target' if moved >= 0 else 'back'}")
+    overlays = [Overlay("dashed", [(x0, y + 0.4 * s), (x0, y - 0.4 * s)], REFERENCE_COLOR, "At address", show, 2)]
+    if not still:
+        overlays.append(Overlay("arrow", [(x0, y), (x1, y)], color, "", show, 3))
+    overlays.append(Overlay("text", [(max(x0, x1) + 0.12 * s, y + 0.18 * s)], color, text, show))
+    return overlays
+
+
 def _point(track: np.ndarray, frame: int, what: str, look_back: int = 0) -> np.ndarray:
     """The track on this frame, or (with look_back) the nearest tracked frame up to that
     many before it: a finish held to the clip's last frame can lose tracking there."""
@@ -128,10 +145,7 @@ def fo_impact(ctx: SwingContext) -> Verdict:
         Overlay("dashed", [tuple(ball), (float(ball[0]), float(head[1]) - 0.2 * s)], REFERENCE_COLOR, "Ball", show, 2),
         spot_mark(ball, REFERENCE_COLOR, show),
         hands_mark(hands, STATUS_COLORS[hands_status], show, hands_label),
-        Overlay("vline", [(float(hip0[0]), float(hip0[1]) - 0.3 * s), (float(hip0[0]), float(hip0[1]) + 0.3 * s)],
-                REFERENCE_COLOR, "", show, 2),
-        Overlay("segment", [(float(hip0[0]), float(hip1[1])), tuple(hip1)], hips_col, "", show, 3),
-        Overlay("text", [(float(hip1[0]), float(hip1[1]) - 0.35 * s)], hips_col, hips_label, show),
+        *movement(ctx, "Hips", hip0, hip1, shift, hips_col, show),
         spot_mark(head, head_col, show, head_label),
     ]
 

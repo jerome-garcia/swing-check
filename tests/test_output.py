@@ -22,7 +22,7 @@ def fo_verdicts():
 
 
 def test_every_overlay_kind_renders():
-    kinds = ["line", "ray", "segment", "point", "vline", "text", "circle", "square", "ring", "dashed"]
+    kinds = ["line", "ray", "segment", "point", "vline", "text", "circle", "square", "ring", "dashed", "arrow"]
     overlays = [Overlay(k, [(100.0, 900.0), (300.0, 300.0)], label=k) for k in kinds]
     overlays.append(Overlay("point", [(50.0, 50.0)], thickness=1))  # ring marker
     overlays.append(Overlay("ray", [(-500.0, -500.0), (-400.0, -400.0)], label="off-frame"))  # misses frame

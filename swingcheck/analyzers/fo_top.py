@@ -20,7 +20,7 @@ import numpy as np
 
 from swingcheck.analyzers import (Overlay, REFERENCE_COLOR, Row, STATUS_COLORS, SwingContext, Verdict, grade, register,
                                   spot_mark)
-from swingcheck.analyzers.fo_impact import ORDER, _point, head_center
+from swingcheck.analyzers.fo_impact import ORDER, _point, head_center, movement
 
 
 @register("fo_top", view="fo", title="Top", phase="top")
@@ -76,10 +76,8 @@ def fo_top(ctx: SwingContext) -> Verdict:
         Overlay("dashed", [tuple(trail_ankle), (float(trail_ankle[0]), float(trail_hip[1]) - 0.2 * s)],
                 REFERENCE_COLOR, "Back foot", show, 2),
         spot_mark(trail_hip, sway_col, show, sway_label),
-        Overlay("vline", [(float(head0[0]), float(head0[1]) - 0.25 * s), (float(head0[0]), float(head0[1]) + 0.25 * s)],
-                REFERENCE_COLOR, "", show, 2),
-        Overlay("segment", [(float(head0[0]), float(head1[1])), tuple(head1)], head_col, "", show, 3),
-        spot_mark(head1, head_col, show, head_label),
+        *movement(ctx, "Head", head0, head1, moved, head_col, show, lift=0.22),
+        spot_mark(head1, head_col, show),
     ]
 
     def along(value: float) -> str:

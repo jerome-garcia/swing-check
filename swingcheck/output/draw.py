@@ -73,6 +73,15 @@ def draw_line_overlay(img, kind: str, points, color, thickness: int, label: str,
             draw_text(img, label, (x, y), 0.5 * s, color)
     elif kind == "segment":
         cv2.line(img, _pt(points[0]), _pt(points[1]), color, thickness, cv2.LINE_AA)
+    elif kind == "arrow":
+        # From points[0] to points[1], with a head at points[1] about the same size however
+        # long the arrow is (a small move still shows which way it went).
+        a, b = _pt(points[0]), _pt(points[1])
+        length = float(np.hypot(b[0] - a[0], b[1] - a[1]))
+        if length >= 2:
+            tip = min(0.6, max(6.0, 9.0 * s) / length)
+            cv2.arrowedLine(img, a, b, (0, 0, 0), thickness + 2, cv2.LINE_AA, tipLength=tip)
+            cv2.arrowedLine(img, a, b, color, thickness, cv2.LINE_AA, tipLength=tip)
     elif kind == "dashed":
         a, b = np.asarray(points[0], float), np.asarray(points[1], float)
         length = float(np.linalg.norm(b - a))

@@ -16,9 +16,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from swingcheck.analyzers import (MissingData, Overlay, REFERENCE_COLOR, Row, STATUS_COLORS, SwingContext, Verdict,
-                                  grade, register, spot_mark)
-from swingcheck.analyzers.fo_impact import ORDER, _point, head_center
+from swingcheck.analyzers import MissingData, Row, STATUS_COLORS, SwingContext, Verdict, grade, register, spot_mark
+from swingcheck.analyzers.fo_impact import ORDER, _point, head_center, movement
 
 
 @register("fo_downswing", view="fo", title="Downswing")
@@ -63,17 +62,12 @@ def fo_downswing(ctx: SwingContext) -> Verdict:
         tips.append("Keep your head back while your hips move forward; let it go toward the target only after "
                     "the ball is gone.")
 
-    s = ctx.scale
     show = (f, f)
     hips_col, head_col = STATUS_COLORS[hips_status], STATUS_COLORS[head_status]
     overlays = [
-        Overlay("vline", [(float(hip0[0]), float(hip0[1]) - 0.3 * s), (float(hip0[0]), float(hip0[1]) + 0.3 * s)],
-                REFERENCE_COLOR, "", show, 2),
-        Overlay("segment", [(float(hip0[0]), float(hip1[1])), tuple(hip1)], hips_col, "", show, 3),
-        Overlay("text", [(float(hip1[0]), float(hip1[1]) - 0.35 * s)], hips_col, hips_label, show),
-        Overlay("vline", [(float(head0[0]), float(head0[1]) - 0.25 * s), (float(head0[0]), float(head0[1]) + 0.25 * s)],
-                REFERENCE_COLOR, "", show, 2),
-        spot_mark(head1, head_col, show, head_label),
+        *movement(ctx, "Hips", hip0, hip1, shift, hips_col, show),
+        *movement(ctx, "Head", head0, head1, moved, head_col, show, lift=0.22),
+        spot_mark(head1, head_col, show),
     ]
     return Verdict(
         status=status,
