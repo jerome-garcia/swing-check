@@ -62,7 +62,7 @@ checks the camera angle:
 
 - ✅ **Green:** a good down-the-line view. Carry on.
 - ⚠️ **Yellow or red:** it says what to change, such as the camera being off to
-  one side, or your feet being cut off. With a red result, film again: the
+  one side, your feet being cut off, or the camera moving during the clip. With a red result, film again: the
   numbers would likely be wrong.
 
 ## 3. Marking your swing

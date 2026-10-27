@@ -21,7 +21,8 @@ import numpy as np
 
 from swingcheck.analyzers import SwingContext, Verdict, run_analyzers
 from swingcheck.body import body_scale, clip_torso_length, hands
-from swingcheck.camera_check import ANGLE_TITLES, angle_finding, body_spread, camera_check, facing, facing_finding
+from swingcheck.camera_check import (ANGLE_TITLES, angle_finding, body_spread, camera_check, camera_motion, facing,
+                                     facing_finding, motion_finding)
 from swingcheck.ingest import VideoInfo, normalize
 from swingcheck.checkpoints import CHECKPOINTS
 from swingcheck.priority import pick_focus
@@ -113,6 +114,9 @@ def suggest_frames(run_dir: Path, info: VideoInfo, config: dict[str, Any],
     # The angle is judged when it's shown (load_camera_check), for the swing's view then:
     # it can still be switched between down-the-line and face-on.
     camera = camera_check(pose, address, config, view=None)
+    if pose.detected().any():
+        moved = camera_motion(run_dir / "normalized.mp4", address or 0, info.fps, config["camera_check"]["motion_step_s"])
+        camera += motion_finding(moved, config)
     if frames is None and pose.detected().any():
         camera.append({"level": "warn", "title": "Couldn't find the swing automatically",
                        "tip": "You can still mark it: move the slider to each position yourself. If the clip holds more "

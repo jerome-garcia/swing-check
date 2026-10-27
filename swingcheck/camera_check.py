@@ -13,8 +13,11 @@ means the camera looks right.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+from pathlib import Path
 from typing import Any
 
+import cv2
 import numpy as np
 
 from swingcheck.models import LANDMARK_INDEX, PoseSeq
@@ -127,6 +130,70 @@ def angle_finding(spread: float, view: str, config: dict[str, Any]) -> list[dict
     if spread > cfg["side_on_warn"]:
         return [finding("warn", "The camera may be off to one side",
                         f"Your shoulders and hips look wider than they should from behind. {BEHIND_TIP}")]
+    return []
+
+
+MIN_RESPONSE = 0.1  # phase correlation's confidence below which an area's shift is ignored
+
+
+def motion_from_frames(frames: Iterable[np.ndarray]) -> float:
+    """How far the camera moved from the first frame (grayscale, float32) over the rest, as a
+    share of the frame. Three areas that are mostly background (the top quarter, and the left
+    and right sixths) are each lined up with the first frame (phase correlation); the median
+    shift of the ones that line up with some confidence is the camera's, so the club or a
+    passer-by crossing one area doesn't count (and a pan wider than an edge strip, which can't
+    line up there, leaves the top quarter to say so). A shift only counts when it holds for two
+    frames in a row."""
+    it = iter(frames)
+    ref = next(it, None)
+    if ref is None:
+        return 0.0
+    h, w = ref.shape
+    areas = [(slice(0, h // 4), slice(None)), (slice(None), slice(0, w // 6)), (slice(None), slice(5 * w // 6, None))]
+    moved, last = 0.0, 0.0
+    for frame in it:
+        found = [cv2.phaseCorrelate(ref[r, c], frame[r, c]) for r, c in areas]
+        shifts = [(np.hypot(dx / w, dy / h), response) for (dx, dy), response in found]
+        # None lining up with confidence means the whole picture changed: use them all then.
+        sure = [m for m, response in shifts if response >= MIN_RESPONSE] or [m for m, _ in shifts]
+        now = float(np.median(sure))
+        moved = max(moved, min(now, last))
+        last = now
+    return moved
+
+
+def camera_motion(video: Path, start: int, fps: float, step_s: float) -> float:
+    """motion_from_frames over the clip from the address frame, a frame every `step_s` seconds."""
+    cap = cv2.VideoCapture(str(video))
+    step = max(1, round(step_s * fps))
+
+    def frames():
+        i = 0
+        while True:
+            if not cap.grab():  # decode only the frames used
+                return
+            if i >= start and (i - start) % step == 0:
+                ok, img = cap.retrieve()
+                if ok:
+                    yield cv2.cvtColor(img, cv2.COLOR_BGR2GRAY).astype(np.float32)
+            i += 1
+
+    try:
+        return motion_from_frames(frames())
+    finally:
+        cap.release()
+
+
+def motion_finding(moved: float, config: dict[str, Any]) -> list[dict[str, str]]:
+    """The camera moving during the clip: every measurement compares positions in the picture,
+    so a moving camera reads as the golfer moving."""
+    cfg = config["camera_check"]
+    tip = ("Put the phone on a tripod, or prop it against something solid, and don't zoom in or follow the swing: "
+           "SwingCheck measures your body against the picture, so the camera has to stay still.")
+    if moved >= cfg["moved_flag"]:
+        return [finding("flag", "The camera moved during the clip", tip)]
+    if moved >= cfg["moved_warn"]:
+        return [finding("warn", "The camera may have moved during the clip", tip)]
     return []
 
 

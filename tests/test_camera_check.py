@@ -1,8 +1,9 @@
 """Camera check: a clean down-the-line view passes; the usual filming mistakes are named."""
 
+import cv2
 import numpy as np
 
-from swingcheck.camera_check import camera_check, facing, facing_finding
+from swingcheck.camera_check import camera_check, facing, facing_finding, motion_finding, motion_from_frames
 from swingcheck.config import load_config
 from swingcheck.models import LANDMARK_INDEX, LANDMARKS, PoseSeq
 
@@ -98,3 +99,38 @@ def test_body_spread_is_saved_for_either_view():
     from swingcheck.camera_check import body_spread
     assert 0.7 < body_spread(pose_of(spread_by(110)), 5) < 0.8
     assert body_spread(pose_of(DTL), 5) < 0.1
+
+
+def textured(shift_x=0, blob_x=None, seed=1):
+    """A 240x320 frame of fixed random texture, slid shift_x px sideways (a panning camera),
+    with an optional bright moving blob in the middle (the golfer and club)."""
+    rng = np.random.default_rng(seed)
+    big = cv2.GaussianBlur(rng.random((240, 480)).astype(np.float32), (0, 0), 2)
+    frame = big[:, 80 + shift_x:400 + shift_x].copy()
+    if blob_x is not None:
+        frame[60:220, blob_x:blob_x + 60] = 1.0
+    return frame
+
+
+def test_a_still_camera_with_a_moving_golfer_isnt_counted_as_moving():
+    frames = [textured(blob_x=x) for x in (130, 120, 140, 110, 150, 130)]
+    assert motion_from_frames(frames) < 0.02
+
+
+def test_a_panning_camera_is_caught():
+    frames = [textured(shift_x=s, blob_x=130) for s in (0, 10, 25, 45, 60, 60)]
+    moved = motion_from_frames(frames)
+    assert moved >= 0.12
+    assert [f["title"] for f in motion_finding(moved, load_config())] == ["The camera moved during the clip"]
+
+
+def test_a_one_frame_jump_doesnt_count():
+    frames = [textured(), textured(), textured(shift_x=60), textured(), textured()]  # e.g. a dropped frame
+    assert motion_from_frames(frames) < 0.02
+
+
+def test_motion_finding_levels():
+    cfg = load_config()
+    assert motion_finding(0.04, cfg) == []
+    assert motion_finding(0.08, cfg)[0]["level"] == "warn"
+    assert motion_finding(0.20, cfg)[0]["level"] == "flag"
