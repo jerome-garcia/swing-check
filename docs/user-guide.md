@@ -68,7 +68,7 @@ checks the camera angle:
 ## 3. Marking your swing
 
 The body tracking can't see the club, so you show it where the ball, club, and
-hands are. There are six steps, and each one has two parts:
+hands are. There are seven steps, and each one has two parts:
 
 1. **Drag the slider to match the example.** A pro at the same moment of the
    swing appears beside or above your video. Move the slider (or tap ‹ › to
@@ -76,7 +76,7 @@ hands are. There are six steps, and each one has two parts:
 2. **Click the points** the bar asks for, one at a time. The point to click next
    pulses on the example.
 
-### The six steps
+### The seven steps
 
 | Step | Pick the frame where… | Click |
 |---|---|---|
@@ -85,6 +85,7 @@ hands are. There are six steps, and each one has two parts:
 | **Halfway back** | your front arm is parallel to the ground | the clubhead, then your hands |
 | **Top** | the club stops going back | the clubhead, then your hands |
 | **Downswing** | the shaft is parallel to the ground on the way down | the clubhead |
+| **Impact** | the club meets the ball (it opens on the frame SwingCheck found) | nothing: just check the frame |
 | **Follow-through** | your back arm is parallel to the ground after impact | the clubhead, then your hands |
 
 Each point has its own look: the **ball** is a yellow ring, the **club** a pink
@@ -155,9 +156,9 @@ Tap a key frame to see it large.
 
 ### If the impact frame is wrong
 
-Impact is the one moment SwingCheck finds by itself. If it picked the wrong
-frame, open **Impact frame** on the results page, press **Adjust impact**, move
-to the right frame, and press **Set as impact**. **Reset to automatic** undoes it.
+Press **Edit marks** (in the ⋯ menu), open the **Impact** step, press **‹ Change
+frame**, move to the right frame, and press **Frame looks right**. Then **Save
+and analyze**.
 
 ## 5. Sharing and managing your swings
 

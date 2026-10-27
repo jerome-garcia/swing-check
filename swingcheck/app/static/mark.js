@@ -18,6 +18,8 @@ const STEPS = {
       intro: "Move the slider to the top of your backswing (the moment the club stops going back). Click the clubhead, then your hands. This frame is the top checkpoint." },
     { key: "downswing", title: "Downswing", points: ["clubhead"],
       intro: "Move the slider to where the shaft is parallel to the ground on the way down (hands about hip height). Click the clubhead. This frame is the downswing checkpoint." },
+    { key: "impact", title: "Impact", points: [],
+      intro: "Move the slider to the moment the club meets the ball, then press Frame looks right. There's nothing to click: this frame is the impact checkpoint." },
     { key: "follow_through", title: "Follow-through", points: ["clubhead", "grip"],
       intro: "Move the slider to where your back arm is parallel to the ground after impact (hands about shoulder height, the mirror of halfway back; if your arms are hidden, pick where the shaft looks about as steep as at halfway back). Click the clubhead, then your hands. This frame is the follow-through checkpoint." },
   ],
@@ -34,6 +36,7 @@ const FIND = {
   halfway_back: "Your front arm is parallel to the ground.",
   top: "The top of your backswing, where the club stops going back.",
   downswing: "The shaft is parallel to the ground on the way down.",
+  impact: "The moment the club meets the ball.",
   follow_through: "Your back arm is parallel to the ground after impact.",
 };
 // Label offsets (CSS px) keep the ball and clubhead labels apart; those points sit together.
@@ -431,8 +434,11 @@ export async function renderMark(view, id, isCurrent) {
 
   // --- Points ---------------------------------------------------------------
   const nextPoint = () => stepDef().points.find(n => !cur().points[n]) || null;
-  const complete = key => steps.find(st => st.key === key).points.every(n => state.steps[key].points[n]);
-  const started = key => Object.keys(state.steps[key].points).length > 0;
+  // A step with nothing to click (impact) is done once its frame is confirmed.
+  const frameOnly = key => !steps.find(st => st.key === key).points.length;
+  const complete = key => (frameOnly(key) ? state.steps[key].frameOk
+    : steps.find(st => st.key === key).points.every(n => state.steps[key].points[n]));
+  const started = key => (frameOnly(key) ? state.steps[key].frameOk : Object.keys(state.steps[key].points).length > 0);
   const unfinished = () => steps.filter(st => !complete(st.key));
 
   const rounded = p => [Math.round(p.x * 10) / 10, Math.round(p.y * 10) / 10];
@@ -774,8 +780,9 @@ export async function renderMark(view, id, isCurrent) {
         // Back to finding the frame; this step's clicks go, since they were made on this frame.
         el("button", { class: "btn small hud-btn", type: "button",
           onclick: () => { cur().frameOk = false; cur().points = {}; history[state.active] = []; setZoom(1); refresh(); } }, "‹ Change frame"),
-        el("button", { class: "btn small hud-btn", type: "button", onclick: undo, disabled: !started(state.active) && !history[state.active]?.length }, "Undo"),
-        el("button", { class: "btn small hud-btn", type: "button", disabled: !started(state.active),
+        // Nothing to click on a frame-only step (impact), so nothing to undo or clear.
+        frameOnly(state.active) ? null : el("button", { class: "btn small hud-btn", type: "button", onclick: undo, disabled: !started(state.active) && !history[state.active]?.length }, "Undo"),
+        frameOnly(state.active) ? null : el("button", { class: "btn small hud-btn", type: "button", disabled: !started(state.active),
           onclick: () => { remember(); cur().points = {}; refresh(); } }, "Clear step"),
         !next && after ? el("button", { class: "btn small primary", type: "button", onclick: () => selectStep(after.key) }, `Next: ${after.title} ›`) : null,
         // Last step done: save once every step is marked, else go back to the first one left.

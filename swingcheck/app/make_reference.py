@@ -34,6 +34,10 @@ def build(run_dir: Path, name: str, out: Path = OUT) -> dict:
     marks = json.loads((run_dir / "marks.json").read_text())
     steps = {"address": {"frame": marks["address_frame"], "points": marks["points"]}}
     steps.update(marks.get("checkpoints") or {})
+    # Swings marked before impact was a marking step: the impact frame the analysis used.
+    analysis = run_dir / "analysis.json"
+    if "impact" not in steps and analysis.exists():
+        steps["impact"] = {"frame": json.loads(analysis.read_text())["phases"]["impact"], "points": {}}
     scale = min(1.0, WIDTH / info.width)
     out.mkdir(parents=True, exist_ok=True)
     reader = FrameReader()

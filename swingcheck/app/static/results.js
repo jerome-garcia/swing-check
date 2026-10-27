@@ -296,20 +296,8 @@ function phasesPanel(s, startAnalysis) {
   const adjustable = ADJUSTABLE[s.view] || [];
   const body = el("div", {});
 
-  // Down-the-line: just the impact frame, the one checkpoint found automatically.
-  function impactOnly() {
-    const setByYou = manual.has("impact");
-    body.replaceChildren(
-      el("p", { class: "small" }, setByYou
-        ? "You set the impact frame."
-        : "Impact is found automatically. If the impact frame looks wrong, pick it yourself."),
-      el("div", { class: "actions" },
-        s.video ? el("button", { class: "btn small", type: "button", onclick: () => adjust("impact", a.phases.impact) }, "Adjust impact") : null,
-        setByYou ? el("button", { class: "btn small", type: "button", onclick: () => startAnalysis({ reset_phases: true }) }, "Reset to automatic") : null));
-  }
-
+  // Face-on only: down-the-line confirms its impact frame while marking (Edit marks).
   function list() {
-    if (s.view === "dtl") return impactOnly();
     body.replaceChildren(
       el("table", { class: "phases" }, el("tbody", {}, Object.entries(a.phases).map(([name, frame]) =>
         el("tr", {},
@@ -330,8 +318,8 @@ function phasesPanel(s, startAnalysis) {
 
   list();
   // Collapsed by default: it's only needed when a detected phase is wrong.
-  const title = s.view === "dtl" ? "Impact frame" : "Detected phases";
-  const hint = s.view === "dtl" ? " · adjust if it's off" : " · adjust if impact or the top is off";
+  const title = "Detected phases";
+  const hint = " · adjust if impact or the top is off";
   return el("details", { class: "panel phases-panel" },
     el("summary", {}, el("strong", {}, title), el("span", { class: "subtle small" }, hint)),
     body);
@@ -456,5 +444,5 @@ export async function renderResults(view, s, header, isCurrent, rerender) {
     clipNotes(warnings) || "",
     el("div", { class: "results-layout" },
       el("div", { class: "stack main-col" }, ...main),
-      el("div", { class: "stack side-col" }, videoPlayer(s), phasesPanel(s, startAnalysis))));
+      el("div", { class: "stack side-col" }, videoPlayer(s), s.view === "dtl" ? null : phasesPanel(s, startAnalysis))));
 }

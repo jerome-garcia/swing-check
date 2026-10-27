@@ -288,10 +288,12 @@ def test_store_ids_are_unique_and_safe(runs):
 def test_marking_reference_is_bundled(client):
     ref = client.get("/reference/reference.json").json()
     assert ref["name"] == "Rory McIlroy"
-    assert list(ref["steps"]) == ["address", "takeaway", "halfway_back", "top", "downswing", "follow_through"]
+    assert list(ref["steps"]) == ["address", "takeaway", "halfway_back", "top", "downswing", "impact", "follow_through"]
     for step in ref["steps"].values():
         assert client.get(f"/reference/{step['image']}").content[:2] == b"\xff\xd8"
         assert all(0 <= x <= ref["width"] and 0 <= y <= ref["height"] for x, y in step["points"].values())
+    driver = client.get("/reference/driver/reference.json").json()
+    assert list(driver["steps"]) == list(ref["steps"]) and driver["steps"]["impact"]["points"] == {}
 
 
 def test_detail_includes_suggested_frames_for_this_video(client, runs):

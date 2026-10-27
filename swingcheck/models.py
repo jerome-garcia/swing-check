@@ -69,10 +69,11 @@ REQUIRED_MARKS: dict[str, tuple[str, ...]] = {
 }
 
 # Optional marks on later checkpoint frames (the pose model can't see the club),
-# keyed by checkpoint: the points clicked there.
+# keyed by checkpoint, in swing order: the points clicked there. Impact has none: the
+# golfer only confirms its frame (found automatically, so it opens on the suggestion).
 CHECKPOINT_MARKS: dict[str, dict[str, tuple[str, ...]]] = {
     "dtl": {"takeaway": ("clubhead",), "halfway_back": ("clubhead", "grip"), "top": ("clubhead", "grip"),
-            "downswing": ("clubhead",), "follow_through": ("clubhead", "grip")},
+            "downswing": ("clubhead",), "impact": (), "follow_through": ("clubhead", "grip")},
     "fo": {},
 }
 

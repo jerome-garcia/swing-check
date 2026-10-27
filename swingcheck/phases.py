@@ -283,6 +283,7 @@ def get_phases(
     search: tuple[int, int] | None = None,
     marked_takeaway: int | None = None,
     marked_top: int | None = None,
+    marked_impact: int | None = None,
 ) -> tuple[Phases, str | None]:
     """Detect phases, merge saved + new manual overrides, save phases.json.
 
@@ -294,6 +295,8 @@ def get_phases(
     override exists or it isn't before the detected impact (and no impact was set); like
     the address, it isn't saved as an override. An impact set by the user is then checked
     against the top they marked, not a hidden detected one.
+    `marked_impact` (the impact frame the user confirmed while marking) is the impact, over
+    any impact set earlier on the results page; it isn't saved as an override either.
     Returns (phases, detection_error) where detection_error explains a failed
     automatic detection that overrides papered over.
     """
@@ -307,6 +310,8 @@ def get_phases(
     except PhaseError as e:
         auto, error = None, str(e)
     effective = dict(overrides)
+    if marked_impact is not None:
+        effective["impact"] = marked_impact
     if marked_address is not None and "address" not in effective:
         effective["address"] = marked_address
     if marked_top is not None and "top" not in effective:

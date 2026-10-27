@@ -185,8 +185,10 @@ def save_marks(run_dir: Path, view: str, address_frame: int, points: dict[str, P
         if allowed is None:
             raise PipelineError(f"Unknown checkpoint marks: {name}")
         cp_points = {k: (float(x), float(y)) for k, (x, y) in (cp.get("points") or {}).items() if k in allowed}
-        if not cp_points:
-            continue  # nothing clicked for this checkpoint yet
+        if allowed and not cp_points:
+            continue  # nothing clicked for this checkpoint yet (a frame-only one, like impact, is kept)
+        if cp.get("frame") is None:
+            continue
         frame = int(cp["frame"])
         if not 0 <= frame < frame_count:
             raise PipelineError(f"{name.capitalize()} frame {frame} is outside the clip")
@@ -280,6 +282,7 @@ def analyze(
             search=_downswing_search(pose),
             marked_takeaway=marks.checkpoint("takeaway").frame if marks.checkpoint("takeaway") else None,
             marked_top=marks.checkpoint("top").frame if view == "dtl" and marks.checkpoint("top") else None,
+            marked_impact=marks.checkpoint("impact").frame if view == "dtl" and marks.checkpoint("impact") else None,
         )
     except PhaseOrderError as e:
         raise PipelineError(str(e)) from e

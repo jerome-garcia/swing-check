@@ -240,3 +240,17 @@ def test_halfway_back_is_where_the_hands_are_partway_up():
     y = track[:, 1]
     risen = (y[phases.address] - y[frame]) / (y[phases.address] - y[phases.top])
     assert abs(risen - CFG["halfway_back_fraction"]) < 0.05
+
+
+def test_marked_impact_is_the_impact(tmp_path):
+    from swingcheck.phases import get_phases, load_overrides
+
+    fps = 240.0
+    track, _ = synthetic_swing(fps)
+    config = {"phases": CFG}
+    auto, _ = get_phases(tmp_path, track, fps, SCALE, config, {}, {}, clear_overrides=True)
+    # An impact set earlier on the results page gives way to the one confirmed while marking.
+    get_phases(tmp_path, track, fps, SCALE, config, {}, {"impact": auto.impact + 4})
+    phases, _ = get_phases(tmp_path, track, fps, SCALE, config, {}, {}, marked_impact=auto.impact - 2)
+    assert phases.impact == auto.impact - 2 and "impact" in phases.manual
+    assert load_overrides(tmp_path / "phases.json", {}) == {"impact": auto.impact + 4}  # not saved over

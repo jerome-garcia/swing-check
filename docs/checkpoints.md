@@ -34,7 +34,8 @@ and **Fix** range; anything between is **Watch**.
 **Marking.** Checkpoints 3, 4, 5, 6, and 8 each have a marking step (frame plus
 clubhead, and hands where needed), saved in `marks.json` under `checkpoints`,
 since the pose model only tracks the body. Address is the frame you mark the
-club on. Impact is found automatically.
+club on. Impact is found automatically, then confirmed (or moved) in its own
+marking step, with nothing to click; it's saved as a checkpoint with no points.
 
 ## Overview
 
@@ -166,8 +167,8 @@ about hip height); click the clubhead.
 
 ## 7. Impact
 
-Automatic, on the detected impact frame (adjustable on the results page). No
-extra marks.
+On the impact frame: found automatically, and confirmed by the golfer in the
+Impact marking step (change it with Edit marks). No points to click.
 
 | Measurement | How | 🟢 Green | 🟡 Yellow | 🔴 Red |
 |---|---|---|---|---|

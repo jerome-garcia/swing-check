@@ -31,6 +31,21 @@ def test_save_marks_rejects_checkpoints_out_of_order(tmp_path):
     assert save_marks(tmp_path, "dtl", 10, address, make_info(), checkpoints=cps).checkpoint("halfway_back").frame == 40
 
 
+def test_impact_is_a_frame_only_checkpoint_in_swing_order(tmp_path):
+    address = {"ball": (1, 2), "clubhead": (3, 4), "grip": (5, 6)}
+    cps = {"top": {"frame": 40, "points": {"clubhead": (1, 1), "grip": (2, 2)}},
+           "impact": {"frame": 50, "points": {}},
+           "follow_through": {"frame": 45, "points": {"clubhead": (1, 1), "grip": (2, 2)}}}
+    with pytest.raises(PipelineError, match="Your follow through frame comes before your impact frame"):
+        save_marks(tmp_path, "dtl", 10, address, make_info(), checkpoints=cps)
+    cps["impact"]["frame"] = 35
+    with pytest.raises(PipelineError, match="Your impact frame comes before your top frame"):
+        save_marks(tmp_path, "dtl", 10, address, make_info(), checkpoints=cps)
+    cps["impact"]["frame"] = 42
+    marks = save_marks(tmp_path, "dtl", 10, address, make_info(), checkpoints=cps)
+    assert marks.checkpoint("impact").frame == 42 and marks.checkpoint("impact").points == {}
+
+
 def test_analyze_needs_converted_video(tmp_path):
     with pytest.raises(PipelineError, match="converted"):
         analyze(tmp_path, "dtl", CONFIG)

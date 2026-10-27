@@ -69,6 +69,11 @@
         ]
       }
     },
+    "impact": {
+      "image": "impact.jpg",
+      "v": "fb20de2c87",
+      "points": {}
+    },
     "follow_through": {
       "image": "follow_through.jpg",
       "v": "6376475731",
