@@ -38,7 +38,7 @@ def test_every_overlay_kind_renders():
 
 def test_face_on_verdicts_render_through_impact():
     verdicts = fo_verdicts()
-    assert {v.name for v in verdicts} == {"fo_address", "fo_impact"}
+    assert {v.name for v in verdicts} == {"fo_address", "fo_top", "fo_downswing", "fo_impact", "fo_finish"}
     pose = face_on_pose()
     hands = (pose.xy("left_wrist") + pose.xy("right_wrist")) / 2
     ann = Annotator(verdicts, PHASES, hands, 240.0, 1080, 1920, CONFIG)

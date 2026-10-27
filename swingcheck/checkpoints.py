@@ -52,7 +52,7 @@ FO_CHECKPOINTS: tuple[Checkpoint, ...] = (
     Checkpoint(4, "Impact", "fo_impact", "impact",
                "Your hands are ahead of the ball, your hips have moved toward the target, and your head is behind the ball."),
     Checkpoint(5, "Finish", "fo_finish", None,
-               "Balanced at the finish: your hips and head over your front foot."),
+               "A full finish: your weight has moved onto your front side, with your head over your front foot."),
 )
 
 CHECKPOINTS: dict[str, tuple[Checkpoint, ...]] = {"dtl": DTL_CHECKPOINTS, "fo": FO_CHECKPOINTS}

@@ -350,6 +350,34 @@ tilt_max = 12                 # ...to 12 deg away;
 tilt_watch_min = -8           # yellow to 8 deg toward (red beyond: leaning at the target)...
 tilt_watch_max = 18           # ...and 18 deg away
 
+[analyzers.fo_top]
+# Face-on checkpoint 2, on the marked top frame. Shares of torso length (0.10 is about
+# 5 cm). On the 11 marked clips the pros' back hip stayed 10-22 cm inside the back
+# ankle and their head moved 4-10 cm back.
+hip_inside_min = 0.12         # back hip green from 6 cm inside the back ankle...
+hip_inside_watch = 0.0        # ...yellow to level with it; red outside it (a sway)
+head_back_max = -0.30         # head green from 15 cm back...
+head_forward_max = 0.03       # ...to 1.5 cm toward the target;
+head_back_watch = -0.45       # yellow to 22 cm back (red beyond: the upper body swaying)...
+head_forward_watch = 0.10     # ...or 5 cm toward the target (red beyond: a reverse pivot)
+
+[analyzers.fo_downswing]
+# Face-on checkpoint 3, on the marked downswing frame (shaft parallel coming down). Pros'
+# hips had moved 10-17 cm toward the target since address, with the head within 4 cm.
+hips_shift_min = 0.15         # hips green from 7.5 cm toward the target...
+hips_shift_watch = 0.05       # ...yellow to 2.5 cm; red less (no shift)
+head_back_max = -1.0          # head anywhere back is fine...
+head_forward_max = 0.10       # ...up to 5 cm toward the target green;
+head_forward_watch = 0.20     # yellow to 10 cm; red beyond (lunging)
+
+[analyzers.fo_finish]
+# Face-on checkpoint 5, on the marked finish frame. Pros' hips had moved 11-25 cm toward
+# the target; their head sat 14 cm behind to 6.5 cm past the front ankle.
+hips_shift_min = 0.20         # hips green from 10 cm toward the target...
+hips_shift_watch = 0.10       # ...yellow below (finishing on the back foot); never red: the ball's gone
+head_behind_max = -0.45       # head green from 22 cm behind the front ankle...
+head_past_max = 0.30          # ...to 15 cm past it; a watch item beyond
+
 [analyzers.fo_impact]
 # Face-on checkpoint 4, on the impact frame confirmed while marking, with the hands
 # clicked there and the ball clicked at address. Shares of torso length (0.10 is about

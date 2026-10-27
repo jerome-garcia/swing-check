@@ -40,11 +40,13 @@ def head_center(ctx: SwingContext) -> np.ndarray:
         return np.nanmean(tracks, axis=0)
 
 
-def _point(track: np.ndarray, frame: int, what: str) -> np.ndarray:
-    xy = track[frame]
-    if not np.all(np.isfinite(xy)):
-        raise MissingData(f"Your {what} wasn't tracked on frame {frame}.")
-    return xy
+def _point(track: np.ndarray, frame: int, what: str, look_back: int = 0) -> np.ndarray:
+    """The track on this frame, or (with look_back) the nearest tracked frame up to that
+    many before it: a finish held to the clip's last frame can lose tracking there."""
+    for f in range(frame, max(-1, frame - look_back - 1), -1):
+        if np.all(np.isfinite(track[f])):
+            return track[f]
+    raise MissingData(f"Your {what} wasn't tracked on frame {frame}.")
 
 
 @register("fo_impact", view="fo", title="Impact", phase="impact")

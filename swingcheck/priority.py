@@ -37,6 +37,12 @@ TIERS: dict[tuple[str, str], int] = {
     ("halfway_back", "Back knee bend kept"): 3,
     ("follow_through", "Shaft points at"): 3,
     ("follow_through", "Vs halfway back"): 3,
+    # Face-on: the hands behind the ball (a scoop) and hips that hang back cost shots
+    # directly; the finish mostly shows what came before.
+    ("fo_impact", "Hands vs ball"): 1,
+    ("fo_impact", "Hips vs address"): 1,
+    ("fo_finish", "Hips vs address"): 3,
+    ("fo_finish", "Head vs front foot"): 3,
 }
 
 

@@ -262,12 +262,13 @@ Being built, and off in the app until it's ready: set `face_on = true` under
 | 2 | **Top** | Frame only | Sway: hips inside the back foot; head steady |
 | 3 | **Downswing** | Frame only (shaft parallel to the ground coming down) | Hips moving toward the target; head back |
 | 4 | **Impact** | Frame, then click the hands | Hands ahead of the ball, hips forward, head behind the ball |
-| 5 | **Finish** | Frame only | Hips and head over the front foot |
+| 5 | **Finish** | Frame only | Weight on the front side, head over the front foot |
 
-- **Built so far:** the checkpoint list, the marking steps, the face-on camera check
+- **Foundations:** the checkpoint list, the marking steps, the face-on camera check
   (shoulders and hips spread wide from the front: real face-on clips measure 0.51–0.72
-  of torso length, down-the-line 0.03–0.21), and the scorecard and PDF. The checks
-  themselves show as coming soon.
+  of torso length, down-the-line 0.03–0.21), and the scorecard and PDF.
+- **All five checks are built**, and checked on 11 face-on clips the user marked
+  (`samples/fo-runs`, not in git): all six pros green on every checkpoint.
 - **Body tracking face-on** (11 test clips): head, shoulders, and hips tracked almost
   perfectly; ankles and toes well; wrists, heels, and the front knee poorly. So the
   checks use the first two groups, and the hands at impact are clicked.
@@ -282,6 +283,24 @@ Being built, and off in the app until it's ready: set `face_on = true` under
   On the 11 marked clips: all six pros green; random4 a slightly narrow stance, random2
   leaning slightly toward the target, random6 the ball outside the front foot (driver).
   With irons the ball moves back as the club shortens, so its band is wide.
+
+- **Top, Downswing, Finish (built):** two rows each, from body tracking only (shares of
+  torso length since address, + = toward the target):
+
+  | Checkpoint | Measurement | 🟢 Green | 🟡 Yellow | 🔴 Red |
+  |---|---|---|---|---|
+  | **Top** | **Back hip vs back foot** | 6 cm or more inside | closer | outside it (a sway) |
+  | | **Head vs address** | up to 15 cm back or 1.5 cm forward | to 22 cm back or 5 cm forward | beyond (sway, or a reverse pivot) |
+  | **Downswing** | **Hips vs address** | 7.5 cm or more forward | 2.5–7.5 cm | less |
+  | | **Head vs address** | back, or up to 5 cm forward | to 10 cm forward | beyond (lunging) |
+  | **Finish** | **Hips vs address** | 10 cm or more forward | less (on the back foot); never red | |
+  | | **Head vs front foot** | 22 cm behind to 15 cm past | beyond (never red) | |
+
+  Pros on the marked clips: back hip 10–22 cm inside at the top, head 4–10 cm back;
+  hips 10–17 cm forward at the downswing, head within 4 cm; hips 11–25 cm forward at the
+  finish. A finish frame without tracking (the clip's last frame) uses the frame just
+  before it. Like the follow-through down the line, the finish is never red and ranks
+  lowest for Work on first; the hands and hips at impact rank highest.
 
 - **Impact (built):** three rows, in `[analyzers.fo_impact]`:
 

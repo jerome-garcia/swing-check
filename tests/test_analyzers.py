@@ -21,10 +21,11 @@ def face_on_pose(hands_dx=0.0, hip_dx=0.0, head_dx=0.0, mirror=False):
     hands, hips and head are shifted by the given amounts (pixels, + = screen-right)."""
     width = 1080
     data = np.full((FRAMES, len(LANDMARKS), 4), np.nan)
+    # Facing the camera, a right-hander's left (front) side is on screen-right, the target side.
     base = {
-        "nose": (540, 300), "left_ear": (525, 290), "right_ear": (555, 290),
-        "left_shoulder": (480, 400), "right_shoulder": (600, 400),
-        "left_hip": (500, 660), "right_hip": (580, 660),
+        "nose": (540, 300), "left_ear": (555, 290), "right_ear": (525, 290),
+        "left_shoulder": (600, 400), "right_shoulder": (480, 400),
+        "left_hip": (580, 660), "right_hip": (500, 660),
         "left_wrist": (535, 760), "right_wrist": (545, 760),
         # Feet 1.33x shoulder width, the front (left) one on the target side, screen-right.
         "left_ankle": (620, 1000), "right_ankle": (460, 1000),
@@ -58,9 +59,13 @@ def run_fo(pose, mirror=False, config=None, hands_dx=0.1 * TORSO, club="iron", c
     if mirror:
         config["golfer"]["handedness"] = "left"
     flip = (lambda x: 1080 - 1 - x) if mirror else (lambda x: x)
-    impact = {"impact": CheckpointMark(frame=PHASES.impact, points={"grip": (flip(BALL_X + hands_dx), 760.0)})}
-    marks = Marks(view="fo", address_frame=10, points={"ball": (flip(BALL_X), 1000.0)},
-                  checkpoints=impact if clicked else {})
+    # The made-up swing moves only at impact (frame 80), so downswing and finish are marked
+    # just after it, where the shift shows.
+    frames = {"top": CheckpointMark(frame=PHASES.top, points={}), "downswing": CheckpointMark(frame=82, points={}),
+              "finish": CheckpointMark(frame=95, points={})}
+    if clicked:
+        frames["impact"] = CheckpointMark(frame=PHASES.impact, points={"grip": (flip(BALL_X + hands_dx), 760.0)})
+    marks = Marks(view="fo", address_frame=10, points={"ball": (flip(BALL_X), 1000.0)}, checkpoints=frames)
     ctx = SwingContext(view="fo", pose=pose, marks=marks, phases=PHASES, scale=TORSO, config=config)
     return {v.name: v for v in run_analyzers(ctx)}
 
@@ -174,6 +179,48 @@ def test_left_hander_address_matches():
                   mirror=True)
     for key in ("stance_over_shoulders", "ball_position", "spine_tilt_deg"):
         assert left["fo_address"].measurements[key] == pytest.approx(right["fo_address"].measurements[key], abs=1e-3)
+
+
+def shifted(pose, names, frame, dx):
+    """The pose with these body points moved dx px along x from `frame` on."""
+    for name in names:
+        pose.data[frame:, LANDMARK_INDEX[name], 0] += dx
+    return pose
+
+
+HEAD = ("nose", "left_ear", "right_ear")
+
+
+def test_top_sway_and_head_movement():
+    good = run_fo(face_on_pose())["fo_top"]  # back hip 6 cm inside the back ankle, head still
+    assert good.status == "ok" and good.label == "No sway, head steady"
+    sway = run_fo(shifted(face_on_pose(), ["right_hip"], PHASES.top, -60))["fo_top"]  # back hip out past the ankle
+    assert sway.status == "flag" and sway.label == "Swaying" and "Turn your hips" in sway.tip
+    reverse = run_fo(shifted(face_on_pose(), HEAD, PHASES.top, 0.15 * TORSO))["fo_top"]  # head toward the target
+    assert reverse.status == "flag" and reverse.label == "Head toward the target"
+
+
+def test_downswing_hips_lead_and_head_stays_back():
+    good = run_fo(face_on_pose(hip_dx=0.25 * TORSO))["fo_downswing"]
+    assert good.status == "ok" and good.label == "Hips leading, head back"
+    stuck = run_fo(face_on_pose(hip_dx=0.02 * TORSO))["fo_downswing"]
+    assert stuck.status == "flag" and stuck.label == "Hips not moving"
+    lunge = run_fo(face_on_pose(hip_dx=0.25 * TORSO, head_dx=0.3 * TORSO))["fo_downswing"]
+    assert lunge.status == "flag" and lunge.label == "Head lunging forward"
+
+
+def test_finish_on_the_front_side():
+    good = run_fo(face_on_pose(hip_dx=0.25 * TORSO))["fo_finish"]
+    assert good.status == "ok" and good.label == "Balanced on the front side"
+    # Downswing and finish have no detected phase: their key frames are the marked frames.
+    v = run_fo(face_on_pose(hip_dx=0.25 * TORSO))
+    assert (v["fo_downswing"].frame, v["fo_finish"].frame) == (82, 95)
+    back = run_fo(face_on_pose(hip_dx=-0.05 * TORSO))["fo_finish"]
+    assert back.status == "warn" and back.label == "Finishing on the back foot"  # never red: the ball is gone
+    # Tracking lost on the finish frame itself: the frame just before stands in.
+    pose = face_on_pose(hip_dx=0.25 * TORSO)
+    pose.data[95:, :, :] = np.nan
+    assert run_fo(pose)["fo_finish"].status == "ok"
 
 
 def test_new_analyzer_plugs_in_without_pipeline_changes():
