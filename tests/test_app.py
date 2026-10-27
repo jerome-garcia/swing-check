@@ -303,6 +303,12 @@ def test_marking_reference_is_bundled(client):
         assert all(0 <= x <= ref["width"] and 0 <= y <= ref["height"] for x, y in step["points"].values())
     driver = client.get("/reference/driver/reference.json").json()
     assert list(driver["steps"]) == list(ref["steps"]) and driver["steps"]["impact"]["points"] == {}
+    # Face-on: Tiger with an iron, Rory with a driver; the ball at address, the hands at impact.
+    for path, name in (("fo", "Tiger Woods"), ("fo/driver", "Rory McIlroy")):
+        fo = client.get(f"/reference/{path}/reference.json").json()
+        assert fo["name"] == name and list(fo["steps"]) == ["address", "top", "downswing", "impact", "finish"]
+        assert list(fo["steps"]["address"]["points"]) == ["ball"] and list(fo["steps"]["impact"]["points"]) == ["grip"]
+        assert client.get(f"/reference/{path}/{fo['steps']['finish']['image']}").content[:2] == b"\xff\xd8"
 
 
 def test_detail_includes_suggested_frames_for_this_video(client, runs):

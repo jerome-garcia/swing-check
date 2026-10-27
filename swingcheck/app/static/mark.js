@@ -59,9 +59,13 @@ const POINT_INFO = {
   clubhead: { label: "Club neck", hint: "Where the shaft goes into the clubhead (the hosel)", color: "#ff5ca8", shape: "circle", dx: -70, dy: -10 },
   grip: { label: "Hands", hint: "Middle of your grip, between your two hands", color: "#4dc3ff", shape: "square", dx: 13, dy: -9 },
 };
-// static/reference: the example swing shown beside each step, one per club: Rory McIlroy
-// with an iron, and Tiger Woods with a driver (reference/driver).
-const REFERENCE_DIRS = { iron: "/reference", driver: "/reference/driver" };
+// static/reference: the example swing shown beside each step, per view and club. Down the
+// line: Rory McIlroy with an iron, Tiger Woods with a driver (reference/driver). Face-on
+// (reference/fo): Tiger with an iron, Rory with a driver (reference/fo/driver).
+const REFERENCE_DIRS = {
+  dtl: { iron: "/reference", driver: "/reference/driver" },
+  fo: { iron: "/reference/fo", driver: "/reference/fo/driver" },
+};
 const PLANE_COLOR = "#ff9f43"; // the address shaft line is the swing plane, in the brand's plane orange
 // Wording for points on a later checkpoint frame.
 const STEP_POINT_INFO = {
@@ -124,7 +128,8 @@ const MAX_ZOOM = 5; // pinching to zoom stops here
 export async function renderMark(view, id, isCurrent) {
   const s = await api(`/api/swings/${encodeURIComponent(id)}`);
   // The example for this swing's club (switching the club renders this page again).
-  const refDir = REFERENCE_DIRS[s.club] || REFERENCE_DIRS.iron;
+  const dirs = REFERENCE_DIRS[s.view] || REFERENCE_DIRS.dtl;
+  const refDir = dirs[s.club] || dirs.iron;
   const reference = await api(`${refDir}/reference.json`).catch(() => null);
   if (!isCurrent()) return;
   if (!s.video || (s.job && ["queued", "running"].includes(s.job.state))) {
@@ -631,7 +636,7 @@ export async function renderMark(view, id, isCurrent) {
   // it, kept clear of you: taps on it never place a point, and a tap enlarges it for a
   // closer look, another shrinks it back.
   const refBox = el("figure", { class: "ref-frame" });
-  const hasExample = () => Boolean(s.view === "dtl" && reference && reference.steps[state.active]);
+  const hasExample = () => Boolean(reference && reference.steps[state.active]);
   const REF_GAP = 8;
   let refSide = false;
   let refBig = false;
@@ -670,7 +675,7 @@ export async function renderMark(view, id, isCurrent) {
   function renderRef() {
     if (refShown === state.active) return;
     refShown = state.active;
-    const st = s.view === "dtl" && reference ? reference.steps[state.active] : null;
+    const st = reference ? reference.steps[state.active] : null;
     refBox.hidden = !st;
     if (!st) return;
     const url = `${refDir}/${st.image}${st.v ? `?v=${st.v}` : ""}`; // v: the picture's fingerprint

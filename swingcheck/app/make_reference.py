@@ -5,9 +5,12 @@ example to follow. Rebuild them from a fully marked down-the-line swing with:
 
     python -m swingcheck.app.make_reference runs/<swing-folder> "Rory McIlroy"
     python -m swingcheck.app.make_reference runs/<swing-folder> "Tiger Woods" driver
+    python -m swingcheck.app.make_reference samples/fo-runs/<swing-folder> "Tiger Woods" fo
+    python -m swingcheck.app.make_reference samples/fo-runs/<swing-folder> "Rory McIlroy" fo/driver
 
-The second form builds the driver example (static/reference/driver), shown for swings
-marked as a driver or wood.
+The third argument is the folder under static/reference: driver for the driver example
+(shown for swings marked as a driver or wood), fo and fo/driver for the face-on ones,
+built from fully marked face-on swings.
 
 One point in the shipped reference.json is set by hand after the rebuild: the halfway-back
 hands, moved 28 video px down the shaft line (to 271.8, 468.1 on the 720-wide clip) to the

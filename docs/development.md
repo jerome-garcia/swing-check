@@ -224,10 +224,19 @@ The examples on the marking screen come from a fully marked swing:
 python -m swingcheck.app.make_reference runs/<swing-folder> "Rory McIlroy"
 ```
 
-Add `driver` at the end for the driver example. They're saved in
-`swingcheck/app/static/reference/` and `reference/driver/`. A few points were
-adjusted by hand after building; the docstring in `make_reference.py` lists
-them, so put them back after a rebuild.
+Add a folder at the end for the other examples: `driver` for the driver,
+`fo` and `fo/driver` for face-on. They're saved under
+`swingcheck/app/static/reference/`:
+
+| Folder | Example | Built from |
+|---|---|---|
+| `reference/` | Rory McIlroy, iron, down the line | `runs/` |
+| `reference/driver/` | Tiger Woods, driver, down the line | `runs/` |
+| `reference/fo/` | Tiger Woods, iron, face-on | `samples/fo-runs/` |
+| `reference/fo/driver/` | Rory McIlroy, driver, face-on | `samples/fo-runs/` |
+
+A few down-the-line points were adjusted by hand after building; the docstring in
+`make_reference.py` lists them, so put them back after a rebuild.
 
 ## Writing style
 
