@@ -21,9 +21,9 @@ import numpy as np
 
 from swingcheck.analyzers import SwingContext, Verdict, run_analyzers
 from swingcheck.body import body_scale, clip_torso_length, hands
-from swingcheck.camera_check import camera_check, facing, facing_finding
+from swingcheck.camera_check import ANGLE_TITLES, angle_finding, body_spread, camera_check, facing, facing_finding
 from swingcheck.ingest import VideoInfo, normalize
-from swingcheck.checkpoints import DTL_CHECKPOINTS
+from swingcheck.checkpoints import CHECKPOINTS
 from swingcheck.priority import pick_focus
 from swingcheck.models import CHECKPOINT_MARKS, REQUIRED_MARKS, CheckpointMark, Marks, Point, PoseSeq
 from swingcheck.output.annotate import Annotator, write_outputs
@@ -110,7 +110,9 @@ def suggest_frames(run_dir: Path, info: VideoInfo, config: dict[str, Any],
     except (PhaseError, ValueError):
         frames = None
     address = frames["address"] if frames else None
-    camera = camera_check(pose, address, config)
+    # The angle is judged when it's shown (load_camera_check), for the swing's view then:
+    # it can still be switched between down-the-line and face-on.
+    camera = camera_check(pose, address, config, view=None)
     if frames is None and pose.detected().any():
         camera.append({"level": "warn", "title": "Couldn't find the swing automatically",
                        "tip": "You can still mark it: move the slider to each position yourself. If the clip holds more "
@@ -118,7 +120,8 @@ def suggest_frames(run_dir: Path, info: VideoInfo, config: dict[str, Any],
     # Which way the golfer faces is saved rather than judged here: whether it's right
     # depends on the swing's handedness, which can still be changed (load_camera_check).
     path.write_text(json.dumps({"video_signature": video_signature(info), "phases": frames, "camera": camera,
-                                "facing": facing(pose, address), "golfer_box": golfer_box(pose)}, indent=2))
+                                "facing": facing(pose, address), "spread": body_spread(pose, address),
+                                "golfer_box": golfer_box(pose)}, indent=2))
     return frames
 
 
@@ -148,12 +151,19 @@ def load_golfer_box(run_dir: Path, info: VideoInfo) -> list[float] | None:
     return _suggest_data(run_dir, info).get("golfer_box")
 
 
-def load_camera_check(run_dir: Path, info: VideoInfo, handedness: str = "right") -> list[dict[str, str]] | None:
-    """The camera check for this exact conversion: [] if it looks right, None if not run."""
+def load_camera_check(run_dir: Path, info: VideoInfo, handedness: str = "right", view: str = "dtl",
+                      config: dict[str, Any] | None = None) -> list[dict[str, str]] | None:
+    """The camera check for this exact conversion: [] if it looks right, None if not run.
+    The angle is judged here for the swing's view (checks saved before that carry their own)."""
     data = _suggest_data(run_dir, info)
     camera = data.get("camera")
     if camera is None:
         return None
+    if data.get("spread") is not None and config is not None:
+        camera = [*angle_finding(data["spread"], view, config),
+                  *(f for f in camera if f["title"] not in ANGLE_TITLES)]
+    if view != "dtl":
+        return camera  # which way you face only matters from behind your hands
     wrong_way = facing_finding(data.get("facing"), handedness)
     # Facing the wrong way and "not down the line" have one cause: report only the angle.
     if wrong_way and not any(f["title"] == "This doesn't look like a down-the-line view" for f in camera):
@@ -278,11 +288,11 @@ def analyze(
         # DTL posture checks are judged on the frame the user marked, so it is the address.
         phases, detect_error = get_phases(
             run_dir, hand_track, pose.fps, scale, config, video_signature(info), overrides or {}, clear_overrides,
-            marked_address=marks.address_frame if view == "dtl" else None,
+            marked_address=marks.address_frame,
             search=_downswing_search(pose),
             marked_takeaway=marks.checkpoint("takeaway").frame if marks.checkpoint("takeaway") else None,
-            marked_top=marks.checkpoint("top").frame if view == "dtl" and marks.checkpoint("top") else None,
-            marked_impact=marks.checkpoint("impact").frame if view == "dtl" and marks.checkpoint("impact") else None,
+            marked_top=marks.checkpoint("top").frame if marks.checkpoint("top") else None,
+            marked_impact=marks.checkpoint("impact").frame if marks.checkpoint("impact") else None,
         )
     except PhaseOrderError as e:
         raise PipelineError(str(e)) from e
@@ -307,7 +317,7 @@ def analyze(
     )
     verdicts = run_analyzers(ctx)
     saved = [v.to_json() for v in verdicts]
-    order = [cp.analyzer for cp in DTL_CHECKPOINTS] if view == "dtl" else [v.name for v in verdicts]
+    order = [cp.analyzer for cp in CHECKPOINTS[view]]
     (run_dir / "analysis.json").write_text(json.dumps(
         {"view": view, "handedness": config["golfer"]["handedness"], "club": config["golfer"]["club"], "phases": phases.as_dict(), "manual_phases": phases.manual, "fps": pose.fps,
          "body_scale_px": round(ctx.scale, 2), "warnings": warnings,

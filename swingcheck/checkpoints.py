@@ -1,4 +1,4 @@
-"""The down-the-line checkpoints, in swing order.
+"""The checkpoints for each camera view, in swing order.
 
 Single source for the results page's checkpoint stepper. A checkpoint is
 "built" once an analyzer with its name is registered; until then the app
@@ -39,7 +39,24 @@ DTL_CHECKPOINTS: tuple[Checkpoint, ...] = (
 )
 
 
+# Face-on: the camera square to the golfer's chest. It sees side-to-side movement (sway,
+# weight shift, the head) and shaft lean, which down-the-line can't. Analyzer names are
+# global, so these carry an fo_ prefix.
+FO_CHECKPOINTS: tuple[Checkpoint, ...] = (
+    Checkpoint(1, "Address", "fo_address", "address",
+               "Your setup from the front: feet about shoulder width apart, the ball in the right place between them, and your spine tilted slightly away from the target."),
+    Checkpoint(2, "Top", "fo_top", "top",
+               "At the top, your hips stay inside your back foot (no sway) and your head stays about where it started."),
+    Checkpoint(3, "Downswing", "fo_downswing", None,
+               "Front arm parallel to the ground on the way down: your hips have started moving toward the target, and your head stays back."),
+    Checkpoint(4, "Impact", "fo_impact", "impact",
+               "Your hands are ahead of the ball, your hips have moved toward the target, and your head is behind the ball."),
+    Checkpoint(5, "Finish", "fo_finish", None,
+               "Balanced at the finish: your hips and head over your front foot."),
+)
+
+CHECKPOINTS: dict[str, tuple[Checkpoint, ...]] = {"dtl": DTL_CHECKPOINTS, "fo": FO_CHECKPOINTS}
+
+
 def checkpoints_json(view: str, registered: set[str]) -> list[dict]:
-    if view != "dtl":
-        return []
-    return [{**asdict(cp), "built": cp.analyzer in registered} for cp in DTL_CHECKPOINTS]
+    return [{**asdict(cp), "built": cp.analyzer in registered} for cp in CHECKPOINTS.get(view, ())]

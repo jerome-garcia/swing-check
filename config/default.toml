@@ -6,6 +6,11 @@
 # Distances marked "body units" are divided by the body scale measured on the
 # address frame (see [scale]), so they don't depend on camera distance.
 
+[features]
+# Face-on analysis is still being built and checked on real clips. Off on the site; set it
+# true in config/local.toml to try it on your own computer.
+face_on = false
+
 [golfer]
 handedness = "right"          # "right" | "left"; the app sets it per swing (upload page)
 club = "iron"                 # "iron" (irons and wedges) | "driver" (driver and woods); per swing too
@@ -50,6 +55,10 @@ pad_after_s = 0.75
 # straight face-on is roughly 0.7.
 side_on_warn = 0.35           # above this: "the camera may be off to one side"
 side_on_flag = 0.55           # above this: "doesn't look like a down-the-line view"
+# Face-on, the other way round: real face-on clips measure 0.51-0.72 (Rory, Tiger, Scott,
+# Collin, and five amateurs); narrower means the camera is round to the side.
+face_on_warn = 0.40           # below this: "the camera may be at an angle"
+face_on_flag = 0.25           # below this: "doesn't look like a face-on view"
 min_height = 0.20             # golfer (head to ankles) under this share of the frame: "small"
 edge_margin = 0.02            # head or feet this close to the frame edge: cut off
 min_visibility = 0.5          # tracker confidence below this: hidden / hard to see

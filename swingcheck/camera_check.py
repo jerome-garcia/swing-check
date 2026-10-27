@@ -26,7 +26,15 @@ TRACKED = ("shoulder", "hip", "knee", "ankle", "wrist")
 BEHIND_TIP = "Put the camera straight behind your hands at about hip height, pointing at the target."
 
 
-def camera_check(pose: PoseSeq, address: int | None, config: dict[str, Any]) -> list[dict[str, str]]:
+FRONT_TIP = "Put the camera straight in front of you at about chest height, square to your chest."
+ANGLE_TITLES = ("This doesn't look like a down-the-line view", "The camera may be off to one side",
+                "This doesn't look like a face-on view", "The camera may be at an angle")
+
+
+def camera_check(pose: PoseSeq, address: int | None, config: dict[str, Any],
+                 view: str | None = "dtl") -> list[dict[str, str]]:
+    """Findings for the camera. `view` None leaves out the angle (angle_finding judges it
+    later, from body_spread, for whichever view the swing ends up as)."""
     cfg = config["camera_check"]
     detected = np.where(pose.detected())[0]
     if not len(detected):
@@ -54,13 +62,8 @@ def camera_check(pose: PoseSeq, address: int | None, config: dict[str, Any]) -> 
 
     # Angle: side-to-side spread of shoulders and hips, as a share of torso length.
     spread = (abs(shoulders[0][0] - shoulders[1][0]) + abs(hips[0][0] - hips[1][0])) / 2 / torso
-    if spread > cfg["side_on_flag"]:
-        findings.append(finding("flag", "This doesn't look like a down-the-line view",
-                                "Down-the-line means the camera behind you, looking toward the target, so you're "
-                                f"seen from the side. {BEHIND_TIP}"))
-    elif spread > cfg["side_on_warn"]:
-        findings.append(finding("warn", "The camera may be off to one side",
-                                f"Your shoulders and hips look wider than they should from behind. {BEHIND_TIP}"))
+    if view is not None:
+        findings += angle_finding(spread, view, config)
 
     # Framing: size, and head or feet cut off.
     top = min(point("nose")[1], point("left_ear")[1], point("right_ear")[1])
@@ -84,6 +87,47 @@ def camera_check(pose: PoseSeq, address: int | None, config: dict[str, Any]) -> 
                                 "Film in even light without strong light behind you, and wear clothes that stand "
                                 "out from the background."))
     return findings
+
+
+def body_spread(pose: PoseSeq, address: int | None) -> float | None:
+    """Side-to-side spread of shoulders and hips near address, as a share of torso length:
+    small from behind (down-the-line), large from the front (face-on)."""
+    detected = np.where(pose.detected())[0]
+    if not len(detected):
+        return None
+    near = detected[np.argsort(np.abs(detected - (address if address is not None else detected[0])))[:SAMPLES]]
+    data = pose.data[near]
+
+    def point(name: str) -> np.ndarray:
+        return np.nanmedian(data[:, LANDMARK_INDEX[name], :2], axis=0)
+
+    ls, rs, lh, rh = (point(n) for n in ("left_shoulder", "right_shoulder", "left_hip", "right_hip"))
+    torso = float(np.linalg.norm((ls + rs) / 2 - (lh + rh) / 2))
+    if not torso > 0:
+        return None
+    return round((abs(ls[0] - rs[0]) + abs(lh[0] - rh[0])) / 2 / torso, 3)
+
+
+def angle_finding(spread: float, view: str, config: dict[str, Any]) -> list[dict[str, str]]:
+    """Is the camera where this view needs it? Down-the-line wants a small spread, face-on a large one."""
+    cfg = config["camera_check"]
+    if view == "fo":
+        if spread < cfg["face_on_flag"]:
+            return [finding("flag", "This doesn't look like a face-on view",
+                            "Face-on means the camera in front of you, facing your chest, so you're seen from the "
+                            f"front. {FRONT_TIP}")]
+        if spread < cfg["face_on_warn"]:
+            return [finding("warn", "The camera may be at an angle",
+                            f"Your shoulders and hips look narrower than they should from the front. {FRONT_TIP}")]
+        return []
+    if spread > cfg["side_on_flag"]:
+        return [finding("flag", "This doesn't look like a down-the-line view",
+                        "Down-the-line means the camera behind you, looking toward the target, so you're "
+                        f"seen from the side. {BEHIND_TIP}")]
+    if spread > cfg["side_on_warn"]:
+        return [finding("warn", "The camera may be off to one side",
+                        f"Your shoulders and hips look wider than they should from behind. {BEHIND_TIP}")]
+    return []
 
 
 def facing(pose: PoseSeq, address: int | None) -> int | None:

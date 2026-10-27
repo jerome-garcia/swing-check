@@ -37,9 +37,8 @@ log = logging.getLogger(__name__)
 STATIC = Path(__file__).parent / "static"
 VIDEO_EXTENSIONS = {".mov", ".mp4", ".m4v", ".avi", ".mkv", ".webm", ".3gp"}
 
-# Face-on is held back for a future release: its checks haven't been validated on
-# real clips yet. Existing face-on swings can still be opened. Flip this to enable it.
-FACE_ON_ENABLED = False
+# Face-on is held back for a future release ([features] face_on in the config, off by
+# default): its checks are still being built. Existing face-on swings can still be opened.
 FACE_ON_DISABLED_MESSAGE = "Face-on analysis is coming in a future release."
 
 
@@ -174,6 +173,9 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     jobs = JobManager(on_finish=job_finished)
     frames = FrameReader()
     config = load_config()
+
+    def face_on() -> bool:
+        return bool(config["features"]["face_on"])
     limits = config["hosted"] if hosted else None
     version = app_version()  # once: a release is a restart
     app = FastAPI(title="SwingCheck", docs_url=None, redoc_url=None)
@@ -258,7 +260,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     def check_view(view: str) -> None:
         if view not in ("dtl", "fo"):
             raise HTTPException(400, "Choose down-the-line or face-on")
-        if view == "fo" and not FACE_ON_ENABLED:
+        if view == "fo" and not face_on():
             raise HTTPException(400, FACE_ON_DISABLED_MESSAGE)
 
     @app.get("/api/health")
@@ -271,12 +273,12 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
     @app.get("/api/features")
     def features() -> dict[str, Any]:
         discover()
-        built = {name for name, a in REGISTRY.items() if a.view == "dtl"}
+        built = set(REGISTRY)
         return {
             "version": version,
-            "face_on": FACE_ON_ENABLED,
+            "face_on": face_on(),
             "face_on_message": FACE_ON_DISABLED_MESSAGE,
-            "checkpoints": {"dtl": checkpoints_json("dtl", built)},
+            "checkpoints": {view: checkpoints_json(view, built) for view in ("dtl", "fo")},
             "hosted": {k: limits[k] for k in ("max_swings", "keep_days", "max_upload_mb", "max_clip_seconds")}
             if limits else None,
         }
@@ -474,7 +476,7 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
             raise HTTPException(409, "This swing is already being processed.")
         if store.status(swing_id) not in ("marked", "analyzed"):
             raise HTTPException(409, "Mark the ball (and club, for down-the-line) first.")
-        if meta.view == "fo" and not FACE_ON_ENABLED:
+        if meta.view == "fo" and not face_on():
             raise HTTPException(409, f"{FACE_ON_DISABLED_MESSAGE} Switch this swing to down-the-line to analyze it.")
         overrides = {k: v for k, v in body.phases.items() if k in ("address", "top", "impact")}
         check_not_busy()
@@ -522,7 +524,8 @@ def create_app(runs_dir: Path | None = None, hosted: bool = False) -> FastAPI:
         if detail["video"]:
             detail["video"]["version"] = conversion_token(folder)
         detail["suggested"] = load_suggested(folder, info) if info else None
-        detail["camera_check"] = load_camera_check(folder, info, detail["handedness"]) if info else None
+        detail["camera_check"] = (load_camera_check(folder, info, detail["handedness"], detail.get("view") or "dtl",
+                                                    config) if info else None)
         detail["golfer_box"] = load_golfer_box(folder, info) if info else None
         detail["files"] = sorted(p.name for p in folder.iterdir()
                                  if p.suffix in (".mp4", ".png", ".txt") and p.name != "pose_debug.mp4")

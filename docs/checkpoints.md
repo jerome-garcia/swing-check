@@ -251,13 +251,25 @@ score: **depth × importance**.
 - **Validated** on mirrored copies of McIlroy, Tiger, Jolo, and an amateur
   swing: every checkpoint within about 2° or 2 cm of the original.
 
-## Face-on (future release)
+## Face-on (in progress)
 
-Built and unit-tested on made-up data, but not validated on real clips, so it's
-off in the app (`FACE_ON_ENABLED` in `swingcheck/app/server.py`).
+Being built, and off in the app until it's ready: set `face_on = true` under
+`[features]` in `config/local.toml` to try it on your own computer.
 
-| Check | What it tells you |
-|---|---|
-| **Hands at impact** | Hands ahead of, level with, or behind the ball (scoop or shaft lean) |
-| **Weight shift** | How far the hips moved toward the target by impact |
-| **Head drift** | Whether the head moved away from the target by impact |
+| # | Checkpoint | Marking | What it will check |
+|---|---|---|---|
+| 1 | **Address** | Frame, then click the ball | Stance width, ball position, spine tilted away from the target |
+| 2 | **Top** | Frame only | Sway: hips inside the back foot; head steady |
+| 3 | **Downswing** | Frame only (front arm parallel coming down) | Hips moving toward the target; head back |
+| 4 | **Impact** | Frame, then click the hands | Hands ahead of the ball, hips forward, head behind the ball |
+| 5 | **Finish** | Frame only | Hips and head over the front foot |
+
+- **Built so far:** the checkpoint list, the marking steps, the face-on camera check
+  (shoulders and hips spread wide from the front: real face-on clips measure 0.51–0.72
+  of torso length, down-the-line 0.03–0.21), and the scorecard and PDF. The checks
+  themselves show as coming soon.
+- **Body tracking face-on** (11 test clips): head, shoulders, and hips tracked almost
+  perfectly; ankles and toes well; wrists, heels, and the front knee poorly. So the
+  checks use the first two groups, and the hands at impact are clicked.
+- **Older face-on checks** (hands at impact, weight shift, head drift, from made-up data)
+  still run, and will be folded into the Impact checkpoint.

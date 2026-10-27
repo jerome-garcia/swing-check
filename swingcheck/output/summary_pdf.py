@@ -17,7 +17,7 @@ from typing import Any
 import cv2
 from fpdf import FPDF
 
-from swingcheck.checkpoints import DTL_CHECKPOINTS
+from swingcheck.checkpoints import CHECKPOINTS
 
 STATUS_WORD = {"ok": "Good", "warn": "Watch", "flag": "Fix", "error": "Not marked", "missing": "Not run"}
 STATUS_RGB = {"ok": (35, 130, 79), "warn": (183, 121, 31), "flag": (194, 65, 45),
@@ -115,11 +115,11 @@ def _row_height(doc: _Doc, r: dict[str, Any], text_w: float, lab_w: float, val_w
 
 
 def _items(view: str, verdicts: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Checkpoints in swing order with their verdicts (DTL), else the verdicts as listed."""
+    """The view's checkpoints in swing order with their verdicts, else the verdicts as listed."""
     by_name = {v.get("name"): v for v in verdicts}
-    if view == "dtl":
+    if view in CHECKPOINTS:
         out = []
-        for cp in DTL_CHECKPOINTS:
+        for cp in CHECKPOINTS[view]:
             v = by_name.get(cp.analyzer)
             out.append({"number": cp.number, "title": cp.title, "name": cp.analyzer,
                         "status": v["status"] if v else "missing", "verdict": v})
@@ -144,8 +144,9 @@ def summary_pdf(folder: Path, swing_name: str, created: str, analysis: dict[str,
     doc.font(22, True)
     doc.cell(0, 11, doc.text_ok(f"Swing summary: {swing_name}"), new_x="LMARGIN", new_y="NEXT")
     doc.font(10, color=MUTED)
-    doc.cell(0, 6, doc.text_ok(f"Filmed {date} · {len(items)} checkpoints from address to follow-through"
-                               if view == "dtl" else f"Filmed {date}"), new_x="LMARGIN", new_y="NEXT")
+    to = "follow-through" if view == "dtl" else "finish"
+    doc.cell(0, 6, doc.text_ok(f"Filmed {date} · {len(items)} checkpoints from address to {to}"),
+             new_x="LMARGIN", new_y="NEXT")
     doc.ln(4)
 
     # Scorecard: one box per checkpoint, colored bar on top.

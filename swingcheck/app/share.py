@@ -17,7 +17,7 @@ import secrets
 from pathlib import Path
 from typing import Any
 
-from swingcheck.checkpoints import DTL_CHECKPOINTS
+from swingcheck.checkpoints import CHECKPOINTS
 
 PDF_FILE = "shared-summary.pdf"
 PREVIEW_FILE = "shared-preview.jpg"
@@ -32,7 +32,7 @@ def snapshot_items(analysis: dict[str, Any]) -> list[dict[str, Any]]:
     """The checkpoint list as it stands now: number, title, status, and the short result."""
     by_name = {v.get("name"): v for v in analysis.get("verdicts", [])}
     items = []
-    for cp in DTL_CHECKPOINTS:
+    for cp in CHECKPOINTS.get(analysis.get("view", "dtl"), ()):
         v = by_name.get(cp.analyzer)
         if v is not None:
             items.append({"number": cp.number, "title": cp.title, "status": v.get("status", "error"),

@@ -74,7 +74,9 @@ REQUIRED_MARKS: dict[str, tuple[str, ...]] = {
 CHECKPOINT_MARKS: dict[str, dict[str, tuple[str, ...]]] = {
     "dtl": {"takeaway": ("clubhead",), "halfway_back": ("clubhead", "grip"), "top": ("clubhead", "grip"),
             "downswing": ("clubhead",), "impact": (), "follow_through": ("clubhead", "grip")},
-    "fo": {},
+    # Face-on: frames only, except impact, where the hands are clicked (tracked wrists are
+    # often a blur there) to compare with the ball clicked at address.
+    "fo": {"top": (), "downswing": (), "impact": ("grip",), "finish": ()},
 }
 
 

@@ -46,6 +46,19 @@ def test_impact_is_a_frame_only_checkpoint_in_swing_order(tmp_path):
     assert marks.checkpoint("impact").frame == 42 and marks.checkpoint("impact").points == {}
 
 
+def test_face_on_marks_frames_and_the_hands_at_impact(tmp_path):
+    cps = {"top": {"frame": 40, "points": {}}, "downswing": {"frame": 45, "points": {}},
+           "impact": {"frame": 50, "points": {}}, "finish": {"frame": 70, "points": {}}}
+    marks = save_marks(tmp_path, "fo", 10, {"ball": (1, 2)}, make_info(), checkpoints=cps)
+    assert "impact" not in marks.checkpoints  # its hands aren't clicked yet
+    assert [marks.checkpoint(k).frame for k in ("top", "downswing", "finish")] == [40, 45, 70]
+    cps["impact"]["points"] = {"grip": (5, 6)}
+    assert save_marks(tmp_path, "fo", 10, {"ball": (1, 2)}, make_info(), checkpoints=cps).checkpoint("impact").points         == {"grip": (5.0, 6.0)}
+    cps["finish"]["frame"] = 48
+    with pytest.raises(PipelineError, match="Your finish frame comes before your impact frame"):
+        save_marks(tmp_path, "fo", 10, {"ball": (1, 2)}, make_info(), checkpoints=cps)
+
+
 def test_analyze_needs_converted_video(tmp_path):
     with pytest.raises(PipelineError, match="converted"):
         analyze(tmp_path, "dtl", CONFIG)

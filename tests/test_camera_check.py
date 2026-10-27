@@ -82,3 +82,19 @@ def test_far_leg_hidden_behind_the_near_one_is_fine():
     for name in ("left_ankle", "left_knee", "left_heel"):  # the lead leg, hidden from behind
         data[:, LANDMARK_INDEX[name], 3] = 0.2
     assert camera_check(PoseSeq(30.0, W, H, data), 5, load_config()) == []
+
+
+def test_face_on_wants_the_body_wide():
+    def fo_titles(points):
+        return [f["title"] for f in camera_check(pose_of(points), 5, load_config(), view="fo")]
+
+    assert fo_titles(spread_by(110)) == []                                                # ~0.75 torso: face-on
+    assert fo_titles(spread_by(50)) == ["The camera may be at an angle"]                 # ~0.34
+    assert fo_titles(DTL) == ["This doesn't look like a face-on view"]                   # from behind
+    assert camera_check(pose_of(DTL), 5, load_config(), view=None) == []                 # angle left for later
+
+
+def test_body_spread_is_saved_for_either_view():
+    from swingcheck.camera_check import body_spread
+    assert 0.7 < body_spread(pose_of(spread_by(110)), 5) < 0.8
+    assert body_spread(pose_of(DTL), 5) < 0.1

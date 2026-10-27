@@ -23,9 +23,19 @@ const STEPS = {
     { key: "follow_through", title: "Follow-through", points: ["clubhead", "grip"],
       intro: "Move the slider to where your back arm is parallel to the ground after impact (hands about shoulder height, the mirror of halfway back; if your arms are hidden, pick where the shaft looks about as steep as at halfway back). Click the clubhead, then your hands. This frame is the follow-through checkpoint." },
   ],
+  // Face-on: the body is tracked well from the front, so most steps are just the frame.
   fo: [
     { key: "address", title: "Address", points: ["ball"],
-      intro: "Move the slider to your address position, then click the ball." },
+      intro: "Move the slider to your address position (set up and still), then click the ball. This frame is used for the address checks." },
+    { key: "top", title: "Top", points: [],
+      intro: "Move the slider to the top of your backswing (the moment the club stops going back), then press Frame looks right. This frame is the top checkpoint." },
+    { key: "downswing", title: "Downswing", points: [],
+      find: "Your front arm is parallel to the ground on the way down.",
+      intro: "Move the slider to where your front arm is parallel to the ground on the way down, then press Frame looks right. This frame is the downswing checkpoint." },
+    { key: "impact", title: "Impact", points: ["grip"],
+      intro: "Move the slider to the moment the club meets the ball, then click your hands. This frame is the impact checkpoint." },
+    { key: "finish", title: "Finish", points: [],
+      intro: "Move the slider to your finish, where the swing has stopped and you're holding your pose, then press Frame looks right. This frame is the finish checkpoint." },
   ],
 };
 // Each step starts by finding the moment in the clip: one short line for the instruction
@@ -38,6 +48,7 @@ const FIND = {
   downswing: "The shaft is parallel to the ground on the way down.",
   impact: "The moment the club meets the ball.",
   follow_through: "Your back arm is parallel to the ground after impact.",
+  finish: "The end of the swing, holding your finish.",
 };
 // Label offsets (CSS px) keep the ball and clubhead labels apart; those points sit together.
 // Shapes match the key frames: clubhead = circle, hands = square, ball = ring. Here they're
@@ -73,6 +84,9 @@ const STEP_POINT_INFO = {
     clubhead: { label: "Clubhead", hint: "Center of the clubhead, or the highest point of the shaft you can see if it's out of frame" },
     grip: { label: "Hands", hint: "Center of your hands, or the lowest point of the shaft you can see if they're hidden behind you" },
   },
+  impact: {
+    grip: { label: "Hands", hint: "Center of your hands, where they hold the club" },
+  },
 };
 // Where to start a checkpoint step that has no detected phase of its own (checked against
 // hand-marked McIlroy, Tiger and amateur clips).
@@ -84,13 +98,15 @@ const FRAME_GUESS = {
   downswing: p => (p.early_downswing !== undefined && p.impact !== undefined ? (p.early_downswing + p.impact) / 2 : undefined),
   // Trail arm parallel after impact: about as long after impact as the downswing took from the top.
   follow_through: p => (p.top !== undefined && p.impact !== undefined ? p.impact + 0.6 * (p.impact - p.top) : undefined),
+  // The finish: well after impact, about twice as long as the downswing took.
+  finish: p => (p.top !== undefined && p.impact !== undefined ? p.impact + 2 * (p.impact - p.top) : undefined),
 };
 // The camera check made after upload (swingcheck/camera_check.py): what to film
 // differently, or a short all-clear. Nothing for older swings or face-on.
 function cameraCheck(s) {
   const found = s.camera_check;
-  if (s.view !== "dtl" || !Array.isArray(found)) return null;
-  if (!found.length) return el("p", { class: "camera-ok" }, "✓ Camera check: a good down-the-line view.");
+  if (!Array.isArray(found)) return null;
+  if (!found.length) return el("p", { class: "camera-ok" }, `✓ Camera check: a good ${s.view === "fo" ? "face-on" : "down-the-line"} view.`);
   const serious = found.some(f => f.level === "flag");
   return el("details", { class: `notice camera-check ${serious ? "error" : ""}`, open: true },
     el("summary", {}, `Camera check: ${found.length === 1 ? "1 thing" : `${found.length} things`} to film differently`),
@@ -131,7 +147,10 @@ export async function renderMark(view, id, isCurrent) {
   // Address opens on the first frame: the golfer is set up and still there in most clips,
   // and it's easy to step forward from. (The detected address is still used behind the
   // scenes, for the camera check and to find the later checkpoints.)
-  const addressSuggested = !savedAddress && s.suggested ? 0 : undefined;
+  // Face-on, the detected address was right on every test clip (some start mid-swing), so
+  // it opens there.
+  const addressSuggested = !savedAddress && s.suggested
+    ? (s.view === "fo" && s.suggested.address !== undefined ? s.suggested.address : 0) : undefined;
   const addressFrame = savedAddress ? clampFrame(s.marks.address_frame) : addressSuggested ?? 0;
   const ballStep = BALL_STEP[s.view] || "address";
   const savedBall = savedAddress && s.marks.points && s.marks.points.ball ? { ball: s.marks.points.ball } : {};
@@ -763,7 +782,7 @@ export async function renderMark(view, id, isCurrent) {
       hud.replaceChildren(
         el("div", { class: "hud-text" }, stepLine,
           el("span", { class: "hud-next" }, hasExample() ? "Drag the slider to match the example" : "Drag the slider to the right frame"),
-          el("span", { class: "hud-hint" }, FIND[state.active] || stepDef().intro)),
+          el("span", { class: "hud-hint" }, stepDef().find || FIND[state.active] || stepDef().intro)),
         el("div", { class: "actions" },
           el("button", { class: "btn small primary", type: "button",
             onclick: () => { cur().frameOk = true; refresh(); } }, "Frame looks right ›")));

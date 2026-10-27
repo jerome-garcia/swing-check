@@ -104,7 +104,7 @@ function summaryPanel(s, states, focusPick, onSelect) {
   } else if (counts.ok && !notMarked.length) {
     focusBox = el("div", { class: "focus ok good-note" },
       el("div", { class: "focus-kicker" }, "Tour-level swing"),
-      el("div", { class: "focus-title" }, "Every checkpoint is green, from address to follow-through. Keep swinging just like this."));
+      el("div", { class: "focus-title" }, `Every checkpoint is green, from address to ${s.view === "fo" ? "the finish" : "follow-through"}. Keep swinging just like this.`));
   } else if (counts.ok) {
     focusBox = el("div", { class: "focus ok good-note" },
       el("div", { class: "focus-kicker" }, "Looking good"),

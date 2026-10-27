@@ -252,8 +252,8 @@ def test_face_on_held_back_for_future_release(client, runs):
     assert not list(runs.glob("*-a"))  # nothing was created
 
 
-def test_change_view_requires_marking_again(client, runs, monkeypatch):
-    monkeypatch.setattr(server, "FACE_ON_ENABLED", True)
+def test_change_view_requires_marking_again(client, runs):
+    client.app.state.config["features"]["face_on"] = True
     assert client.get("/api/swings/old_swing").json()["status"] == "analyzed"
     assert client.post("/api/swings/old_swing/view", json={"view": "side"}).status_code == 400
     r = client.post("/api/swings/old_swing/view", json={"view": "fo"})
@@ -283,6 +283,15 @@ def test_store_ids_are_unique_and_safe(runs):
     assert store.summary(a.id)["status"] == "uploaded"
     with pytest.raises(SwingNotFound):
         store.path("../etc")
+
+
+def test_features_list_both_views_checkpoints(client):
+    f = client.get("/api/features").json()
+    assert f["face_on"] is False  # off until it's ready
+    assert [cp["title"] for cp in f["checkpoints"]["fo"]] == ["Address", "Top", "Downswing", "Impact", "Finish"]
+    assert len(f["checkpoints"]["dtl"]) == 8 and all(cp["built"] for cp in f["checkpoints"]["dtl"])
+    client.app.state.config["features"]["face_on"] = True
+    assert client.get("/api/features").json()["face_on"] is True
 
 
 def test_marking_reference_is_bundled(client):
