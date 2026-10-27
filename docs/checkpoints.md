@@ -271,7 +271,19 @@ Being built, and off in the app until it's ready: set `face_on = true` under
 - **Body tracking face-on** (11 test clips): head, shoulders, and hips tracked almost
   perfectly; ankles and toes well; wrists, heels, and the front knee poorly. So the
   checks use the first two groups, and the hands at impact are clicked.
-- **Impact (built, being tuned):** three rows, in `[analyzers.fo_impact]`:
+- **Address (built):** three rows, in `[analyzers.fo_address]`:
+
+  | Measurement | 🟢 Green | 🟡 Yellow | 🔴 Red |
+  |---|---|---|---|
+  | **Stance width** (ankles ÷ shoulder joints) | 0.95–1.65× (driver 1.2–1.95×) | to 0.8× or 1.9× (driver 1.0× or 2.2×) | beyond |
+  | **Ball position** (0% = back ankle, 100% = front ankle) | 30–90% (driver 55–105%) | to 15% or 105% (driver 40% or 120%) | beyond |
+  | **Spine tilt** (hips to shoulders, + = away from the target) | −3° to +12° (driver −1° to +15°) | to −8° or +18° (driver −6° or +20°) | beyond: leaning at the target |
+
+  On the 11 marked clips: all six pros green; random4 a slightly narrow stance, random2
+  leaning slightly toward the target, random6 the ball outside the front foot (driver).
+  With irons the ball moves back as the club shortens, so its band is wide.
+
+- **Impact (built):** three rows, in `[analyzers.fo_impact]`:
 
   | Measurement | 🟢 Green | 🟡 Yellow | 🔴 Red |
   |---|---|---|---|

@@ -26,6 +26,8 @@ def face_on_pose(hands_dx=0.0, hip_dx=0.0, head_dx=0.0, mirror=False):
         "left_shoulder": (480, 400), "right_shoulder": (600, 400),
         "left_hip": (500, 660), "right_hip": (580, 660),
         "left_wrist": (535, 760), "right_wrist": (545, 760),
+        # Feet 1.33x shoulder width, the front (left) one on the target side, screen-right.
+        "left_ankle": (620, 1000), "right_ankle": (460, 1000),
     }
     groups = {"hands": ("left_wrist", "right_wrist"), "hips": ("left_hip", "right_hip"),
               "head": ("nose", "left_ear", "right_ear")}
@@ -40,7 +42,7 @@ def face_on_pose(hands_dx=0.0, hip_dx=0.0, head_dx=0.0, mirror=False):
         data[:, LANDMARK_INDEX[name]] = np.stack([xs, np.full(FRAMES, float(y)), np.zeros(FRAMES), np.full(FRAMES, 0.95)], 1)
     if mirror:  # a left-hander's left/right landmarks swap sides of the screen
         for a, b in [("left_wrist", "right_wrist"), ("left_hip", "right_hip"), ("left_ear", "right_ear"),
-                     ("left_shoulder", "right_shoulder")]:
+                     ("left_shoulder", "right_shoulder"), ("left_ankle", "right_ankle")]:
             ia, ib = LANDMARK_INDEX[a], LANDMARK_INDEX[b]
             data[:, [ia, ib]] = data[:, [ib, ia]]
     return PoseSeq(fps=240.0, width=width, height=1920, data=data)
@@ -134,6 +136,44 @@ def test_missing_keypoints_give_error_verdict_not_crash():
     pose = face_on_pose()
     pose.data[:, LANDMARK_INDEX["left_hip"]] = np.nan
     assert run_fo(pose)["fo_impact"].status == "error"
+
+
+def moved(pose, name, dx):
+    """The pose with one body point moved dx px along x on every frame."""
+    pose.data[:, LANDMARK_INDEX[name], 0] += dx
+    return pose
+
+
+def test_good_address_from_the_front_is_green():
+    v = run_fo(face_on_pose())["fo_address"]
+    assert v.status == "ok" and v.label == "Good setup from the front"
+    m = v.measurements
+    assert m["stance_over_shoulders"] == pytest.approx(160 / 120, abs=1e-3) and m["ball_position"] == pytest.approx(0.5)
+    assert m["spine_tilt_deg"] == pytest.approx(0.0)
+
+
+def test_address_faults_are_named():
+    narrow = moved(moved(face_on_pose(), "left_ankle", -45), "right_ankle", 45)  # 0.58x shoulder width
+    assert run_fo(narrow)["fo_address"].label == "Stance too narrow"
+    back = moved(moved(face_on_pose(), "left_ankle", 120), "right_ankle", 120)  # ball behind the back ankle
+    assert run_fo(back)["fo_address"].label == "Ball too far back"
+    lean = moved(moved(face_on_pose(), "left_shoulder", 50), "right_shoulder", 50)  # 11 deg toward the target
+    v = run_fo(lean)["fo_address"]
+    assert v.status == "flag" and v.label == "Leaning toward the target" and "back shoulder" in v.tip
+
+
+def test_driver_address_wants_a_wider_stance_and_the_ball_forward():
+    v = run_fo(face_on_pose(), club="driver")["fo_address"]  # 1.33x, ball in the middle
+    assert [r.status for r in v.rows] == ["ok", "warn", "ok"] and v.label == "Ball slightly back"
+
+
+def test_left_hander_address_matches():
+    lean = dict(dx=30)
+    right = run_fo(moved(moved(face_on_pose(), "left_shoulder", lean["dx"]), "right_shoulder", lean["dx"]))
+    left = run_fo(moved(moved(face_on_pose(mirror=True), "left_shoulder", -lean["dx"]), "right_shoulder", -lean["dx"]),
+                  mirror=True)
+    for key in ("stance_over_shoulders", "ball_position", "spine_tilt_deg"):
+        assert left["fo_address"].measurements[key] == pytest.approx(right["fo_address"].measurements[key], abs=1e-3)
 
 
 def test_new_analyzer_plugs_in_without_pipeline_changes():

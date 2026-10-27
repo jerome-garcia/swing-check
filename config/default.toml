@@ -331,6 +331,25 @@ same_line_watch = 1.00    # ...yellow to 100%; red beyond
 same_line_flatter_max = 0.90    # green up to 90% flatter (about 45 cm)...
 same_line_flatter_watch = 1.30  # ...yellow to 130%; red beyond
 
+[analyzers.fo_address]
+# Face-on checkpoint 1, on the marked address frame with the clicked ball. Checked on
+# 11 marked face-on clips: pros with irons stood 1.1-1.5x shoulder width (joint to
+# joint), drivers 1.6x; the ball sat 39-83% of the way to the front ankle with irons
+# (it moves back as the club shortens, so only extremes count), 69-77% with drivers; the
+# spine (hips to shoulders) tilted -2 to +8 deg away from the target.
+stance_min = 0.95             # stance green from 0.95x shoulder width...
+stance_max = 1.65             # ...to 1.65x;
+stance_watch_min = 0.80       # yellow down to 0.8x and...
+stance_watch_max = 1.90       # ...up to 1.9x; red beyond
+ball_min = 0.30               # ball green from 30% of the way from the back ankle to the front...
+ball_max = 0.90               # ...to 90%;
+ball_watch_min = 0.15         # yellow to 15% and...
+ball_watch_max = 1.05         # ...105% (just outside the front ankle); red beyond
+tilt_min = -3                 # spine green from 3 deg toward the target...
+tilt_max = 12                 # ...to 12 deg away;
+tilt_watch_min = -8           # yellow to 8 deg toward (red beyond: leaning at the target)...
+tilt_watch_max = 18           # ...and 18 deg away
+
 [analyzers.fo_impact]
 # Face-on checkpoint 4, on the impact frame confirmed while marking, with the hands
 # clicked there and the ball clicked at address. Shares of torso length (0.10 is about
@@ -394,6 +413,22 @@ min_free_gb = 5
 # out, and the shaft is flatter. These replace the matching iron settings above
 # for a swing marked "Driver or wood". Set by hand for now (no pro driver clip
 # to tune against yet).
+[clubs.driver.analyzers.fo_address]
+# Driver: a wider stance, the ball forward (about the inside of the front heel), and a
+# little more tilt away from the target.
+stance_min = 1.20
+stance_max = 1.95
+stance_watch_min = 1.00
+stance_watch_max = 2.20
+ball_min = 0.55
+ball_max = 1.05
+ball_watch_min = 0.40
+ball_watch_max = 1.20
+tilt_min = -1
+tilt_max = 15
+tilt_watch_min = -6
+tilt_watch_max = 20
+
 [clubs.driver.analyzers.fo_impact]
 # Face-on with a driver: the ball sits forward and is hit on the way up, so the hands
 # are about level with it or a little behind. A watch item only.
