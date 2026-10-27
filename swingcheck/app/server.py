@@ -37,8 +37,8 @@ log = logging.getLogger(__name__)
 STATIC = Path(__file__).parent / "static"
 VIDEO_EXTENSIONS = {".mov", ".mp4", ".m4v", ".avi", ".mkv", ".webm", ".3gp"}
 
-# Face-on is held back for a future release ([features] face_on in the config, off by
-# default): its checks are still being built. Existing face-on swings can still be opened.
+# Face-on can be switched off ([features] face_on in the config); existing face-on swings
+# can still be opened then.
 FACE_ON_DISABLED_MESSAGE = "Face-on analysis is coming in a future release."
 
 

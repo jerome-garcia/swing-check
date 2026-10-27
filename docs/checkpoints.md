@@ -251,10 +251,9 @@ score: **depth × importance**.
 - **Validated** on mirrored copies of McIlroy, Tiger, Jolo, and an amateur
   swing: every checkpoint within about 2° or 2 cm of the original.
 
-## Face-on (in progress)
+## Face-on
 
-Being built, and off in the app until it's ready: set `face_on = true` under
-`[features]` in `config/local.toml` to try it on your own computer.
+Released in v0.10.0. `face_on = false` under `[features]` switches it off.
 
 | # | Checkpoint | Marking | What it will check |
 |---|---|---|---|

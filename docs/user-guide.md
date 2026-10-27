@@ -4,8 +4,8 @@ Everything you need to get a useful swing check, from filming to reading your
 results. It takes about 5 minutes per swing.
 
 > Sections 1 to 5 are for **down-the-line** videos (filmed from behind you,
-> looking toward the target). **Face-on** videos (filmed from in front of you)
-> are coming soon; [section 6](#6-face-on-videos-coming-soon) covers them.
+> looking toward the target). [Section 6](#6-face-on-videos) covers **face-on**
+> videos (filmed from in front of you).
 
 ## Quick start
 
@@ -174,7 +174,7 @@ On swingcheck.org you can keep **4 swings** at a time, and each one is deleted
 **3 days** after upload. To see your swings on another device, use **Copy
 private link** on the home page.
 
-## 6. Face-on videos (coming soon)
+## 6. Face-on videos
 
 Face-on is filmed from in front of you. It shows what down-the-line can't:
 side-to-side movement (sway, weight shift, your head) and whether your hands
@@ -235,8 +235,8 @@ you being out of the picture.
 **My numbers changed, but my swing didn't.** Check that the camera was in the
 same spot and at the same height. A small move changes the measurements.
 
-**Can I analyze a face-on video?** Not yet; it's coming soon. See
-[section 6](#6-face-on-videos-coming-soon) for how it will work.
+**Can I analyze a face-on video?** Yes: choose **Face-on** when you upload. See
+[section 6](#6-face-on-videos).
 
 **Is this coaching advice?** No. Results are estimates from video, for practice
 only.

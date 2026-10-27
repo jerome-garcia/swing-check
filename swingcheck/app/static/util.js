@@ -55,7 +55,7 @@ export const VIEW_NAMES = { dtl: "Down-the-line", fo: "Face-on" };
 export const HAND_NAMES = { right: "Right-handed", left: "Left-handed" };
 export const CLUB_NAMES = { iron: "Iron or wedge", driver: "Driver or wood" };
 
-// Which features the server has switched on (e.g. face-on is held for a future release).
+// Which features the server has switched on (e.g. face-on, which can be switched off).
 let featuresPromise = null;
 export function features() {
   featuresPromise = featuresPromise || api("/api/features");

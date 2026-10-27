@@ -15,7 +15,7 @@
 
 ## How it works
 
-1. **📱 Film** one swing from behind, with your phone on a tripod.
+1. **📱 Film** one swing from behind or from the front, with your phone on a tripod.
 2. **👆 Mark** a few points. A tour pro at the same moment shows you exactly
    what to match and where to click.
 3. **✅ Get your results:** every checkpoint graded green, yellow, or red, an
@@ -34,6 +34,10 @@
 | 7 | **Impact** | Whether you stand up early (early extension) |
 | 8 | **Follow-through** | Whether the club exits on the same line |
 
+**Filmed from the front?** Face-on has five checkpoints of its own: your setup,
+sway at the top, your hips leading the downswing, your hands and hips at impact,
+and your finish.
+
 🟢 **Good**: you're where good players are. 🟡 **Watch**: worth a look.
 🔴 **Fix**: work on this. Every result shows its measurement in centimetres or
 degrees, next to the good range.
@@ -47,6 +51,8 @@ degrees, next to the good range.
 - **Easy to follow.** A pro example guides every step of marking.
 - **Share it with your coach or friends** as a one-page PDF link, with a preview
   in chat apps.
+- **Two camera views:** from behind (down the line) for the club's path, from
+  the front (face-on) for sway, weight shift, and your hands at impact.
 - **Irons and drivers, right- and left-handed,** each with their own ranges.
 - **Private.** No account, no email. Your swings are yours alone, and deleted
   after 3 days.
@@ -66,9 +72,9 @@ New to it? The [user guide](docs/user-guide.md) walks through every step.
 
 ## Support SwingCheck
 
-SwingCheck is free. If it helps
-your game, you can [support it on Ko-fi](https://ko-fi.com/jeromegarcia) to
-help cover the server costs. Thank you!
+SwingCheck is free. It costs about $7 a month to run; if it helps your game,
+you can [support it on Ko-fi](https://ko-fi.com/jeromegarcia) to help keep it
+online. Thank you!
 
 [![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/jeromegarcia)
 

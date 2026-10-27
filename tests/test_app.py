@@ -244,7 +244,8 @@ def test_checkpoint_list_marks_built_ones(client):
     assert cps[0]["title"] == "Address" and cps[0]["phase"] == "address"
 
 
-def test_face_on_held_back_for_future_release(client, runs):
+def test_face_on_can_be_switched_off(client, runs):
+    client.app.state.config["features"]["face_on"] = False
     assert client.get("/api/features").json()["face_on"] is False
     r = client.post("/api/swings", files={"file": ("a.mov", b"x")}, data={"view": "fo"})
     assert r.status_code == 400 and "future release" in r.json()["detail"]
@@ -287,11 +288,11 @@ def test_store_ids_are_unique_and_safe(runs):
 
 def test_features_list_both_views_checkpoints(client):
     f = client.get("/api/features").json()
-    assert f["face_on"] is False  # off until it's ready
+    assert f["face_on"] is True  # on since v0.10.0
     assert [cp["title"] for cp in f["checkpoints"]["fo"]] == ["Address", "Top", "Downswing", "Impact", "Finish"]
     assert len(f["checkpoints"]["dtl"]) == 8 and all(cp["built"] for cp in f["checkpoints"]["dtl"])
-    client.app.state.config["features"]["face_on"] = True
-    assert client.get("/api/features").json()["face_on"] is True
+    client.app.state.config["features"]["face_on"] = False
+    assert client.get("/api/features").json()["face_on"] is False
 
 
 def test_marking_reference_is_bundled(client):

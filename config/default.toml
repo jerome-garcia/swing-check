@@ -7,9 +7,9 @@
 # address frame (see [scale]), so they don't depend on camera distance.
 
 [features]
-# Face-on analysis is still being built and checked on real clips. Off on the site; set it
-# true in config/local.toml to try it on your own computer.
-face_on = false
+# Face-on analysis (released in v0.10.0). Set false to offer down-the-line only; existing
+# face-on swings can still be opened.
+face_on = true
 
 [golfer]
 handedness = "right"          # "right" | "left"; the app sets it per swing (upload page)

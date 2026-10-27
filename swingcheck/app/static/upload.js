@@ -60,7 +60,7 @@ export async function renderUpload(view, isCurrent) {
     return;
   }
   let file = null;
-  // With face-on held back, down-the-line is the only choice, so preselect it.
+  // With face-on switched off, down-the-line is the only choice, so preselect it.
   let viewChoice = faceOn ? null : "dtl";
   let hand = rememberedHand();
   let club = rememberedClub();
