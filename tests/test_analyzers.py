@@ -5,8 +5,8 @@ import pytest
 
 from swingcheck import analyzers
 from swingcheck.analyzers import REGISTRY, SwingContext, Verdict, analyzers_for, register, run_analyzers
-from swingcheck.config import load_config
-from swingcheck.models import LANDMARK_INDEX, LANDMARKS, Marks, PoseSeq
+from swingcheck.config import for_club, load_config
+from swingcheck.models import LANDMARK_INDEX, LANDMARKS, CheckpointMark, Marks, PoseSeq
 from swingcheck.phases import Phases
 
 CONFIG = load_config()
@@ -46,74 +46,94 @@ def face_on_pose(hands_dx=0.0, hip_dx=0.0, head_dx=0.0, mirror=False):
     return PoseSeq(fps=240.0, width=width, height=1920, data=data)
 
 
-def run_fo(pose, mirror=False, config=None):
+def run_fo(pose, mirror=False, config=None, hands_dx=0.1 * TORSO, club="iron", clicked=True):
+    """Face-on analyzers on a made-up swing. The hands are clicked on the impact frame
+    `hands_dx` px toward screen-right of the ball (the target side for a right-hander)."""
     config = copy.deepcopy(config or CONFIG)
+    if club != "iron":
+        config = for_club(config, club)
     config["pose"]["smoothing_ms"] = 0  # keep the step change crisp
     if mirror:
         config["golfer"]["handedness"] = "left"
-    ball = (1080 - 1 - BALL_X) if mirror else BALL_X
-    marks = Marks(view="fo", address_frame=10, points={"ball": (ball, 1000.0)})
+    flip = (lambda x: 1080 - 1 - x) if mirror else (lambda x: x)
+    impact = {"impact": CheckpointMark(frame=PHASES.impact, points={"grip": (flip(BALL_X + hands_dx), 760.0)})}
+    marks = Marks(view="fo", address_frame=10, points={"ball": (flip(BALL_X), 1000.0)},
+                  checkpoints=impact if clicked else {})
     ctx = SwingContext(view="fo", pose=pose, marks=marks, phases=PHASES, scale=TORSO, config=config)
     return {v.name: v for v in run_analyzers(ctx)}
 
 
 def test_builtin_fo_analyzers_registered():
-    names = {a.name for a in analyzers_for("fo", CONFIG)}
-    assert {"hands_at_impact", "weight_shift", "head_drift"} <= names
+    assert "fo_impact" in {a.name for a in analyzers_for("fo", CONFIG)}
     assert all(a.view == "fo" for a in analyzers_for("fo", CONFIG))
 
 
-def test_good_impact_all_ok():
-    # Right-hander, target screen-right: hands, hips forward; head steady.
-    v = run_fo(face_on_pose(hands_dx=0.2 * TORSO, hip_dx=0.25 * TORSO, head_dx=0.0))
-    assert v["hands_at_impact"].label == "ahead" and v["hands_at_impact"].status == "ok"
-    assert v["weight_shift"].status == "ok"
-    assert v["head_drift"].label == "steady"
+def test_good_impact_is_green():
+    # Right-hander, target screen-right: hands ahead, hips forward, head behind the ball.
+    v = run_fo(face_on_pose(hip_dx=0.25 * TORSO, head_dx=-0.1 * TORSO))["fo_impact"]
+    assert v.status == "ok" and v.label == "Hands ahead, hips forward, head behind the ball"
+    assert [r.status for r in v.rows] == ["ok", "ok", "ok"]
 
 
-def test_scoop_and_hang_back_flagged():
-    v = run_fo(face_on_pose(hands_dx=-0.15 * TORSO, hip_dx=0.02 * TORSO, head_dx=-0.2 * TORSO))
-    assert v["hands_at_impact"].label == "behind" and v["hands_at_impact"].status == "flag"
-    assert v["weight_shift"].status == "flag"
-    assert v["head_drift"].status == "flag"
-    assert v["hands_at_impact"].measurements["hands_ahead_at_impact"] == pytest.approx(-0.15, abs=1e-3)
+def test_scoop_and_hanging_back_are_red():
+    v = run_fo(face_on_pose(hip_dx=-0.05 * TORSO, head_dx=-0.1 * TORSO), hands_dx=-0.15 * TORSO)["fo_impact"]
+    assert v.status == "flag" and v.label == "Hands behind the ball"
+    assert [r.status for r in v.rows] == ["flag", "flag", "ok"]
+    assert v.measurements["hands_ahead_of_ball"] == pytest.approx(-0.15, abs=1e-3)
+    assert "Lead with your hands" in v.tip and "front foot" in v.tip
 
 
-def test_level_hands_warn():
-    v = run_fo(face_on_pose(hands_dx=0.02 * TORSO))
-    assert v["hands_at_impact"].label == "level" and v["hands_at_impact"].status == "warn"
+def test_hands_level_with_the_ball_are_yellow():
+    v = run_fo(face_on_pose(hip_dx=0.25 * TORSO, head_dx=-0.1 * TORSO), hands_dx=0.0)["fo_impact"]
+    assert v.status == "warn" and v.label == "Hands about level with the ball"
+
+
+def test_head_past_the_ball_is_red_and_far_behind_only_yellow():
+    lunge = run_fo(face_on_pose(hip_dx=0.25 * TORSO, head_dx=0.2 * TORSO))["fo_impact"]
+    assert lunge.status == "flag" and lunge.label == "Head past the ball"
+    back = run_fo(face_on_pose(hip_dx=0.25 * TORSO, head_dx=-0.9 * TORSO))["fo_impact"]
+    assert back.status == "warn" and back.label == "Head well behind the ball"
+
+
+def test_driver_hands_behind_the_ball_are_a_watch_item():
+    good = run_fo(face_on_pose(hip_dx=0.25 * TORSO, head_dx=-0.1 * TORSO), hands_dx=-0.15 * TORSO, club="driver")
+    assert good["fo_impact"].status == "ok"
+    far = run_fo(face_on_pose(hip_dx=0.25 * TORSO, head_dx=-0.1 * TORSO), hands_dx=-0.6 * TORSO, club="driver")
+    assert far["fo_impact"].status == "warn" and far["fo_impact"].rows[0].fix == "none (a watch item only)"
+
+
+def test_hands_not_clicked_says_how_to_fix():
+    v = run_fo(face_on_pose(), clicked=False)["fo_impact"]
+    assert v.status == "error" and "Impact step" in v.summary
 
 
 def test_left_hander_mirrored_gives_same_results():
-    args = dict(hands_dx=-0.15 * TORSO, hip_dx=0.3 * TORSO, head_dx=-0.2 * TORSO)
-    right = run_fo(face_on_pose(**args))
-    left = run_fo(face_on_pose(**args, mirror=True), mirror=True)
-    for name in right:
-        assert left[name].label == right[name].label, name
-        for key, value in right[name].measurements.items():
-            if isinstance(value, float):
-                assert left[name].measurements[key] == pytest.approx(value, abs=1e-3), (name, key)
+    args = dict(hip_dx=0.3 * TORSO, head_dx=-0.2 * TORSO)
+    right = run_fo(face_on_pose(**args), hands_dx=-0.15 * TORSO)["fo_impact"]
+    left = run_fo(face_on_pose(**args, mirror=True), mirror=True, hands_dx=-0.15 * TORSO)["fo_impact"]
+    assert left.label == right.label
+    for key, value in right.measurements.items():
+        if isinstance(value, float):
+            assert left.measurements[key] == pytest.approx(value, abs=1e-3), key
 
 
 def test_thresholds_come_from_config():
     config = copy.deepcopy(CONFIG)
-    config["analyzers"]["weight_shift"]["min_shift"] = 0.5
-    v = run_fo(face_on_pose(hip_dx=0.25 * TORSO), config=config)
-    assert v["weight_shift"].status == "flag"
+    config["analyzers"]["fo_impact"]["hips_shift_min"] = 0.5
+    v = run_fo(face_on_pose(hip_dx=0.25 * TORSO, head_dx=-0.1 * TORSO), config=config)["fo_impact"]
+    assert v.rows[1].status == "warn"
 
 
 def test_disabled_analyzer_skipped():
     config = copy.deepcopy(CONFIG)
-    config["analyzers"]["disabled"] = ["head_drift"]
-    assert "head_drift" not in run_fo(face_on_pose(), config=config)
+    config["analyzers"]["disabled"] = ["fo_impact"]
+    assert "fo_impact" not in run_fo(face_on_pose(), config=config)
 
 
 def test_missing_keypoints_give_error_verdict_not_crash():
     pose = face_on_pose()
     pose.data[:, LANDMARK_INDEX["left_hip"]] = np.nan
-    v = run_fo(pose)
-    assert v["weight_shift"].status == "error"
-    assert v["hands_at_impact"].status != "error"
+    assert run_fo(pose)["fo_impact"].status == "error"
 
 
 def test_new_analyzer_plugs_in_without_pipeline_changes():
@@ -124,7 +144,7 @@ def test_new_analyzer_plugs_in_without_pipeline_changes():
     try:
         v = run_fo(face_on_pose())
         assert v["test_only_dummy"].status == "error"  # a crash is contained
-        assert v["weight_shift"].status in ("ok", "flag")
+        assert v["fo_impact"].status in ("ok", "warn", "flag")
     finally:
         REGISTRY.pop("test_only_dummy")
 

@@ -17,7 +17,7 @@ PHASES = Phases(address=10, takeaway=30, top=50, early_downswing=70, impact=80)
 
 
 def fo_verdicts():
-    v = run_fo(face_on_pose(hands_dx=-40, hip_dx=10, head_dx=-50))
+    v = run_fo(face_on_pose(hip_dx=10, head_dx=-50), hands_dx=-40)
     return list(v.values())
 
 
@@ -38,7 +38,7 @@ def test_every_overlay_kind_renders():
 
 def test_face_on_verdicts_render_through_impact():
     verdicts = fo_verdicts()
-    assert {v.name for v in verdicts} == {"hands_at_impact", "weight_shift", "head_drift"}
+    assert {v.name for v in verdicts} == {"fo_impact"}
     pose = face_on_pose()
     hands = (pose.xy("left_wrist") + pose.xy("right_wrist")) / 2
     ann = Annotator(verdicts, PHASES, hands, 240.0, 1080, 1920, CONFIG)
@@ -77,8 +77,8 @@ def test_report_lists_phases_and_flags():
     text = build_report(__import__("pathlib").Path("swing.mov"), "fo", info, PHASES, fo_verdicts(), 260.0, "torso")
     assert "face-on" in text and "trimmed 1s to end" in text
     assert "impact" in text and "Note: a note" in text
-    assert "[FIX] Hands at impact: behind" in text
-    assert "SUMMARY" in text and "- Hands at impact: behind" in text
+    assert "[FIX] Impact: Hands behind the ball" in text
+    assert "SUMMARY" in text and "- Impact: Hands behind the ball" in text
 
 
 @pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg not on PATH")

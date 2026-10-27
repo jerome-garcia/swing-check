@@ -11,15 +11,15 @@ def test_defaults_load():
 
 def test_override_merges(tmp_path):
     override = tmp_path / "o.toml"
-    override.write_text("[analyzers.head_drift]\nmax_drift_away = 0.2\n")
+    override.write_text("[analyzers.fo_impact]\nhips_shift_min = 0.2\n")
     config = load_config(override)
-    assert config["analyzers"]["head_drift"]["max_drift_away"] == 0.2
+    assert config["analyzers"]["fo_impact"]["hips_shift_min"] == 0.2
     # Sibling keys survive the merge.
-    assert "weight_shift" in config["analyzers"]
+    assert config["analyzers"]["fo_impact"]["head_behind_max"] == 0.60 and "address" in config["analyzers"]
 
 
 def test_unknown_key_rejected(tmp_path):
     override = tmp_path / "o.toml"
-    override.write_text("[analyzers.head_drift]\nmax_drift = 0.2\n")
-    with pytest.raises(KeyError, match="max_drift"):
+    override.write_text("[analyzers.fo_impact]\nhips_shift = 0.2\n")
+    with pytest.raises(KeyError, match="hips_shift"):
         load_config(override)

@@ -144,7 +144,7 @@ halfway_back_fraction = 0.45
 downswing_fraction = 0.35
 
 [analyzers]
-# Names of analyzers to skip, e.g. ["head_drift"].
+# Names of analyzers to skip, e.g. ["address"].
 disabled = []
 
 [analyzers.address]
@@ -331,18 +331,18 @@ same_line_watch = 1.00    # ...yellow to 100%; red beyond
 same_line_flatter_max = 0.90    # green up to 90% flatter (about 45 cm)...
 same_line_flatter_watch = 1.30  # ...yellow to 130%; red beyond
 
-[analyzers.hands_at_impact]
-# Lead wrist x minus ball x along the target direction, body units.
-ahead_threshold = 0.10        # >= this -> "ahead" (good shaft lean)
-behind_threshold = -0.05      # <= this -> "behind" (scoop signal)
-
-[analyzers.weight_shift]
-# Hip-center movement toward the target, address -> impact, body units.
-min_shift = 0.15              # less than this -> flagged (fat-shot / low-point risk)
-
-[analyzers.head_drift]
-# Head x movement away from the target, address -> impact, body units.
-max_drift_away = 0.10         # more than this -> flagged
+[analyzers.fo_impact]
+# Face-on checkpoint 4, on the impact frame confirmed while marking, with the hands
+# clicked there and the ball clicked at address. Shares of torso length (0.10 is about
+# 5 cm). Starting values from standard teaching, to be tuned on marked clips.
+hands_ahead_min = 0.04        # hands green from 2 cm ahead of the ball (the shaft leans forward)...
+hands_ahead_watch = -0.06     # ...yellow to 3 cm behind; red past that (a scoop)
+hands_watch_only = false      # true: never red (the driver, hit on the way up)
+hips_shift_min = 0.10         # hips green from 5 cm toward the target since address...
+hips_shift_watch = 0.0        # ...yellow to no move; red if they moved back (hanging back)
+head_ahead_max = -0.05        # head green from 2.5 cm past the ball...
+head_ahead_watch = -0.15      # ...yellow to 7.5 cm past; red beyond (lunging)
+head_behind_max = 0.60        # ...to 30 cm behind it; farther back is yellow at most (hanging back)
 
 [output]
 # Draw the hand path (wrist trail) on the video and key frames. Off for now:
@@ -391,6 +391,15 @@ min_free_gb = 5
 # out, and the shaft is flatter. These replace the matching iron settings above
 # for a swing marked "Driver or wood". Set by hand for now (no pro driver clip
 # to tune against yet).
+[clubs.driver.analyzers.fo_impact]
+# Face-on with a driver: the ball sits forward and is hit on the way up, so the hands
+# are about level with it or a little behind. A watch item only.
+hands_ahead_min = -0.20       # green from 10 cm behind the ball
+hands_ahead_watch = -0.40     # yellow beyond 20 cm behind
+hands_watch_only = true
+# The hips move less with a driver: Rory about 4 cm on a face-on test clip, irons 13-17 cm.
+hips_shift_min = 0.05         # green from 2.5 cm toward the target
+
 [clubs.driver.analyzers.address]
 spine_bend_min = 25         # green 25-40 degrees (irons 30-45)
 spine_bend_max = 40

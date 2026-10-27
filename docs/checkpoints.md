@@ -271,5 +271,14 @@ Being built, and off in the app until it's ready: set `face_on = true` under
 - **Body tracking face-on** (11 test clips): head, shoulders, and hips tracked almost
   perfectly; ankles and toes well; wrists, heels, and the front knee poorly. So the
   checks use the first two groups, and the hands at impact are clicked.
-- **Older face-on checks** (hands at impact, weight shift, head drift, from made-up data)
-  still run, and will be folded into the Impact checkpoint.
+- **Impact (built, being tuned):** three rows, in `[analyzers.fo_impact]`:
+
+  | Measurement | 🟢 Green | 🟡 Yellow | 🔴 Red |
+  |---|---|---|---|
+  | **Hands vs ball** (clicked hands vs the ball) | 2 cm or more ahead | to 3 cm behind | more behind (a scoop) |
+  | **Hips vs address** | 5 cm or more toward the target (driver 2.5 cm) | less | moved back (hanging back) |
+  | **Head vs ball** | up to 2.5 cm past, to 30 cm behind | to 7.5 cm past; or farther behind (never red) | more than 7.5 cm past (lunging) |
+
+  With a driver the hands may be level or a little behind the ball (it's hit on the way
+  up): green from 10 cm behind, and never red. Starting values from standard teaching;
+  pro irons moved the hips 13–17 cm on the test clips.
