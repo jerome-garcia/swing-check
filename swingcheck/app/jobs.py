@@ -52,6 +52,7 @@ class JobManager:
         self._on_finish = on_finish
         self._jobs: dict[str, Job] = {}
         self._fns: dict[str, JobFn] = {}
+        self._settled: set[str] = set()  # finished jobs whose on_finish has run too
         self._queue: queue.Queue[str] = queue.Queue()
         self._lock = threading.Lock()
         self._worker = threading.Thread(target=self._run, name="swingcheck-jobs", daemon=True)
@@ -115,14 +116,16 @@ class JobManager:
         """Drop jobs that finished more than KEEP_FINISHED_S ago (call with the lock held)."""
         for job_id in [j.id for j in self._jobs.values() if j.finished and now - j.finished > KEEP_FINISHED_S]:
             del self._jobs[job_id]
+            self._settled.discard(job_id)
 
     def wait(self, job_id: str, timeout: float = 600) -> Job:
-        """Block until a job finishes (for tests)."""
+        """Block until a job finishes and on_finish has run, so its event is logged (for tests)."""
         deadline = time.time() + timeout
         while time.time() < deadline:
-            job = self.get(job_id)
-            if job and job.state in ("done", "failed"):
-                return job
+            with self._lock:
+                settled = job_id in self._settled
+            if settled:
+                return self.get(job_id)
             time.sleep(0.05)
         raise TimeoutError(job_id)
 
@@ -155,3 +158,5 @@ class JobManager:
                     self._on_finish(job)
                 except Exception:  # noqa: BLE001 - stats must never break the queue
                     traceback.print_exc()
+            with self._lock:
+                self._settled.add(job_id)
