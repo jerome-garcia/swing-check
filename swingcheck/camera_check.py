@@ -26,7 +26,7 @@ TRACKED = ("shoulder", "hip", "knee", "ankle", "wrist")
 BEHIND_TIP = "Put the camera straight behind your hands at about hip height, pointing at the target."
 
 
-FRONT_TIP = "Put the camera straight in front of you at about chest height, square to your chest."
+FRONT_TIP = "Put the camera straight in front of you at about hip height, lined up with the middle of your stance."
 ANGLE_TITLES = ("This doesn't look like a down-the-line view", "The camera may be off to one side",
                 "This doesn't look like a face-on view", "The camera may be at an angle")
 

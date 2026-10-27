@@ -21,7 +21,7 @@ const VIEWS = {
     title: "Face-on",
     image: "/setup/face-on.png",
     alt: "Face-on setup: the phone on a stand at hip height, in front of the golfer, its view taking in the whole golfer",
-    tips: ["Camera in front of you, square to the target line, facing your chest",
+    tips: ["Camera straight in front of you, facing your chest, lined up with the middle of your stance",
       "At about hip height, a few steps back",
       "Your whole body in frame, with room above your head for the club",
       "Upright (portrait) video; slo-mo if your phone has it"],
