@@ -382,7 +382,7 @@ head_past_max = 0.30          # ...to 15 cm past it; a watch item beyond
 # Face-on checkpoint 4, on the impact frame confirmed while marking, with the hands
 # clicked there and the ball clicked at address. Shares of torso length (0.10 is about
 # 5 cm). From standard teaching, checked on 11 marked face-on clips: the six pros (Rory,
-# Tiger, Collin irons; Rory, Tiger, Scott drivers) all green, with the hands 12-20 cm
+# Tiger, Collin irons; Rory, Tiger, Scott drivers) all green, with the hands 12-25 cm
 # ahead with irons (amateurs 8-11), the hips 12-19 cm forward, and the head 6-13 cm
 # behind the ball with irons, 20-22 cm with a driver.
 hands_ahead_min = 0.04        # hands green from 2 cm ahead of the ball (the shaft leans forward)...

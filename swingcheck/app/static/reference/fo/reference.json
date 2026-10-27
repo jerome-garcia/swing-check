@@ -5,37 +5,37 @@
   "steps": {
     "address": {
       "image": "address.jpg",
-      "v": "745da6f35a",
+      "v": "18e9d323c9",
       "points": {
         "ball": [
-          272.5,
-          754.7
+          261.7,
+          794.8
         ]
       }
     },
     "top": {
       "image": "top.jpg",
-      "v": "dfb21e48e7",
+      "v": "b066089370",
       "points": {}
     },
     "downswing": {
       "image": "downswing.jpg",
-      "v": "ec84f0e087",
+      "v": "78d65bebf5",
       "points": {}
     },
     "impact": {
       "image": "impact.jpg",
-      "v": "68d00d2b03",
+      "v": "03caf92e74",
       "points": {
         "grip": [
-          312.7,
-          546.1
+          330.9,
+          540.7
         ]
       }
     },
     "finish": {
       "image": "finish.jpg",
-      "v": "f7ddb2683f",
+      "v": "3f61b66bb9",
       "points": {}
     }
   }

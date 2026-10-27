@@ -311,6 +311,6 @@ Released in v0.10.0. `face_on = false` under `[features]` switches it off.
 
   With a driver the hands may be level or a little behind the ball (it's hit on the way
   up): green from 10 cm behind, and never red. From standard teaching, checked on 11
-  marked clips: all six pros green (hands 12–20 cm ahead with irons, hips 12–19 cm
+  marked clips: all six pros green (hands 12–25 cm ahead with irons, hips 12–19 cm
   forward, head 6–13 cm behind the ball with irons and 20–22 cm with a driver); two
   amateurs yellow (head a little past the ball; head hanging 35 cm back with a driver).
