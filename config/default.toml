@@ -334,7 +334,10 @@ same_line_flatter_watch = 1.30  # ...yellow to 130%; red beyond
 [analyzers.fo_impact]
 # Face-on checkpoint 4, on the impact frame confirmed while marking, with the hands
 # clicked there and the ball clicked at address. Shares of torso length (0.10 is about
-# 5 cm). Starting values from standard teaching, to be tuned on marked clips.
+# 5 cm). From standard teaching, checked on 11 marked face-on clips: the six pros (Rory,
+# Tiger, Collin irons; Rory, Tiger, Scott drivers) all green, with the hands 12-20 cm
+# ahead with irons (amateurs 8-11), the hips 12-19 cm forward, and the head 6-13 cm
+# behind the ball with irons, 20-22 cm with a driver.
 hands_ahead_min = 0.04        # hands green from 2 cm ahead of the ball (the shaft leans forward)...
 hands_ahead_watch = -0.06     # ...yellow to 3 cm behind; red past that (a scoop)
 hands_watch_only = false      # true: never red (the driver, hit on the way up)
@@ -397,8 +400,6 @@ min_free_gb = 5
 hands_ahead_min = -0.20       # green from 10 cm behind the ball
 hands_ahead_watch = -0.40     # yellow beyond 20 cm behind
 hands_watch_only = true
-# The hips move less with a driver: Rory about 4 cm on a face-on test clip, irons 13-17 cm.
-hips_shift_min = 0.05         # green from 2.5 cm toward the target
 
 [clubs.driver.analyzers.address]
 spine_bend_min = 25         # green 25-40 degrees (irons 30-45)

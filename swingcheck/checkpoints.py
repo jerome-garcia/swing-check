@@ -48,7 +48,7 @@ FO_CHECKPOINTS: tuple[Checkpoint, ...] = (
     Checkpoint(2, "Top", "fo_top", "top",
                "At the top, your hips stay inside your back foot (no sway) and your head stays about where it started."),
     Checkpoint(3, "Downswing", "fo_downswing", None,
-               "Front arm parallel to the ground on the way down: your hips have started moving toward the target, and your head stays back."),
+               "Shaft parallel to the ground on the way down: your hips have moved toward the target, and your head stays back."),
     Checkpoint(4, "Impact", "fo_impact", "impact",
                "Your hands are ahead of the ball, your hips have moved toward the target, and your head is behind the ball."),
     Checkpoint(5, "Finish", "fo_finish", None,

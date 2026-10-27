@@ -260,7 +260,7 @@ Being built, and off in the app until it's ready: set `face_on = true` under
 |---|---|---|---|
 | 1 | **Address** | Frame, then click the ball | Stance width, ball position, spine tilted away from the target |
 | 2 | **Top** | Frame only | Sway: hips inside the back foot; head steady |
-| 3 | **Downswing** | Frame only (front arm parallel coming down) | Hips moving toward the target; head back |
+| 3 | **Downswing** | Frame only (shaft parallel to the ground coming down) | Hips moving toward the target; head back |
 | 4 | **Impact** | Frame, then click the hands | Hands ahead of the ball, hips forward, head behind the ball |
 | 5 | **Finish** | Frame only | Hips and head over the front foot |
 
@@ -276,9 +276,11 @@ Being built, and off in the app until it's ready: set `face_on = true` under
   | Measurement | 🟢 Green | 🟡 Yellow | 🔴 Red |
   |---|---|---|---|
   | **Hands vs ball** (clicked hands vs the ball) | 2 cm or more ahead | to 3 cm behind | more behind (a scoop) |
-  | **Hips vs address** | 5 cm or more toward the target (driver 2.5 cm) | less | moved back (hanging back) |
+  | **Hips vs address** | 5 cm or more toward the target | less | moved back (hanging back) |
   | **Head vs ball** | up to 2.5 cm past, to 30 cm behind | to 7.5 cm past; or farther behind (never red) | more than 7.5 cm past (lunging) |
 
   With a driver the hands may be level or a little behind the ball (it's hit on the way
-  up): green from 10 cm behind, and never red. Starting values from standard teaching;
-  pro irons moved the hips 13–17 cm on the test clips.
+  up): green from 10 cm behind, and never red. From standard teaching, checked on 11
+  marked clips: all six pros green (hands 12–20 cm ahead with irons, hips 12–19 cm
+  forward, head 6–13 cm behind the ball with irons and 20–22 cm with a driver); two
+  amateurs yellow (head a little past the ball; head hanging 35 cm back with a driver).
